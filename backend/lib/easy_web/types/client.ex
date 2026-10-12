@@ -27,7 +27,6 @@ defmodule EasyWeb.Types.Client do
           required(:invitation_expires_at) => DateTime.t() | nil,
           required(:last_active_at) => DateTime.t() | nil,
           required(:training_plan_name) => String.t() | nil,
-          required(:nutrition_plan_name) => String.t() | nil,
           required(:inserted_at) => DateTime.t(),
           required(:updated_at) => DateTime.t()
         }
@@ -87,7 +86,6 @@ defmodule EasyWeb.Types.Client do
       invitation_expires_at: ClientSchema.invitation_expires_at(client),
       last_active_at: client.last_active_at,
       training_plan_name: client.training_plan_name,
-      nutrition_plan_name: client.nutrition_plan_name,
       inserted_at: client.inserted_at,
       updated_at: client.updated_at
     }

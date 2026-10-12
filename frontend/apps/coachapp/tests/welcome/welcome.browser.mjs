@@ -4,7 +4,7 @@ import {chromium, expect} from '@playwright/test';
 const browser = await chromium.launch();
 const output = '/tmp/coachapp-welcome';
 await mkdir(output, {recursive: true});
-const titles = ['Build once. Coach each person.', 'Make healthy choices easier.'];
+const titles = ['Build once. Coach each person.'];
 try {
   for (const width of [375, 1280]) {
     const context = await browser.newContext({
@@ -42,13 +42,6 @@ try {
       expect(await image.evaluate((node) => node.currentSrc)).toContain(`-${width === 375 ? 'mobile' : 'desktop'}.jpg`);
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
       await page.screenshot({path: `${output}/slide-${index + 1}-${width}.png`, fullPage: true});
-      if (index === 1) {
-        await page.reload();
-        await expect(page.getByRole('heading', {name: titles[1], exact: true})).toBeFocused();
-        await page.getByRole('button', {name: 'Back', exact: true}).click();
-        await expect(page.getByRole('heading', {name: titles[0], exact: true})).toBeFocused();
-        await page.getByRole('button', {name: 'Next', exact: true}).click();
-      }
       if (index < titles.length - 1) {
         await page.getByRole('button', {name: 'Next', exact: true}).focus();
         await page.keyboard.press('Enter');
@@ -96,7 +89,7 @@ try {
     expect(errors).toEqual([]);
     await context.close();
     console.log(
-      `Welcome: real signup, two previews, keyboard, reload/back, finish, replay, skip, login, return destination and recovery passed at ${width}px.`,
+      `Welcome: real signup, training preview, keyboard, reload/back, finish, replay, skip, login, return destination and recovery passed at ${width}px.`,
     );
   }
 } finally {

@@ -1,4 +1,4 @@
-import {ClipboardCheck, Dumbbell, Flower2, House, MessageCircle, Sprout, UserRound, Utensils} from 'lucide-react';
+import {ClipboardCheck, Dumbbell, Flower2, House, MessageCircle, Sprout, UserRound} from 'lucide-react';
 import {type ReactNode, useSyncExternalStore} from 'react';
 import {generatePath, Link, Navigate, NavLink, Outlet, useLocation} from 'react-router-dom';
 import {useProfile} from './api/auth';
@@ -6,7 +6,6 @@ import {clearSession, parseSession, sessionSnapshot, subscribeSession} from './a
 import {useTrainingOccurrences} from './api/training';
 import {authPath} from './auth/return-to';
 import {TodayMessages} from './messages/messages';
-import {TodayNutrition} from './nutrition/nutrition';
 import {routes} from './routes';
 import {TodayTrackers} from './trackers/trackers';
 import {dayLabel} from './training/recording';
@@ -25,8 +24,6 @@ export function AppShell() {
   const focusedEditor =
     location.pathname.startsWith('/training/plans/') ||
     location.pathname.startsWith('/training/sessions/') ||
-    location.pathname.startsWith('/nutrition/days/') ||
-    location.pathname.startsWith('/nutrition/plans') ||
     location.pathname === routes.messages ||
     location.pathname === routes.accountDetails;
   return session ? (
@@ -69,10 +66,6 @@ export function AppShell() {
             <NavLink to={routes.training}>
               <Dumbbell aria-hidden="true" />
               Training
-            </NavLink>
-            <NavLink to={routes.nutrition}>
-              <Utensils aria-hidden="true" />
-              Nutrition
             </NavLink>
             <NavLink to={routes.messages}>
               <MessageCircle aria-hidden="true" />
@@ -145,7 +138,7 @@ export function Home() {
       description={
         profile.data
           ? `${profile.data.data.preferred_name || profile.data.data.full_name} · ${dayLabel(profile.data.data.local_date)}`
-          : 'Your training, nutrition and messages.'
+          : 'Your training and messages.'
       }
     >
       {!profile.data && (
@@ -213,7 +206,6 @@ export function Home() {
           />
         )}
       </section>
-      <TodayNutrition />
       <TodayTrackers />
       <section className="mb-4">
         <ActionCard

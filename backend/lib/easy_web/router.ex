@@ -152,38 +152,6 @@ defmodule EasyWeb.Router do
     get "/clients/:client_id/training-occurrences", ClientTrainingPlanController, :occurrences
     get "/clients/:client_id/exercises/:exercise_id/history", ClientTrainingPlanController, :exercise_history
     get "/clients/:client_id/training-plans", ClientTrainingPlanController, :index
-    get "/clients/:client_id/nutrition-plans", ClientNutritionPlanController, :index
-    get "/clients/:client_id/nutrition-coverage", NutritionCoverageController, :show
-
-    get "/nutrition-foods", FoodController, :index
-    get "/nutrition-foods/categories", FoodController, :categories
-    post "/nutrition-foods", FoodController, :create
-    get "/nutrition-foods/:id", FoodController, :show
-    patch "/nutrition-foods/:id", FoodController, :update
-    delete "/nutrition-foods/:id", FoodController, :delete
-    get "/nutrition-foods/:id/impact", FoodController, :impact
-    get "/nutrition-foods/:id/usage", FoodController, :usage
-    post "/nutrition-foods/:id/copy", FoodController, :copy
-
-    get "/nutrition-recipes", RecipeController, :index
-    post "/nutrition-recipes", RecipeController, :create
-    get "/nutrition-recipes/:id", RecipeController, :show
-    patch "/nutrition-recipes/:id", RecipeController, :update
-    delete "/nutrition-recipes/:id", RecipeController, :delete
-    get "/nutrition-recipes/:id/impact", RecipeController, :impact
-    get "/nutrition-recipes/:id/usage", RecipeController, :usage
-    post "/nutrition-recipes/:id/copy", RecipeController, :copy
-
-    get "/nutrition-plans", NutritionPlanController, :index
-    post "/nutrition-plans", NutritionPlanController, :create
-    get "/nutrition-plans/:id", NutritionPlanController, :show
-    patch "/nutrition-plans/:id", NutritionPlanController, :update
-    delete "/nutrition-plans/:id/revisions/:revision_id", NutritionPlanController, :withdraw
-    delete "/nutrition-plans/:id", NutritionPlanController, :delete
-    post "/nutrition-plans/:id/archive", NutritionPlanController, :archive
-    post "/nutrition-plans/:id/restore", NutritionPlanController, :restore
-    post "/nutrition-plans/:id/duplicate", NutritionPlanController, :duplicate
-    post "/clients/:client_id/nutrition-plans/:id/assign", NutritionPlanController, :assign
 
     get "/training-exercises", ExerciseController, :index
     post "/training-exercises", ExerciseController, :create
@@ -210,9 +178,6 @@ defmodule EasyWeb.Router do
     get "/clients/:client_id/training-sessions", WorkoutSessionController, :index
     get "/clients/:client_id/training-sessions/:id", WorkoutSessionController, :show
 
-    get "/clients/:client_id/nutrition-food-metrics", NutritionDayController, :metrics
-    get "/clients/:client_id/nutrition-days", NutritionDayController, :index
-
     # Chat
     get "/conversations", ConversationController, :index
     get "/conversation-inbox", ConversationController, :inbox
@@ -222,6 +187,24 @@ defmodule EasyWeb.Router do
     post "/conversations/:id/messages", ConversationController, :create_message
     post "/conversations/:id/read", ConversationController, :mark_read
     get "/clients/:client_id/conversation", ConversationController, :show_for_client
+
+    get "/foods", FoodController, :index
+    get "/foods/:id", FoodController, :show
+    post "/foods", FoodController, :create
+    patch "/foods/:id", FoodController, :update
+    get "/nutrients", FoodController, :nutrients
+    get "/clients/:client_id/nutrition-week", NutritionWeekController, :show
+    get "/clients/:client_id/nutrition-presets", NutritionWeekController, :presets
+    post "/clients/:client_id/nutrition-presets", NutritionWeekController, :create_preset
+    patch "/clients/:client_id/nutrition-presets/:id", NutritionWeekController, :update_preset
+    delete "/clients/:client_id/nutrition-presets/:id", NutritionWeekController, :archive_preset
+    post "/clients/:client_id/nutrition-schedules", NutritionWeekController, :create_schedule
+    patch "/clients/:client_id/nutrition-schedules/:id", NutritionWeekController, :update_schedule
+    delete "/clients/:client_id/nutrition-schedules/:id", NutritionWeekController, :remove_schedule
+    post "/clients/:client_id/nutrition-targets", NutritionWeekController, :create_targets
+    patch "/clients/:client_id/nutrition-targets/:id", NutritionWeekController, :update_targets
+    put "/clients/:client_id/nutrition-target-days/:weekday", NutritionWeekController, :assign_targets
+    post "/clients/:client_id/nutrition-undo", NutritionWeekController, :undo
   end
 
   scope "/v1/client", EasyWeb.Clients do
@@ -270,20 +253,7 @@ defmodule EasyWeb.Router do
     patch "/training-performed-sets/:id", PerformedSetController, :update
     delete "/training-performed-sets/:id", PerformedSetController, :delete
 
-    # Nutrition plans (read-only)
-    get "/nutrition-plans", NutritionPlanController, :index
-    get "/nutrition-plans/:id", NutritionPlanController, :show
-
     # Foods (read-only)
-    get "/nutrition-foods", FoodController, :index
-    get "/nutrition-foods/:id", FoodController, :show
-
-    # Recipes (read-only)
-    get "/nutrition-recipes", RecipeController, :index
-    get "/nutrition-recipes/:id", RecipeController, :show
-
-    get "/nutrition-days", NutritionDayController, :index
-    patch "/nutrition-days/:date", NutritionDayController, :save
 
     # Chat
     get "/conversation", ConversationController, :show

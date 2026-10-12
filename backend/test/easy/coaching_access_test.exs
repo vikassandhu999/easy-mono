@@ -44,39 +44,25 @@ defmodule Easy.CoachingAccessTest do
     ]
 
     training = insert(:training_plan, attrs)
-    nutrition = insert(:nutrition_plan, attrs)
     assert {:ok, nil} = TrainingReader.resolve_client_coverage(ctx, :training, today)
-    assert {:ok, nil} = TrainingReader.resolve_client_coverage(ctx, :nutrition, today)
 
     term = insert(:coaching_term, client_id: client.id, starts_on: start_date)
     assert {:ok, %{plan: %{id: training_id}}} = TrainingReader.resolve_client_coverage(ctx, :training, today)
     assert training_id == training.id
-    assert {:ok, %{plan: %{id: nutrition_id}}} = TrainingReader.resolve_client_coverage(ctx, :nutrition, today)
-    assert nutrition_id == nutrition.id
 
     Repo.update!(change(term, ends_on: Date.add(today, -1)))
     insert(:coaching_term, client_id: client.id, starts_on: today)
     assert {:ok, nil} = TrainingReader.resolve_client_coverage(ctx, :training, today)
-    assert {:ok, nil} = TrainingReader.resolve_client_coverage(ctx, :nutrition, today)
     assert {:ok, %{lifecycle: :ended}} = TrainingReader.get_plan(coach_ctx, :training, training.id)
-    assert {:ok, %{lifecycle: :ended}} = TrainingReader.get_plan(coach_ctx, :nutrition, nutrition.id)
 
     training_template = insert(:training_plan, business: client.business)
-    nutrition_template = insert(:nutrition_plan, business: client.business)
 
     assert {:ok, new_training} =
              Programming.assign_template_to_client(coach_ctx, client.id, :training, training_template.id, %{
                start_date: today
              })
 
-    assert {:ok, new_nutrition} =
-             Programming.assign_template_to_client(coach_ctx, client.id, :nutrition, nutrition_template.id, %{
-               start_date: today
-             })
-
     assert new_training.lifecycle == :current
-    assert new_nutrition.lifecycle == :current
     assert Repo.get!(Easy.Plans.Plan, training.id).end_date == nil
-    assert Repo.get!(Easy.Plans.Plan, nutrition.id).end_date == nil
   end
 end

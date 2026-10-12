@@ -1,61 +1,35 @@
 import {useMutation, useQuery} from '@tanstack/react-query';
 import {ApiError, call, client} from './client';
-import {
-  clientKeys,
-  exerciseKeys,
-  foodKeys,
-  nutritionDayKeys,
-  nutritionKeys,
-  recipeKeys,
-  trainingPlanKeys,
-} from './keys';
+import {clientKeys, exerciseKeys, trainingPlanKeys} from './keys';
 import {queryClient} from './query-client';
 import type {paths, TrainingPlan} from './schema';
 import {getSession} from './session';
 
-export type PlanResource = 'training' | 'nutrition';
 export type PlanAction = 'duplicate' | 'archive' | 'restore' | 'delete';
 export type PlanVersion = Pick<TrainingPlan, 'id' | 'name' | 'revision'>;
 
-function keys(resource: PlanResource) {
-  return resource === 'training' ? trainingPlanKeys : nutritionKeys;
+function readPlan(id: string, signal?: AbortSignal) {
+  return call(client.GET('/v1/coach/training-plans/{id}', {params: {path: {id}}, ...(signal ? {signal} : {})}));
 }
-function readPlan(resource: PlanResource, id: string, signal?: AbortSignal) {
-  return resource === 'training'
-    ? call(client.GET('/v1/coach/training-plans/{id}', {params: {path: {id}}, ...(signal ? {signal} : {})}))
-    : call(client.GET('/v1/coach/nutrition-plans/{id}', {params: {path: {id}}, ...(signal ? {signal} : {})}));
-}
-export function useManagedPlan(resource: PlanResource, id: string) {
+export function useManagedPlan(id: string) {
   return useQuery({
-    queryKey: keys(resource).detail(id),
+    queryKey: trainingPlanKeys.detail(id),
     staleTime: 0,
-    queryFn: async ({signal}) => readPlan(resource, id, signal),
+    queryFn: async ({signal}) => readPlan(id, signal),
   });
 }
-function writePlan(resource: PlanResource, action: PlanAction, plan: PlanVersion) {
+function writePlan(action: PlanAction, plan: PlanVersion) {
   const path = {id: plan.id};
   const revision = {expected_revision: plan.revision};
-  if (resource === 'training') {
-    switch (action) {
-      case 'duplicate':
-        return call(client.POST('/v1/coach/training-plans/{id}/duplicate', {params: {path}}));
-      case 'archive':
-        return call(client.POST('/v1/coach/training-plans/{id}/archive', {params: {path}, body: revision}));
-      case 'restore':
-        return call(client.POST('/v1/coach/training-plans/{id}/restore', {params: {path}, body: revision}));
-      case 'delete':
-        return call(client.DELETE('/v1/coach/training-plans/{id}', {params: {path, query: revision}}));
-    }
-  }
   switch (action) {
     case 'duplicate':
-      return call(client.POST('/v1/coach/nutrition-plans/{id}/duplicate', {params: {path}}));
+      return call(client.POST('/v1/coach/training-plans/{id}/duplicate', {params: {path}}));
     case 'archive':
-      return call(client.POST('/v1/coach/nutrition-plans/{id}/archive', {params: {path}, body: revision}));
+      return call(client.POST('/v1/coach/training-plans/{id}/archive', {params: {path}, body: revision}));
     case 'restore':
-      return call(client.POST('/v1/coach/nutrition-plans/{id}/restore', {params: {path}, body: revision}));
+      return call(client.POST('/v1/coach/training-plans/{id}/restore', {params: {path}, body: revision}));
     case 'delete':
-      return call(client.DELETE('/v1/coach/nutrition-plans/{id}', {params: {path, query: revision}}));
+      return call(client.DELETE('/v1/coach/training-plans/{id}', {params: {path, query: revision}}));
   }
 }
 export function uncertainPlanWrite(error: unknown) {
@@ -67,14 +41,14 @@ function checkSession(id: string | undefined) {
   }
 }
 
-export function useManagePlan(resource: PlanResource) {
+export function useManagePlan() {
   return useMutation({
     onMutate: () => getSession()?.id,
     mutationFn: async ({action, plan}: {action: PlanAction; plan: PlanVersion}) => {
       const sessionId = getSession()?.id;
       checkSession(sessionId);
       try {
-        const result = await writePlan(resource, action, plan);
+        const result = await writePlan(action, plan);
         checkSession(sessionId);
         return result && 'data' in result ? result.data.id : null;
       } catch (error) {
@@ -87,7 +61,7 @@ export function useManagePlan(resource: PlanResource) {
         }
         // Read the same resource to reconcile an interrupted idempotent action.
         try {
-          const latest = await readPlan(resource, plan.id);
+          const latest = await readPlan(plan.id);
           checkSession(sessionId);
           const archived = latest.data.status === 'archived';
           if ((action === 'archive' && archived) || (action === 'restore' && !archived)) {
@@ -105,38 +79,32 @@ export function useManagePlan(resource: PlanResource) {
     onSuccess: async (_result, {action, plan}, sessionId) => {
       checkSession(sessionId);
       if (action === 'delete') {
-        queryClient.removeQueries({queryKey: keys(resource).detail(plan.id)});
+        queryClient.removeQueries({queryKey: trainingPlanKeys.detail(plan.id)});
       }
-      await invalidate(resource);
+      await invalidate();
       checkSession(sessionId);
     },
     onError: async (_error, _input, sessionId) => {
       if (sessionId && getSession()?.id === sessionId) {
-        await invalidate(resource);
+        await invalidate();
       }
     },
   });
 }
-function invalidate(resource: PlanResource) {
+function invalidate() {
   return Promise.all([
-    queryClient.invalidateQueries({queryKey: keys(resource).all}),
+    queryClient.invalidateQueries({queryKey: trainingPlanKeys.all}),
     queryClient.invalidateQueries({queryKey: clientKeys.all}),
-    ...(resource === 'nutrition'
-      ? [
-          queryClient.invalidateQueries({queryKey: foodKeys.lists()}),
-          queryClient.invalidateQueries({queryKey: nutritionDayKeys.all}),
-          queryClient.invalidateQueries({queryKey: recipeKeys.lists()}),
-        ]
-      : [queryClient.invalidateQueries({queryKey: exerciseKeys.lists()})]),
+    queryClient.invalidateQueries({queryKey: exerciseKeys.lists()}),
   ]);
 }
 
 export type PlanDates = Pick<
-  NonNullable<paths['/v1/coach/nutrition-plans/{id}']['patch']['requestBody']>['content']['application/json'],
+  NonNullable<paths['/v1/coach/training-plans/{id}']['patch']['requestBody']>['content']['application/json'],
   'start_date' | 'end_date'
 >;
 
-export function useUpdatePlanDates(resource: PlanResource) {
+export function useUpdatePlanDates() {
   return useMutation({
     onMutate: () => getSession()?.id,
     mutationFn: async ({plan, dates}: {plan: PlanVersion; dates: PlanDates}) => {
@@ -145,16 +113,13 @@ export function useUpdatePlanDates(resource: PlanResource) {
       const params = {path: {id: plan.id}};
       const body = {...dates, expected_revision: plan.revision};
       try {
-        const result =
-          resource === 'training'
-            ? await call(client.PATCH('/v1/coach/training-plans/{id}', {params, body}))
-            : await call(client.PATCH('/v1/coach/nutrition-plans/{id}', {params, body}));
+        const result = await call(client.PATCH('/v1/coach/training-plans/{id}', {params, body}));
         checkSession(sessionId);
         return result.data;
       } catch (error) {
         checkSession(sessionId);
         if (uncertainPlanWrite(error)) {
-          const latest = await readPlan(resource, plan.id);
+          const latest = await readPlan(plan.id);
           checkSession(sessionId);
           if (latest.data.start_date === dates.start_date && latest.data.end_date === dates.end_date) {
             return latest.data;
@@ -165,12 +130,12 @@ export function useUpdatePlanDates(resource: PlanResource) {
     },
     onSuccess: async (_result, _input, sessionId) => {
       checkSession(sessionId);
-      await invalidate(resource);
+      await invalidate();
       checkSession(sessionId);
     },
     onError: async (_error, _input, sessionId) => {
       if (sessionId && getSession()?.id === sessionId) {
-        await invalidate(resource);
+        await invalidate();
       }
     },
   });

@@ -1,13 +1,13 @@
 defmodule EasyWeb.CorsTest do
   use Easy.ConnCase, async: true
 
-  test "client nutrition saves allow authenticated PATCH requests", %{conn: conn} do
+  test "client tracker saves allow authenticated PATCH requests", %{conn: conn} do
     conn =
       conn
       |> put_req_header("origin", "http://localhost:1314")
       |> put_req_header("access-control-request-method", "PATCH")
       |> put_req_header("access-control-request-headers", "authorization,content-type")
-      |> options("/v1/client/nutrition-days/2026-08-21")
+      |> options("/v1/client/tracker-entries/example")
 
     assert response(conn, 204)
 

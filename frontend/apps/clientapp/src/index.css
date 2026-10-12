@@ -31,7 +31,6 @@
   --border: #e1d9d2;
   --destructive: #a62e35;
   --training: #eae4ff;
-  --nutrition: #eaf1cf;
   --coach: #ffe6d9;
   --progress: #def0eb;
   --sunshine: #ffdc7d;
@@ -238,9 +237,7 @@ a:focus-visible {
 .action-card[data-tone="training"] {
   background: var(--training);
 }
-.action-card[data-tone="nutrition"] {
-  background: var(--nutrition);
-}
+
 .action-card[data-tone="coach"] {
   background: var(--coach);
 }

@@ -52,10 +52,10 @@ const report = {...habit, id: 'report', kind: 'document' as const};
 const reportDraft = trackerDraft('tracker.report.new', report, '2026-10-06', 'metric');
 reportDraft.files = ['file-pdf', 'file-image'];
 const reportInput = trackerInput(reportDraft, report, ['uploaded-pdf', 'uploaded-image'], {
-  about_meal_id: 'saved-meal',
+  about_session_id: 'saved-session',
 });
 assert.deepEqual(reportInput.attachment_ids, ['uploaded-pdf', 'uploaded-image']);
-assert.equal(reportInput.about_meal_id, 'saved-meal');
+assert.equal(reportInput.about_session_id, 'saved-session');
 reportDraft.attempt = reportInput;
 assert.deepEqual(
   parseTrackerDraft(JSON.parse(JSON.stringify(reportDraft)), reportDraft.resource)?.attempt,
@@ -105,7 +105,6 @@ const originalEntry: TrackerEntry = {
   yes_no_value: null,
   text_value: null,
   about_session_id: null,
-  about_meal_id: null,
   attachments: [],
   inserted_at: '2026-10-05T09:00:00Z',
   updated_at: '2026-10-05T09:00:00Z',

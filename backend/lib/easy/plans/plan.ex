@@ -6,7 +6,7 @@ defmodule Easy.Plans.Plan do
   @foreign_key_type :binary_id
   @type t :: %__MODULE__{}
   schema "plans" do
-    field :domain, Ecto.Enum, values: [:training, :nutrition]
+    field :domain, Ecto.Enum, values: [:training]
     field :name, :string
     field :description, :string
     field :revision, :integer, default: 1

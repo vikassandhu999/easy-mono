@@ -1,5 +1,14 @@
 import {useSyncExternalStore} from 'react';
-import {createBrowserRouter, Link, matchPath, Navigate, Outlet, ScrollRestoration, useLocation} from 'react-router-dom';
+import {
+  createBrowserRouter,
+  Link,
+  matchPath,
+  Navigate,
+  Outlet,
+  ScrollRestoration,
+  useLocation,
+  useParams,
+} from 'react-router-dom';
 import {parseSession, sessionSnapshot, subscribeSession} from './api/session';
 import {AppShell} from './app-shell';
 import {AuthLayout} from './auth/auth-layout';
@@ -15,7 +24,6 @@ import {ClientTrackers} from './client-trackers/client-trackers';
 import {RecordTracker} from './client-trackers/record-tracker';
 import {TrackerHistory} from './client-trackers/tracker-history';
 import {ClientWeekPrototype} from './client-week-prototype/client-week-prototype';
-import {AssignNutritionPlan} from './clients/assign-nutrition-plan';
 import {AssignTrainingPlan} from './clients/assign-training-plan';
 import {ChangeClientCoach} from './clients/change-client-coach';
 import {ClientOverview} from './clients/client-overview';
@@ -28,16 +36,11 @@ import {ExerciseEditor} from './exercises/exercise-editor';
 import {Exercises} from './exercises/exercises';
 import {FoodEditor} from './foods/food-editor';
 import {Foods} from './foods/foods';
-import {NutritionHistory} from './nutrition-history/nutrition-history';
-import {LibraryManagement} from './nutrition-library/library-management';
-import {NutritionPlanEditor} from './nutrition-plans/nutrition-plan-editor';
-import {NutritionPlans} from './nutrition-plans/nutrition-plans';
+import {NutritionWeek} from './nutrition-week/nutrition-week';
 import {NutritionWeekPrototype} from './nutrition-week-prototype/nutrition-week-prototype';
 import {ClientPlanManagement} from './plan-management/client-plan-management';
 import {ClientPlans} from './plan-management/client-plans';
 import {PlanManagement} from './plan-management/plan-management';
-import {RecipeEditor} from './recipes/recipe-editor';
-import {Recipes} from './recipes/recipes';
 import {ReviewHistory} from './reviews/review-history';
 import {ReviewScreen} from './reviews/review-screen';
 import {routes} from './routes';
@@ -121,22 +124,14 @@ function Root() {
           location.pathname === routes.conversations ||
           location.pathname === routes.trainingPlans ||
           location.pathname === routes.exercises ||
-          location.pathname === routes.nutritionPlans ||
           location.pathname === routes.foods ||
-          location.pathname === routes.recipes ||
           location.pathname === routes.trackers ||
           location.pathname === routes.trackerTemplates ||
           matchPath(routes.trackerHistory, location.pathname) ||
           matchPath(routes.manageTrainingPlan, location.pathname) ||
-          matchPath(routes.manageNutritionPlan, location.pathname) ||
           matchPath(routes.clientTrainingPlans, location.pathname) ||
           matchPath(routes.manageClientTrainingPlan, location.pathname) ||
-          matchPath(routes.clientNutritionPlans, location.pathname) ||
-          matchPath(routes.manageClientNutritionPlan, location.pathname) ||
-          matchPath(routes.manageFood, location.pathname) ||
-          matchPath(routes.manageRecipe, location.pathname) ||
           matchPath(routes.trainingSessions, location.pathname) ||
-          matchPath(routes.assignNutritionPlan, location.pathname) ||
           location.pathname === routes.home ||
           matchPath(routes.assignTrainingPlan, location.pathname)
             ? location.pathname + location.search
@@ -145,6 +140,11 @@ function Root() {
       />
     </>
   );
+}
+
+function ClientNutrition() {
+  const {clientId = ''} = useParams();
+  return <NutritionWeek clientId={clientId} />;
 }
 
 export const router = createBrowserRouter([
@@ -200,12 +200,12 @@ export const router = createBrowserRouter([
               {path: routes.businessSettings, element: <BusinessSettings />},
               {path: routes.inviteClient, element: <InviteClient />},
               {path: routes.client, element: <ClientOverview />},
+              {path: routes.clientNutrition, element: <ClientNutrition />},
               {path: routes.clientProfile, element: <ClientProfile />},
               {path: routes.conversations, element: <Conversations />},
               {path: routes.clientConversation, element: <Conversation />},
               {path: routes.trainingSessions, element: <TrainingSessions />},
               {path: routes.trainingSession, element: <TrainingSession />},
-              {path: routes.nutritionHistory, element: <NutritionHistory />},
               {path: routes.assignTrainingPlan, element: <AssignTrainingPlan />},
               {path: routes.previewTrainingPlan, element: <AssignTrainingPlan />},
               {path: routes.trainingPlans, element: <TrainingPlans />},
@@ -213,28 +213,14 @@ export const router = createBrowserRouter([
               {path: routes.createExercise, element: <ExerciseEditor />},
               {path: routes.exercise, element: <ExerciseEditor />},
               {path: routes.createTrainingPlan, element: <TrainingPlanEditor />},
-              {path: routes.clientTrainingPlans, element: <ClientPlans resource="training" />},
-              {path: routes.manageClientTrainingPlan, element: <ClientPlanManagement resource="training" />},
-              {path: routes.manageTrainingPlan, element: <PlanManagement resource="training" />},
+              {path: routes.clientTrainingPlans, element: <ClientPlans />},
+              {path: routes.manageClientTrainingPlan, element: <ClientPlanManagement />},
+              {path: routes.manageTrainingPlan, element: <PlanManagement />},
               {path: routes.editTrainingPlan, element: <TrainingPlanEditor />},
               {path: routes.editClientTrainingPlan, element: <TrainingPlanEditor />},
-              {path: routes.nutritionPlans, element: <NutritionPlans />},
               {path: routes.foods, element: <Foods />},
-              {path: routes.recipes, element: <Recipes />},
-              {path: routes.createRecipe, element: <RecipeEditor />},
-              {path: routes.recipe, element: <RecipeEditor />},
               {path: routes.createFood, element: <FoodEditor />},
               {path: routes.food, element: <FoodEditor />},
-              {path: routes.manageFood, element: <LibraryManagement resource="food" />},
-              {path: routes.manageRecipe, element: <LibraryManagement resource="recipe" />},
-              {path: routes.createNutritionPlan, element: <NutritionPlanEditor />},
-              {path: routes.clientNutritionPlans, element: <ClientPlans resource="nutrition" />},
-              {path: routes.manageClientNutritionPlan, element: <ClientPlanManagement resource="nutrition" />},
-              {path: routes.manageNutritionPlan, element: <PlanManagement resource="nutrition" />},
-              {path: routes.editNutritionPlan, element: <NutritionPlanEditor />},
-              {path: routes.editClientNutritionPlan, element: <NutritionPlanEditor />},
-              {path: routes.assignNutritionPlan, element: <AssignNutritionPlan />},
-              {path: routes.previewNutritionPlan, element: <AssignNutritionPlan />},
             ],
           },
           {path: routes.setup, element: <Setup />},

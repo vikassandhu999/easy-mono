@@ -250,7 +250,6 @@ export function NutritionWeekPrototype() {
                 <TabPanel
                   key={day.bit}
                   id={String(day.bit)}
-                  aria-label={day.long}
                   className={`${columnClass} mt-3 outline-none`}
                 >
                   {column(day)}

@@ -1,7 +1,6 @@
 import {mkdir} from 'node:fs/promises';
 import {chromium, expect} from '@playwright/test';
 import {emptyMessageDraft, messageAttempt} from '../../src/messages/message-draft.ts';
-import {initialMealDraft, mealInput} from '../../src/nutrition/meal-draft.ts';
 import {emptySet, initialWorkoutDraft} from '../../src/training/recording.ts';
 
 const browser = await chromium.launch();
@@ -23,30 +22,6 @@ const profile = {
   current_term: null,
   terms: [],
   coach: {full_name: 'Sam Coach', preferred_name: 'Sam', business_name: 'Everyday Coaching', phone: null},
-};
-const nutrients = {calories: 200, protein: 10, carbohydrates: 30, fat: 5, complete: true};
-const slot = {
-  id: 'meal-1',
-  meal_slot: 'breakfast',
-  meal_id: null,
-  revision: 1,
-  write_eligible: true,
-  options: [],
-  shared_at: '2026-09-30T08:00:00Z',
-  note_to_coach: 'A satisfying breakfast',
-  logged_calories: 200,
-  rows: [
-    {
-      id: 'row-1',
-      entry_id: 'entry-1',
-      name: 'Oats',
-      portion: {kind: 'gram', grams: 100},
-      notes: null,
-      planned_item_ref: null,
-      food_id: 'food-1',
-      recipe_id: null,
-    },
-  ],
 };
 const session = {
   id: 'workout-1',
@@ -129,33 +104,21 @@ await page.route('**/v1/client/**', (route) => {
           ? session
           : path === '/v1/client/training-sessions'
             ? [session]
-            : path === '/v1/client/nutrition-days'
-              ? [
-                  {
-                    date: '2026-09-30',
-                    plan_id: null,
-                    applied_timezone: 'Asia/Kolkata',
-                    write_eligible: true,
-                    targets: {},
-                    summary: {has_intake: true, logged: nutrients, planned: nutrients},
-                    slots: [slot],
-                  },
-                ]
-              : path === '/v1/client/conversation'
-                ? {id: 'conversation-1', unread_count: 0}
-                : path === '/v1/client/conversation/history'
-                  ? [
-                      {
-                        id: 'message-1',
-                        body: 'Great progress, Alex!',
-                        sender_type: 'coach',
-                        sender_name: 'Sam',
-                        inserted_at: '2026-09-30T09:00:00Z',
-                        attachments: [{id: 'photo-1', content_type: 'image/png'}],
-                        embed: null,
-                      },
-                    ]
-                  : null;
+            : path === '/v1/client/conversation'
+              ? {id: 'conversation-1', unread_count: 0}
+              : path === '/v1/client/conversation/history'
+                ? [
+                    {
+                      id: 'message-1',
+                      body: 'Great progress, Alex!',
+                      sender_type: 'coach',
+                      sender_name: 'Sam',
+                      inserted_at: '2026-09-30T09:00:00Z',
+                      attachments: [{id: 'photo-1', content_type: 'image/png'}],
+                      embed: null,
+                    },
+                  ]
+                : null;
   return route.fulfill({
     json: {
       data,
@@ -168,13 +131,7 @@ await page.route('**/v1/client/**', (route) => {
 
 try {
   await mkdir('tests/coaching/artifacts', {recursive: true});
-  for (const path of [
-    '/',
-    '/messages',
-    '/training/sessions/workout-1',
-    '/nutrition/days/2026-09-30/breakfast',
-    '/account/details',
-  ]) {
+  for (const path of ['/', '/messages', '/training/sessions/workout-1', '/account/details']) {
     await page.goto(path);
     await expect(page.getByRole('heading', {name: 'Coaching starts soon', exact: true})).toBeVisible();
     await expect(page.getByRole('button', {name: 'Sign out', exact: true})).toBeVisible();
@@ -189,10 +146,8 @@ try {
     {id: 'term-0', starts_on: '2026-08-01', ends_on: '2026-08-15'},
   ];
   const message = {...emptyMessageDraft(), body: 'An unsent message'};
-  const meal = initialMealDraft('2026-09-30', 'breakfast', slot);
   const drafts = {
     message: {...message, attempt: messageAttempt(message, [])},
-    'nutrition.2026-09-30.breakfast': {...meal, attempt: mealInput(meal)},
     'training.workout-1': {
       ...initialWorkoutDraft(session),
       entries: [
@@ -222,14 +177,6 @@ try {
   await expect(page.getByText('A steady workout', {exact: true})).toBeVisible();
   await expect(page.getByRole('textbox')).toHaveCount(0);
   await expect(page.getByRole('button', {name: /Save|Finish|Discard/})).toHaveCount(0);
-
-  await page.goto('/nutrition/days/2026-09-30/breakfast');
-  await expect(page.getByText('A satisfying breakfast', {exact: false})).toBeVisible();
-  await expect(page.getByText('Oats · 100 g', {exact: true})).toBeVisible();
-  await expect(page.getByRole('textbox')).toHaveCount(0);
-  await expect(page.getByRole('button', {name: /Share|Record|Replace|Add food|Discard/})).toHaveCount(0);
-  await page.goto('/nutrition');
-  await expect(page.getByRole('button', {name: 'Record another meal'})).toHaveCount(0);
 
   await page.goto('/messages');
   await expect(page.getByRole('status').filter({hasText: 'Conversation history'})).toBeVisible();

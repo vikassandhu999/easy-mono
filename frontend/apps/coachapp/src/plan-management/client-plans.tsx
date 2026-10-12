@@ -2,7 +2,6 @@ import {formatDateShort} from '@easy/utils';
 import {generatePath, Link, useLocation, useParams, useSearchParams} from 'react-router-dom';
 import {useClientPlanPage} from '../api/client-plans';
 import {useClient} from '../api/clients';
-import type {PlanResource} from '../api/plan-management';
 import {routes} from '../routes';
 import {buttonVariants} from '../ui/button';
 import {InfiniteList} from '../ui/infinite-list';
@@ -11,25 +10,25 @@ import {ListSearch} from '../ui/list-search';
 import {Page, PageHeader, StatusBadge, Surface} from '../ui/page';
 import {PlanStatusFilter, usePlanStatus} from '../ui/plan-status-filter';
 
-export function ClientPlans({resource}: {resource: PlanResource}) {
+export function ClientPlans() {
   const {clientId = ''} = useParams();
   const [params] = useSearchParams();
   const location = useLocation();
   const {state} = useListLocation(routes.home);
   const archived = usePlanStatus();
-  const query = useClientPlanPage(resource, clientId, {
+  const query = useClientPlanPage(clientId, {
     search: params.get('search') ?? '',
-    ...(archived !== null ? {archived} : {}),
+    ...(archived !== null ? {status: archived ? 'archived' : 'active'} : {}),
   });
   const client = useClient(clientId);
   const name = client.data ? client.data.data.preferred_name || client.data.data.full_name : 'Client';
-  const manage = resource === 'training' ? routes.manageClientTrainingPlan : routes.manageClientNutritionPlan;
-  const assign = resource === 'training' ? routes.assignTrainingPlan : routes.assignNutritionPlan;
+  const manage = routes.manageClientTrainingPlan;
+  const assign = routes.assignTrainingPlan;
   const notice: unknown = location.state;
   return (
     <Page>
       <PageHeader
-        title={`${name || 'Client'}’s ${resource} plans`}
+        title={`${name || 'Client'}’s training plans`}
         description="Find an assigned plan, adjust its dates, or review a previous plan."
         back={{to: generatePath(routes.client, {id: clientId}), label: 'Back to client', state}}
         actions={
@@ -38,7 +37,7 @@ export function ClientPlans({resource}: {resource: PlanResource}) {
             to={generatePath(assign, {id: clientId})}
             state={state}
           >
-            Assign {resource} plan
+            Assign training plan
           </Link>
         }
       />

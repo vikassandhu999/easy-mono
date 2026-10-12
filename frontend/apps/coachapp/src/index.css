@@ -134,6 +134,9 @@
     padding: 1.5rem var(--page-gutter) max(2rem, env(safe-area-inset-bottom));
     outline: none;
   }
+  .app-main-wide {
+    max-width: 96rem;
+  }
   .page {
     display: grid;
     gap: 1.75rem;
@@ -525,5 +528,22 @@
   }
   .editor-page :is(.editor-name, .editor-item-name):disabled {
     color: var(--muted-foreground);
+  }
+}
+
+@layer components {
+  .nutrition-week {
+    max-width: 96rem;
+  }
+  .nutrition-week .nutrition-schedule {
+    min-height: 2.75rem;
+  }
+  .nutrition-weekday {
+    min-height: 2.75rem;
+  }
+  .nutrition-meal-editor [data-slot="select-trigger"],
+  .nutrition-dialog [data-slot="select-trigger"] {
+    height: 2.75rem;
+    border-radius: var(--radius-xl);
   }
 }

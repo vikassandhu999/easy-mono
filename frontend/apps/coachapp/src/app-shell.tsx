@@ -202,14 +202,10 @@ export function AppShell() {
           Training
         </NavLink>
         <NavLink
-          to={routes.nutritionPlans}
-          className={({isActive}) =>
-            isActive || pathname.startsWith(routes.foods) || pathname.startsWith(routes.recipes)
-              ? 'app-navigation-link active'
-              : 'app-navigation-link'
-          }
+          to={routes.foods}
+          className={({isActive}) => (isActive ? 'app-navigation-link active' : 'app-navigation-link')}
         >
-          Nutrition
+          Foods
         </NavLink>
         <NavLink
           to={routes.trackers}
@@ -226,7 +222,7 @@ export function AppShell() {
         id="main-content"
         ref={main}
         tabIndex={-1}
-        className="app-main"
+        className={matchPath(routes.clientNutrition, pathname) ? 'app-main app-main-wide' : 'app-main'}
       >
         {profile.isError && (
           <div className="mb-6 space-y-3">

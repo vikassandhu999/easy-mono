@@ -31,10 +31,8 @@ export function TrackerPrompts({event, date}: {event: TrackerEvent; date: string
       className="space-y-3"
       aria-label="Trackers for this record"
     >
-      <h2 className="text-lg font-semibold">{event.about_session_id ? 'After your workout' : 'After your meal'}</h2>
-      <p className="text-sm text-muted-foreground">
-        Your {event.about_session_id ? 'workout' : 'meal'} is saved. Record these when you are ready.
-      </p>
+      <h2 className="text-lg font-semibold">After your workout</h2>
+      <p className="text-sm text-muted-foreground">Your workout is saved. Record these when you are ready.</p>
       {query.data.data.map((item) => (
         <Button
           key={item.id}

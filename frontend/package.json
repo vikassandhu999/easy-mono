@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "test:e2e": "node apps/coachapp/tests/nutrition/core-domains.browser.mjs",
+    "test:e2e": "pnpm -C apps/coachapp test:nutrition",
     "dev": "pnpm --parallel --recursive dev",
     "build": "pnpm --recursive build",
     "lint": "pnpm lint:ci",

@@ -4,7 +4,6 @@ defmodule Easy.ChatRecordReferences do
   alias Easy.ClientAccess
   alias Easy.ClientAccount
   alias Easy.Ctx
-  alias Easy.Nutrition.DiaryMeal
   alias Easy.Repo
   alias Easy.Training.TrainingSession
 
@@ -46,20 +45,6 @@ defmodule Easy.ChatRecordReferences do
     |> Repo.one()
   end
 
-  defp load_record(business_id, client_id, "meal", id) do
-    from(s in DiaryMeal,
-      where: s.business_id == ^business_id and s.client_id == ^client_id and s.id == ^id and not is_nil(s.shared_at),
-      select: %{
-        id: s.id,
-        title: s.name,
-        occurred_on: s.local_date,
-        recorded_at: s.shared_at,
-        revision: s.revision
-      }
-    )
-    |> Repo.one()
-  end
-
   defp load_record(_business_id, _client_id, _type, _id), do: nil
 
   defp freeze_reference(type, row, expected) do
@@ -71,12 +56,9 @@ defmodule Easy.ChatRecordReferences do
         "revision" => expected || row.revision
       }
 
-      {:ok, %{type: type, id: row.id, snapshot: source_snapshot(snapshot, row)}}
+      {:ok, %{type: type, id: row.id, snapshot: snapshot}}
     else
       {:error, :conflict}
     end
   end
-
-  defp source_snapshot(snapshot, %{meal_slot: slot}), do: Map.put(snapshot, "meal_slot", slot)
-  defp source_snapshot(snapshot, _row), do: snapshot
 end

@@ -56,64 +56,16 @@ try {
     method: 'POST',
     body: {expected_revision: plan.revision, start_date: today},
   });
-  const foods = [];
-  for (const [name, calories] of [
-    ['Greek yogurt', 80],
-    ['Rolled oats', 370],
-    ['Mixed berries', 60],
-  ]) {
-    foods.push(
-      (await api('/v1/coach/nutrition-foods', {...coach, method: 'POST', body: {name, calories_per_100g: calories}}))
-        .data,
-    );
-  }
-  let nutrition = (
-    await api('/v1/coach/nutrition-plans', {...coach, method: 'POST', body: {name: 'Everyday nourishment'}})
-  ).data;
-  const meal = crypto.randomUUID();
-  const pattern = crypto.randomUUID();
-  nutrition = (
-    await api(`/v1/coach/nutrition-plans/${nutrition.id}/menu`, {
-      ...coach,
-      method: 'PUT',
-      body: {
-        expected_revision: nutrition.revision,
-        menu: {
-          meals: [
-            {
-              id: meal,
-              name: 'Berry breakfast bowl',
-              meal_items: foods.map((food) => ({
-                id: crypto.randomUUID(),
-                kind: 'food',
-                food_id: food.id,
-                portion: {kind: 'gram', grams: 100},
-              })),
-            },
-          ],
-          day_patterns: [{id: pattern, name: 'Everyday', slots: [{meal_slot: 'breakfast', meal_ids: [meal]}]}],
-          schedule: Object.fromEntries(weekdays.map((weekday) => [weekday, pattern])),
-        },
-      },
-    })
-  ).data;
-  await api(`/v1/coach/clients/${fixture.clientId}/nutrition-plans/${nutrition.id}/assign`, {
-    ...coach,
-    method: 'POST',
-    body: {expected_revision: nutrition.revision, start_date: today},
-  });
   const conversation = (await api('/v1/client/conversation', {token})).data;
   await api(`/v1/coach/conversations/${conversation.id}/messages`, {
     ...coach,
     method: 'POST',
     body: {
-      body: 'Hey Sam! Your workout and breakfast plan are ready. Take things at your pace, and message me whenever you need a hand.',
+      body: 'Hey Sam! Your workout is ready. Take things at your pace, and message me whenever you need a hand.',
     },
   });
   await page.reload();
   await expect(page.getByRole('link', {name: 'Full-body flow', exact: true})).toBeVisible();
-  await page.getByRole('link', {name: 'Nutrition', exact: true}).click();
-  await expect(page.getByRole('link', {name: /Breakfast/})).toBeVisible();
   await page.getByRole('link', {name: 'Your account', exact: true}).click();
   await page.getByRole('button', {name: 'Sign out', exact: true}).click();
   await page.getByLabel('Email', {exact: true}).fill(fixture.email);

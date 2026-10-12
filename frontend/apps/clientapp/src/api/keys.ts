@@ -32,15 +32,6 @@ export const trainingKeys = {
   active: () => ['training', getSession()?.id, 'active'] as const,
 };
 
-export const nutritionKeys = {
-  all: ['nutrition'] as const,
-  lists: () => ['nutrition', getSession()?.id, 'lists'] as const,
-  library: (kind: 'food' | 'recipe', search: string) => [...nutritionKeys.lists(), kind, 'infinite', search] as const,
-  details: () => ['nutrition', getSession()?.id, 'details'] as const,
-  day: (date?: string) => [...nutritionKeys.details(), 'day', date ?? 'today'] as const,
-  plan: (id: string) => [...nutritionKeys.details(), 'plan', id] as const,
-};
-
 export const trackerKeys = {
   all: ['trackers'] as const,
   lists: () => ['trackers', getSession()?.id, 'lists'] as const,

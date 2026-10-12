@@ -11,7 +11,7 @@ defmodule Easy.PaginationContractTest do
     %{coach: coach, client: client, ctx: trainer_ctx(coach)}
   end
 
-  for {domain, factory} <- [{:nutrition, :nutrition_plan}, {:training, :training_plan}] do
+  for {domain, factory} <- [{:training, :training_plan}] do
     test "#{domain} template pages retain bounds and stable timestamp ties", %{coach: coach, ctx: ctx} do
       plans =
         insert_list(101, unquote(factory),
@@ -40,7 +40,7 @@ defmodule Easy.PaginationContractTest do
     end
   end
 
-  for {domain, factory} <- [{:nutrition, :nutrition_plan}, {:training, :training_plan}] do
+  for {domain, factory} <- [{:training, :training_plan}] do
     test "#{domain} client-plan pages retain bounds and scope", %{
       coach: coach,
       client: client,

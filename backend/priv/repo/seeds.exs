@@ -3,13 +3,8 @@
 #     mix run priv/repo/seeds.exs
 #
 # Seeds are modular and idempotent - safe to run multiple times, and this is the
-# path the release runs on deploy (Easy.Release.seed/0). It seeds the SYSTEM
-# library a fresh business needs: muscles/equipment, exercises, and a curated
-# foods subset. Billing state is created per business by the application.
-#
-# The full foods database (priv/repo/foods_database.csv, ~126k rows) is excluded
-# from the Docker image; locally it's used automatically when present, otherwise
-# the shipped curated subset (foods_seed.csv) seeds.
+# path the release runs on deploy (Easy.Release.seed/0). Training reference
+# data is shared. Each business has its own food and nutrient catalogues.
 
 seeds_dir = Path.join(__DIR__, "seeds")
 
@@ -21,6 +16,8 @@ Easy.Repo.Seeds.Training.run_exercises()
 
 Code.eval_file(Path.join(seeds_dir, "food_seeds.exs"))
 Easy.Repo.Seeds.Foods.run()
+
+if Mix.env() == :dev, do: Code.eval_file(Path.join(__DIR__, "dev_nutrition_week.exs"))
 
 IO.puts("\n Seeds completed!\n")
 

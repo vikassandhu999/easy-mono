@@ -2,7 +2,6 @@ import type {ClientPlanFilters} from './client-plans';
 import type {ClientFilters} from './clients';
 import type {ConversationFilters} from './conversations';
 import type {FoodFilters} from './foods';
-import type {NutritionPlanFilters} from './nutrition-plans';
 import type {TeamFilters} from './team';
 import type {TrainingPlanFilters} from './training-plans';
 import type {SessionFilters} from './training-sessions';
@@ -48,36 +47,12 @@ export const exerciseKeys = {
     [...exerciseKeys.lists(), 'relations', kind, {search}] as const,
 };
 
-export const nutritionKeys = {
-  all: ['nutrition'] as const,
-  lists: () => [...nutritionKeys.all, 'list'] as const,
-  infinite: (filters: NutritionPlanFilters) => [...nutritionKeys.lists(), 'templates', 'infinite', filters] as const,
-  details: () => [...nutritionKeys.all, 'detail'] as const,
-  detail: (id: string) => [...nutritionKeys.details(), id] as const,
-  coverage: (clientId: string) => [...nutritionKeys.all, 'coverage', clientId] as const,
-  clientPlans: (clientId: string, filters: ClientPlanFilters) =>
-    [...nutritionKeys.lists(), 'client-plans', clientId, filters] as const,
-};
-
 export const foodKeys = {
   all: ['foods'] as const,
   lists: () => [...foodKeys.all, 'list'] as const,
   infinite: (filters: FoodFilters) => [...foodKeys.lists(), 'infinite', filters] as const,
-  categories: () => [...foodKeys.lists(), 'categories'] as const,
   details: () => [...foodKeys.all, 'detail'] as const,
   detail: (id: string) => [...foodKeys.details(), id] as const,
-  usage: (id: string, kind: string, search: string) => [...foodKeys.lists(), 'usage', id, {kind, search}] as const,
-  copyCandidates: (search: string) => [...foodKeys.lists(), 'copy-candidates', {search}] as const,
-};
-
-export const recipeKeys = {
-  all: ['recipes'] as const,
-  lists: () => [...recipeKeys.all, 'list'] as const,
-  infinite: (search: string) => [...recipeKeys.lists(), 'infinite', {search}] as const,
-  details: () => [...recipeKeys.all, 'detail'] as const,
-  detail: (id: string) => [...recipeKeys.details(), id] as const,
-  usage: (id: string, kind: string, search: string) => [...recipeKeys.lists(), 'usage', id, {kind, search}] as const,
-  copyCandidates: (search: string) => [...recipeKeys.lists(), 'copy-candidates', {search}] as const,
 };
 
 export const trainingSessionKeys = {
@@ -91,15 +66,6 @@ export const trainingSessionKeys = {
     [...trainingSessionKeys.lists(), clientId, 'infinite', filters] as const,
   details: () => [...trainingSessionKeys.all, 'detail'] as const,
   detail: (clientId: string, id: string) => [...trainingSessionKeys.details(), clientId, id] as const,
-};
-
-export const nutritionDayKeys = {
-  all: ['nutrition-days'] as const,
-  lists: () => [...nutritionDayKeys.all, 'list'] as const,
-  day: (clientId: string, date?: string) => [...nutritionDayKeys.lists(), clientId, {date: date ?? 'today'}] as const,
-  range: (clientId: string, from: string, to: string) => [...nutritionDayKeys.lists(), clientId, {from, to}] as const,
-  metrics: (clientId: string, from: string, to: string) =>
-    [...nutritionDayKeys.lists(), clientId, 'food-metrics', {from, to}] as const,
 };
 
 export const conversationKeys = {
@@ -157,4 +123,20 @@ export const reviewKeys = {
   history: (clientId: string) => [...reviewKeys.lists(), 'history', clientId] as const,
   screen: (clientId: string, range: object) => [...reviewKeys.all, 'screen', clientId, range] as const,
   settings: () => [...reviewKeys.all, 'settings'] as const,
+};
+
+export const nutrientKeys = {
+  all: ['nutrients'] as const,
+  lists: () => [...nutrientKeys.all, 'list'] as const,
+  list: () => [...nutrientKeys.lists()] as const,
+};
+
+export const nutritionWeekKeys = {
+  all: ['nutrition-week'] as const,
+  lists: () => [...nutritionWeekKeys.all, 'list'] as const,
+  list: (filters: {clientId: string; search: string; type: 'meal'}) => [...nutritionWeekKeys.lists(), filters] as const,
+  infinite: (filters: {clientId: string; search: string; type: 'meal'}) =>
+    [...nutritionWeekKeys.lists(), 'infinite', filters] as const,
+  details: () => [...nutritionWeekKeys.all, 'detail'] as const,
+  detail: (clientId: string) => [...nutritionWeekKeys.details(), clientId] as const,
 };

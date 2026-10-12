@@ -30,7 +30,7 @@ defmodule Easy.PlanCoverageConcurrencyTest do
     %{client: client}
   end
 
-  for {factory, domain} <- [{:training_plan, :training}, {:nutrition_plan, :nutrition}] do
+  for {factory, domain} <- [{:training_plan, :training}] do
     @factory factory
     @domain domain
 

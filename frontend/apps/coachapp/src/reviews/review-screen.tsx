@@ -2,7 +2,6 @@ import {useEffect, useRef, useState} from 'react';
 import {useForm} from 'react-hook-form';
 import {generatePath, Link, useNavigate, useParams, useSearchParams} from 'react-router-dom';
 import {ApiError, errorMessage} from '../api/client';
-import {nutrientFields, targetLabel} from '../api/nutrition-values';
 import {type ReviewWrite, type ReviewScreen as Screen, useReviewScreen, useSaveReview} from '../api/reviews';
 import {routes} from '../routes';
 import {Button, buttonVariants} from '../ui/button';
@@ -178,20 +177,11 @@ function LoadedScreen({
           >
             Training plans
           </Link>
-          <Link
-            className="text-link"
-            to={generatePath(routes.clientNutritionPlans, {clientId})}
-          >
-            Nutrition plans
-          </Link>
           {screen.plans.map((plan) => (
             <Link
               key={plan.id}
               className="text-link"
-              to={generatePath(
-                plan.domain === 'training' ? routes.editClientTrainingPlan : routes.editClientNutritionPlan,
-                {clientId, id: plan.id},
-              )}
+              to={generatePath(routes.editClientTrainingPlan, {clientId, id: plan.id})}
             >
               {plan.name}
             </Link>
@@ -275,9 +265,7 @@ function ChangeGroup({group, clientId}: {group: Screen['changes'][number]; clien
   const href =
     group.record_type === 'workout'
       ? generatePath(routes.trainingSession, {clientId, id: group.record_id})
-      : group.record_type === 'meal'
-        ? `${generatePath(routes.nutritionHistory, {clientId})}?date=${date}`
-        : `${generatePath(routes.trackerHistory, {clientId})}?${new URLSearchParams({...(trackerId ? {tracker_id: trackerId} : {}), ...(date ? {from: date, to: date} : {})})}`;
+      : `${generatePath(routes.trackerHistory, {clientId})}?${new URLSearchParams({...(trackerId ? {tracker_id: trackerId} : {}), ...(date ? {from: date, to: date} : {})})}`;
   return (
     <Surface className="space-y-4">
       <h3 className="editor-item-title">
@@ -322,7 +310,6 @@ function Summary({screen}: {screen: Screen}) {
   const clientId = screen.client.id;
   const range = new URLSearchParams({from: screen.from, to: screen.to});
   const training = `${generatePath(routes.trainingSessions, {clientId})}?${range}`;
-  const nutrition = `${generatePath(routes.nutritionHistory, {clientId})}?${range}`;
   return (
     <div className="space-y-5">
       <Surface className="space-y-4">
@@ -360,68 +347,6 @@ function Summary({screen}: {screen: Screen}) {
             </li>
           ))}
         </ul>
-      </Surface>
-      <Surface className="space-y-4">
-        <h3 className="editor-item-title">Nutrition</h3>
-        <Link
-          className="text-link"
-          to={nutrition}
-        >
-          {screen.nutrition_summary.days_logged} days logged of {screen.nutrition_summary.days_count} days
-        </Link>
-        <p className="text-sm">
-          Average intake:{' '}
-          <Link
-            className="text-link"
-            to={nutrition}
-          >
-            {nutrientFields
-              .map(([code, name, unit]) => {
-                const total = screen.nutrition_summary.average[code];
-                return `${name}: ${total?.value == null ? 'Unknown' : `${Math.round(total.value * 10) / 10} ${unit}`}`;
-              })
-              .join(' · ')}
-          </Link>
-        </p>
-        {screen.nutrition_days.map((day) => (
-          <div
-            key={day.date}
-            className="space-y-2 border-t border-border pt-3"
-          >
-            <Link
-              className="text-link font-medium"
-              to={`${generatePath(routes.nutritionHistory, {clientId})}?date=${day.date}`}
-            >
-              {day.date} · {day.counts.recorded} recorded of {day.counts.expected} expected meals
-            </Link>
-            <dl className="grid gap-3 text-sm sm:grid-cols-2">
-              {nutrientFields.map(([code, name, unit]) => {
-                const total = day.totals[code];
-                return (
-                  <div key={code}>
-                    <dt className="font-medium">{name}</dt>
-                    <dd>
-                      <Link
-                        className="text-link"
-                        to={`${generatePath(routes.nutritionHistory, {clientId})}?date=${day.date}`}
-                      >
-                        {total?.value == null ? 'Unknown' : `${Math.round(total.value * 10) / 10} ${unit}`} · Target{' '}
-                        {targetLabel(day.targets[code], unit)}
-                        <span className="block text-xs">
-                          {total?.known_entries ?? 0} of {total?.total_entries ?? 0} entries known
-                        </span>
-                      </Link>
-                    </dd>
-                  </div>
-                );
-              })}
-            </dl>
-            <p className="text-xs text-muted-foreground">
-              {day.target_changed ? 'Target changed · ' : ''}
-              {day.plan_revision_number ? `Target revision ${day.plan_revision_number}` : 'No target in force'}
-            </p>
-          </div>
-        ))}
       </Surface>
       <section className="space-y-4">
         <h3 className="editor-item-title">Trackers</h3>

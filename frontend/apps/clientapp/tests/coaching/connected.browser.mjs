@@ -38,7 +38,7 @@ try {
       await page.getByRole('button', {name: 'Verify and continue'}).click();
       if (state === 'joined') {
         await expect(page.getByRole('heading', {name: 'Coaching starts soon'})).toBeVisible();
-        for (const path of ['/training', '/nutrition', '/messages', '/account/details']) {
+        for (const path of ['/training', '/messages', '/account/details']) {
           await page.goto(path);
           await expect(page.getByRole('heading', {name: 'Coaching starts soon'})).toBeVisible();
           await expect(page.getByRole('navigation', {name: 'Main navigation'})).toHaveCount(0);
@@ -67,9 +67,6 @@ try {
         await expect(page.getByRole('button', {name: /Send|Record|Attach/})).toHaveCount(0);
         await expect(page.getByText(/^Coaching ended /)).toBeVisible();
         await page.screenshot({path: 'tests/coaching/artifacts/connected-ended-messages-375.png', fullPage: true});
-        await page.goto('/nutrition');
-        await expect(page.getByRole('heading', {name: 'Nutrition', exact: true})).toBeVisible();
-        await expect(page.getByRole('button', {name: 'Record another meal'})).toHaveCount(0);
         await page.goto('/account/details');
         await expect(page.getByText('Ended Client', {exact: true})).toBeVisible();
         await expect(page.getByRole('textbox')).toHaveCount(0);

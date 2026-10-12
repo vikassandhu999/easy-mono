@@ -3,7 +3,6 @@ defmodule Easy.ReviewsTest do
   alias Easy.Clients.Client
   alias Easy.CoachingTerms.CoachingTerm
   alias Easy.Ctx
-  alias Easy.Nutrition.Diary
   alias Easy.Repo
   alias Easy.Reviews
   alias Easy.Reviews.Reply
@@ -83,50 +82,6 @@ defmodule Easy.ReviewsTest do
     assert third_screen.last_review.id == second.id
     assert third_screen.last_review.reviewed_through_seq == 1
     assert third_screen.changes == []
-  end
-
-  test "nutrition averages preserve unknown days and ignore empty meal headers", f do
-    for {offset, nutrients} <- [{-2, %{"energy_kcal" => 400, "protein_g" => 20}}, {-1, %{"energy_kcal" => 500}}] do
-      meal = %{
-        id: Ecto.UUID.generate(),
-        request_id: Ecto.UUID.generate(),
-        expected_revision: 0,
-        name: "Meal",
-        plan_revision_id: nil,
-        slot_id: nil,
-        chosen_meal_id: nil,
-        entries: [
-          %{
-            id: Ecto.UUID.generate(),
-            request_id: Ecto.UUID.generate(),
-            planned_item_id: nil,
-            source: nil,
-            portion: nil,
-            name: "Food",
-            nutrients: nutrients
-          }
-        ]
-      }
-
-      assert {:ok, _} = Diary.save_client_nutrition_day(f.client_ctx, Date.add(f.today, offset), %{meals: [meal]})
-    end
-
-    empty = %{
-      id: Ecto.UUID.generate(),
-      request_id: Ecto.UUID.generate(),
-      expected_revision: 0,
-      name: "Empty",
-      plan_revision_id: nil,
-      slot_id: nil,
-      chosen_meal_id: nil,
-      entries: []
-    }
-
-    assert {:ok, _} = Diary.save_client_nutrition_day(f.client_ctx, f.today, %{meals: [empty]})
-    assert {:ok, result} = Reviews.screen_for_client(f.ctx, f.client.id, from: Date.add(f.today, -2), to: f.today)
-    assert result.nutrition_summary.days_logged == 2
-    assert result.nutrition_summary.days_count == 3
-    assert result.nutrition_summary.average["protein_g"] == %{value: nil, known_entries: 1, total_entries: 2}
   end
 
   test "returning clients ignore earlier review and stale term token", f do

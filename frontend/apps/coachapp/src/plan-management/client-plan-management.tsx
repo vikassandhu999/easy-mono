@@ -4,7 +4,7 @@ import {generatePath, Link, useBeforeUnload, useBlocker, useParams} from 'react-
 import {ApiError, errorMessage} from '../api/client';
 import type {ClientPlan} from '../api/client-plans';
 import {useClient} from '../api/clients';
-import {type PlanResource, useManagedPlan, useManagePlan, useUpdatePlanDates} from '../api/plan-management';
+import {useManagedPlan, useManagePlan, useUpdatePlanDates} from '../api/plan-management';
 import {routes} from '../routes';
 import {Button, buttonVariants} from '../ui/button';
 import {Dialog, DialogDescription, DialogFooter, DialogHeader, DialogTitle} from '../ui/dialog';
@@ -14,21 +14,20 @@ import {FormField} from '../ui/form-field';
 import {useListLocation} from '../ui/list-location';
 import {Page, PageHeader, StatusBadge, Surface} from '../ui/page';
 
-export function ClientPlanManagement({resource}: {resource: PlanResource}) {
+export function ClientPlanManagement() {
   const {clientId = '', id = ''} = useParams();
   return (
     <LoadClientPlan
-      key={`${resource}:${clientId}:${id}`}
-      resource={resource}
+      key={`${clientId}:${id}`}
       clientId={clientId}
       id={id}
     />
   );
 }
 
-function LoadClientPlan({resource, clientId, id}: {resource: PlanResource; clientId: string; id: string}) {
-  const query = useManagedPlan(resource, id);
-  const listRoute = resource === 'training' ? routes.clientTrainingPlans : routes.clientNutritionPlans;
+function LoadClientPlan({clientId, id}: {clientId: string; id: string}) {
+  const query = useManagedPlan(id);
+  const listRoute = routes.clientTrainingPlans;
   const {to, state} = useListLocation(generatePath(listRoute, {clientId}));
   const [plan, setPlan] = useState<ClientPlan>();
   useEffect(() => {
@@ -39,9 +38,8 @@ function LoadClientPlan({resource, clientId, id}: {resource: PlanResource; clien
   if (plan && plan.kind === 'client_plan' && plan.client_id === clientId) {
     return (
       <ClientPlanDetails
-        key={`${resource}:${clientId}:${id}`}
+        key={`${clientId}:${id}`}
         initial={plan}
-        resource={resource}
         clientId={clientId}
       />
     );
@@ -80,27 +78,19 @@ function dates(plan: ClientPlan) {
 const labels = {archive: 'Archive plan', restore: 'Restore plan', reload: 'Load saved dates'};
 const explanations = {
   archive:
-    'This plan will stop providing workouts or nutrition guidance to this client. Their recorded activity stays available. You can restore the plan later.',
+    'This plan will stop providing workouts to this client. Their recorded activity stays available. You can restore the plan later.',
   restore:
     'Restore this plan for its saved dates. If those dates overlap another plan, update or archive that plan first. The reusable template stays unchanged.',
   reload: 'Replace your date edits with the latest saved version. This also refreshes the plan status.',
 };
-function ClientPlanDetails({
-  initial,
-  resource,
-  clientId,
-}: {
-  initial: ClientPlan;
-  resource: PlanResource;
-  clientId: string;
-}) {
+function ClientPlanDetails({initial, clientId}: {initial: ClientPlan; clientId: string}) {
   const [plan, setPlan] = useState(initial);
   const person = useClient(clientId);
   const today = person.data?.data.local_date;
   const startLocked = Boolean(plan.start_date && today && plan.start_date <= today);
-  const query = useManagedPlan(resource, plan.id);
-  const save = useUpdatePlanDates(resource);
-  const manage = useManagePlan(resource);
+  const query = useManagedPlan(plan.id);
+  const save = useUpdatePlanDates();
+  const manage = useManagePlan();
   const form = useForm({defaultValues: dates(initial)});
   const [dialog, setDialog] = useState<keyof typeof labels | null>(null);
   const [actionError, setActionError] = useState('');
@@ -113,8 +103,8 @@ function ClientPlanDetails({
   const errorElement = useRef<HTMLParagraphElement>(null);
   const actionErrorElement = useRef<HTMLParagraphElement>(null);
   const leaving = useRef(false);
-  const listRoute = resource === 'training' ? routes.clientTrainingPlans : routes.clientNutritionPlans;
-  const editor = resource === 'training' ? routes.editClientTrainingPlan : routes.editClientNutritionPlan;
+  const listRoute = routes.clientTrainingPlans;
+  const editor = routes.editClientTrainingPlan;
   const {to, state} = useListLocation(generatePath(listRoute, {clientId}));
   const dirty = form.formState.isDirty;
   const pending = form.formState.isSubmitting || manage.isPending || reloading;
@@ -235,7 +225,7 @@ function ClientPlanDetails({
   return (
     <Page>
       <PageHeader
-        title={`${resource === 'training' ? 'Training' : 'Nutrition'} for ${name}`}
+        title={`Training for ${name}`}
         description="Manage this client's assigned plan. The reusable template stays independent."
         back={{to, state, label: 'Back to assigned plans'}}
       />

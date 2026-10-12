@@ -1,5 +1,5 @@
 defmodule Easy.Plans.Domain do
-  @type t :: :training | :nutrition | :trackers
+  @type t :: :training | :trackers
   @callback empty() :: map()
   @callback validate(Easy.Ctx.t(), map()) :: {:ok, map()} | {:error, term()}
   @callback summary(map()) :: map()
@@ -8,7 +8,6 @@ defmodule Easy.Plans.Domain do
   @spec module(t()) :: module()
   def module(:training), do: Easy.Training.Content
   def module(:trackers), do: Easy.Trackers.Content
-  def module(:nutrition), do: Easy.Nutrition.Content
 
   @spec empty(t()) :: map()
   def empty(domain), do: module(domain).empty()

@@ -5,7 +5,6 @@ defmodule Easy.TrackersTest do
   alias Easy.CoachingTerms
   alias Easy.CoachingTerms.CoachingTerm
   alias Easy.Ctx
-  alias Easy.Nutrition.DiaryMeal
   alias Easy.Plans.Programming
   alias Easy.Plans.Template
   alias Easy.Repo
@@ -311,9 +310,6 @@ defmodule Easy.TrackersTest do
     other_client = insert(:client)
     foreign = insert(:workout_session, business: other_client.business, client: other_client, state: :completed)
     assert {:error, :not_found} = Records.create_for_client(ctx, client.id, entry(tracker, today, %{rating_value: 3, about_session_id: foreign.id}))
-
-    assert {:error, :invalid_tracker_value} =
-             Records.create_for_client(ctx, client.id, entry(tracker, today, %{rating_value: 3, about_session_id: session.id, about_meal_id: Ecto.UUID.generate()}))
   end
 
   test "numeric and photo metrics supply server series and previous photo", %{ctx: ctx, client: client, business: business, today: today} do
@@ -378,27 +374,6 @@ defmodule Easy.TrackersTest do
     refute Repo.exists?(from(t in CoachingTerm, where: t.client_id == ^client.id))
   end
 
-  test "meal prompts and coverage count shared meals once in assignment dates", f do
-    tracker = custom(f.ctx, :yes_no)
-    {:ok, _} = Assignments.add_for_client(f.ctx, f.client.id, %{tracker_id: tracker.id, timing: :after_meal})
-    meal = meal(f, f.today, "Breakfast", true)
-    meal(f, f.today, "Lunch", true)
-    meal(f, f.today, "Draft", false)
-    meal(f, Date.add(f.today, -1), "Before assignment", true)
-    assert {:ok, [_]} = Reader.prompts_for_client(f.client_ctx, f.client.id, %{about_meal_id: meal.id})
-
-    for _ <- 1..2 do
-      assert {:ok, _} = Records.create_for_client(f.client_ctx, f.client.id, entry(tracker, f.today, %{yes_no_value: true, about_meal_id: meal.id}))
-    end
-
-    assert {:ok, []} = Reader.prompts_for_client(f.client_ctx, f.client.id, %{about_meal_id: meal.id})
-    assert {:ok, metrics} = Reader.metrics_for_client(f.ctx, f.client.id, tracker.id)
-    assert metrics.meal_coverage == %{recorded: 1, total: 2}
-    other = insert(:client, business: f.business)
-    other_meal = meal(%{f | client: other}, f.today, "Other", true)
-    assert {:error, :not_found} = Records.create_for_client(f.client_ctx, f.client.id, entry(tracker, f.today, %{yes_no_value: false, about_meal_id: other_meal.id}))
-  end
-
   test "retry identity rejects a changed tracker or attachments and survives later correction", f do
     document = custom(f.ctx, :document)
     photo1 = insert(:attachment, business: f.business, client: f.client)
@@ -426,14 +401,15 @@ defmodule Easy.TrackersTest do
     assert_raise Postgrex.Error, fn -> Repo.query!("UPDATE trackers SET scale_max=10 WHERE id=$1", [Ecto.UUID.dump!(tracker.id)]) end
   end
 
-  test "SQL enforces the one-event check", f do
+  test "SQL rejects a session link that is not a client event", f do
     tracker = custom(f.ctx)
     {:ok, row} = Records.create_for_client(f.ctx, f.client.id, entry(tracker, f.today, %{text_value: "Value"}))
+    foreign_client = insert(:client)
+    foreign = insert(:workout_session, business: foreign_client.business, client: foreign_client, state: :completed)
 
     assert_raise Postgrex.Error, fn ->
-      Repo.query!("UPDATE tracker_entries SET about_session_id=$1,about_meal_id=$2 WHERE id=$3", [
-        Ecto.UUID.dump!(Ecto.UUID.generate()),
-        Ecto.UUID.dump!(Ecto.UUID.generate()),
+      Repo.query!("UPDATE tracker_entries SET about_session_id=$1 WHERE id=$2", [
+        Ecto.UUID.dump!(foreign.id),
         Ecto.UUID.dump!(row.id)
       ])
     end
@@ -480,19 +456,5 @@ defmodule Easy.TrackersTest do
     assert {:ok, replay} = Records.update_for_client(f.ctx, f.client.id, original.id, patch)
     assert Enum.map(replay.attachments, & &1.id) == [second.id]
     assert Repo.get!(Client, f.client.id).last_change_seq == 3
-  end
-
-  defp meal(f, date, name, shared?) do
-    attrs = %{
-      id: Ecto.UUID.generate(),
-      client_id: f.client.id,
-      request_id: Ecto.UUID.generate(),
-      local_date: date,
-      timezone: "Etc/UTC",
-      name: name,
-      shared_at: if(shared?, do: DateTime.utc_now(:second))
-    }
-
-    f.business.id |> DiaryMeal.insert_changeset({:client, f.client.id}, attrs) |> Repo.insert!()
   end
 end

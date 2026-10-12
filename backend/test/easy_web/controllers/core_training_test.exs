@@ -173,25 +173,6 @@ defmodule EasyWeb.CoreTrainingTest do
     assert response(patch(f.client_conn, "/v1/client/training-sessions/#{session["id"]}", %{notes: "blocked"}), 403)
   end
 
-  test "HTTP coaching gate checks the requested diary date", f do
-    today = Date.utc_today()
-    Repo.query!("UPDATE coaching_terms SET starts_on=$1 WHERE client_id=$2", [today, Ecto.UUID.dump!(f.client.id)])
-
-    meal = %{
-      id: Ecto.UUID.generate(),
-      request_id: Ecto.UUID.generate(),
-      expected_revision: 0,
-      plan_revision_id: nil,
-      slot_id: nil,
-      name: "Extra meal",
-      chosen_meal_id: nil,
-      entries: []
-    }
-
-    assert response(patch(f.client_conn, "/v1/client/nutrition-days/#{Date.add(today, -1)}", %{meals: [meal]}), 403)
-    assert response(patch(f.client_conn, "/v1/client/nutrition-days/#{today}", %{meals: [meal]}), 200)
-  end
-
   test "router denies foreign reads/writes and rejects retired request fields", f do
     template =
       json_response(post(f.coach_conn, "/v1/coach/training-plans", %{name: "Program", content: f.content}), 201)["data"]

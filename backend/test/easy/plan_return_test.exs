@@ -7,7 +7,7 @@ defmodule Easy.PlanReturnTest do
   alias Easy.Ctx
   alias Easy.Plans.{Programming, Reader}
 
-  for {domain, factory} <- [{:training, :training_plan}, {:nutrition, :nutrition_plan}] do
+  for {domain, factory} <- [{:training, :training_plan}] do
     @domain domain
     @factory factory
 

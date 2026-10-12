@@ -19,9 +19,7 @@ const results = [];
 function verifyHierarchy(name, metrics) {
   const order = {
     training: ['Build a stronger foundation', 'Full body A', 'Goblet squat'],
-    nutrition: ['Everyday balanced meals', 'Plan targets', '2200'],
-    recipe: ['Overnight breakfast oats', 'Ingredients', 'Rolled oats', '2'],
-    food: ['Rolled oats', 'Nutrition per 100 g', '380'],
+    food: ['Rolled oats', 'Nutrients per 100 g', '380'],
     client: ['Alex Morgan', 'Training plans'],
     'client-details': ['Alex Morgan', 'Contact details'],
   }[name];
@@ -103,31 +101,11 @@ try {
     })
   ).data;
   const food = (
-    await send('post', '/v1/coach/nutrition-foods', {
+    await send('post', '/v1/coach/foods', {
       name: 'Rolled oats',
+      kind: 'food',
+      basis: '100g',
       nutrients: {energy_kcal: 380, protein_g: 13, carbs_g: 67, fat_g: 7, fiber_g: 10},
-    })
-  ).data;
-  const recipe = (
-    await send('post', '/v1/coach/nutrition-recipes', {
-      name: 'Overnight breakfast oats',
-      servings_count: 2,
-      ingredients: [{food_id: food.id, portion: {type: 'grams', grams: 100}}],
-    })
-  ).data;
-  const patternId = crypto.randomUUID();
-  const nutrition = (
-    await send('post', '/v1/coach/nutrition-plans', {
-      name: 'Everyday balanced meals',
-      content: {
-        targets: {energy_kcal: {min: 2200, max: 2200}, protein_g: {min: 140}},
-        meals: [],
-        day_patterns: [{id: patternId, name: 'Everyday', slots: []}],
-        schedule: {
-          cycle_weeks: 1,
-          entries: Array.from({length: 7}, (_, day) => ({id: crypto.randomUUID(), day, ref: patternId})),
-        },
-      },
     })
   ).data;
   const person = (
@@ -155,9 +133,7 @@ try {
     }, tokens);
     const screens = [
       ['training', `/training-plans/${training.id}`, 'Plan name · edit anytime'],
-      ['nutrition', `/nutrition-plans/${nutrition.id}`, 'Plan name'],
-      ['recipe', `/nutrition-recipes/${recipe.id}`, 'Recipe name'],
-      ['food', `/nutrition-foods/${food.id}`, 'Food name'],
+      ['food', `/foods/${food.id}`, 'Food name'],
       ['exercise', `/training-exercises/${exercises[0].id}`, 'Exercise name'],
       ['clients', '/', 'Search clients'],
       ['client', `/clients/${person.id}`, null],
@@ -169,14 +145,6 @@ try {
         await expect(page.getByLabel(label, {exact: true})).toBeVisible();
       } else {
         await expect(page.getByRole('heading', {name: 'Alex Morgan', exact: true})).toBeVisible();
-      }
-      if (name === 'recipe') {
-        await expect(page.getByRole('heading', {name: 'Rolled oats', exact: true})).toBeVisible();
-      }
-      if (name === 'nutrition') {
-        await page.getByRole('button', {name: 'Add meal', exact: true}).click();
-        await page.getByLabel('Meal name', {exact: true}).fill('Oats and fruit');
-        await page.getByRole('button', {name: 'Add day pattern', exact: true}).click();
       }
       await page.evaluate(() => {
         document.activeElement?.blur();
@@ -218,19 +186,12 @@ try {
   await writeFile(`${output}/results.json`, JSON.stringify(results, null, 2));
   const fixtures = [
     `/v1/coach/training-plans/${training.id}?expected_revision=${training.revision}`,
-    `/v1/coach/nutrition-plans/${nutrition.id}?expected_revision=${nutrition.revision}`,
-    `/v1/coach/nutrition-recipes/${recipe.id}`,
-    `/v1/coach/nutrition-foods/${food.id}`,
     ...exercises.map((exercise) => `/v1/coach/training-exercises/${exercise.id}`),
   ];
   for (const path of fixtures) {
     await send('delete', path);
     const response = await api.get(path.split('?')[0], {headers: {authorization: `Bearer ${token}`}});
-    if (
-      path.startsWith('/v1/coach/training-exercises/') ||
-      path.startsWith('/v1/coach/nutrition-recipes/') ||
-      path.startsWith('/v1/coach/nutrition-foods/')
-    ) {
+    if (path.startsWith('/v1/coach/training-exercises/')) {
       expect(response.status()).toBe(200);
       expect((await response.json()).data.archived_at).not.toBeNull();
     } else {

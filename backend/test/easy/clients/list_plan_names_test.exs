@@ -3,7 +3,7 @@ defmodule Easy.Clients.ListPlanNamesTest do
 
   alias Easy.Clients
 
-  # The CL row's plan chips. Opt-in because the names cost two extra queries per
+  # The CL row's plan chips. Opt-in because the name costs one extra query per
   # page and only the clients list wants them — every other caller of
   # `list_clients/2` must keep getting nil.
   describe "list_clients/2 include_plans" do
@@ -22,48 +22,24 @@ defmodule Easy.Clients.ListPlanNamesTest do
 
     test "is off by default", %{business: business, coach: coach, client: client, window: window} do
       insert(:training_plan, [business: business, creator: coach, client: client] ++ window)
-      insert(:nutrition_plan, business: business, creator: coach, client: client, start_date: Date.utc_today())
 
       assert {:ok, %{clients: [listed]}} = Clients.list_clients(owner_ctx(business))
       assert listed.training_plan_name == nil
-      assert listed.nutrition_plan_name == nil
     end
 
-    test "returns both plan names when asked", %{business: business, coach: coach, client: client, window: window} do
+    test "returns the training plan name when asked", %{business: business, coach: coach, client: client, window: window} do
       insert(
         :training_plan,
         [business: business, creator: coach, client: client, name: "Strength base"] ++ window
       )
 
-      insert(:nutrition_plan,
-        business: business,
-        creator: coach,
-        client: client,
-        name: "Fat loss",
-        start_date: Date.utc_today()
-      )
-
       assert {:ok, %{clients: [listed]}} = Clients.list_clients(owner_ctx(business), include_plans: true)
       assert listed.training_plan_name == "Strength base"
-      assert listed.nutrition_plan_name == "Fat loss"
     end
 
-    test "leaves a kind nil when the client has no plan of it", %{
-      business: business,
-      coach: coach,
-      client: client
-    } do
-      insert(:nutrition_plan,
-        business: business,
-        creator: coach,
-        client: client,
-        name: "Fat loss",
-        start_date: Date.utc_today()
-      )
-
+    test "leaves the name nil when the client has no plan", %{business: business} do
       assert {:ok, %{clients: [listed]}} = Clients.list_clients(owner_ctx(business), include_plans: true)
       assert listed.training_plan_name == nil
-      assert listed.nutrition_plan_name == "Fat loss"
     end
 
     test "archived training keeps current coverage; templates do not cover", %{
@@ -78,12 +54,10 @@ defmodule Easy.Clients.ListPlanNamesTest do
           window
       )
 
-      # A template — no client_id — must never leak onto a client's row.
-      insert(:nutrition_plan, business: business, creator: coach, name: "Template")
+      insert(:training_plan, business: business, creator: coach, name: "Template")
 
       assert {:ok, %{clients: [listed]}} = Clients.list_clients(owner_ctx(business), include_plans: true)
       assert listed.training_plan_name == "Old block"
-      assert listed.nutrition_plan_name == nil
     end
 
     test "ignores a plan whose date window has closed", %{business: business, coach: coach, client: client} do

@@ -26,7 +26,6 @@ defmodule EasyWeb.Types.ChatRecordSnapshot do
           required(:title) => String.t(),
           optional(:revision) => pos_integer(),
           optional(:occurred_on) => Date.t(),
-          optional(:meal_slot) => String.t(),
           optional(:recorded_at) => DateTime.t()
         }
 end
@@ -35,7 +34,7 @@ defmodule EasyWeb.Types.ChatMessageEmbed do
   use EasyWeb.Type
 
   @type t :: %{
-          required(:type) => :training_session | :meal | :review,
+          required(:type) => :training_session | :review,
           required(:id) => String.t(),
           required(:snapshot) => EasyWeb.Types.ChatRecordSnapshot.t()
         }
@@ -45,7 +44,7 @@ defmodule EasyWeb.Types.ChatMessageEmbedRequest do
   use EasyWeb.Type
 
   @type t :: %{
-          required(:type) => :training_session | :meal,
+          required(:type) => :training_session,
           required(:id) => String.t(),
           optional(:revision) => pos_integer()
         }

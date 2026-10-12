@@ -53,7 +53,7 @@ try {
       saveSession(value);
     }, tokens);
     let sessionTarget = '';
-    for (const resource of ['training', 'nutrition']) {
+    for (const resource of ['training']) {
       const library = `/${resource}-plans`;
       const endpoint = `/v1/coach${library}`;
       let plan = (
@@ -63,7 +63,6 @@ try {
           {
             name: `Foundation ${resource}`,
             description: 'Original coaching guidance',
-            ...(resource === 'nutrition' ? {target_calories: 2100} : {}),
           },
           token,
         )
@@ -151,17 +150,13 @@ try {
       await expect(page).toHaveURL(new RegExp(`${library}/[^/]+$`));
       const copyId = new URL(page.url()).pathname.split('/').at(-1);
       expect(copyId).not.toBe(plan.id);
-      if (resource === 'nutrition') {
-        sessionTarget = copyId;
-      }
+      sessionTarget = copyId;
       const copy = (await send('get', `${endpoint}/${copyId}`, undefined, token)).data;
       expect(copy.name).toContain('Copy');
       expect(copy.description).toBe(plan.description);
       if (resource === 'training') {
         expect(copy.workout_count).toBe(1);
         expect(copy.workouts[0].workout_elements[0].planned_sets[0].reps).toBe('8');
-      } else {
-        expect(copy.target_calories).toBe(2100);
       }
       await send(
         'patch',
@@ -247,17 +242,15 @@ try {
       expect(surviving.source_template_id).toBeNull();
       if (resource === 'training') {
         expect(surviving.workouts).toEqual(assigned.workouts);
-      } else {
-        expect(surviving.menu).toEqual(assigned.menu);
       }
       await page.unroute(`**${endpoint}/${plan.id}?*`);
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
       console.log(`${resource} template lifecycle passed at ${width}px`);
     }
     // Failed initial read recovers; late copy responses cannot populate another account.
-    const sessionEndpoint = `/v1/coach/nutrition-plans/${sessionTarget}`;
+    const sessionEndpoint = `/v1/coach/training-plans/${sessionTarget}`;
     await page.route(`**${sessionEndpoint}`, (route) => route.fulfill({status: 503, json: {}}));
-    await page.goto(`/nutrition-plans/${sessionTarget}/manage`);
+    await page.goto(`/training-plans/${sessionTarget}/manage`);
     await expect(page.getByRole('button', {name: 'Try again', exact: true})).toBeVisible();
     await page.unroute(`**${sessionEndpoint}`);
     await page.getByRole('button', {name: 'Try again', exact: true}).click();
@@ -283,8 +276,8 @@ try {
     }, other);
     release.resolve();
     await finished.promise;
-    await page.goto('/nutrition-plans');
-    await expect(page.getByRole('heading', {name: 'Create your first nutrition plan', exact: true})).toBeVisible();
+    await page.goto('/training-plans');
+    await expect(page.getByRole('heading', {name: 'Create your first training plan', exact: true})).toBeVisible();
     await page.waitForLoadState('networkidle');
     expect(
       await page.evaluate(async (id) => {

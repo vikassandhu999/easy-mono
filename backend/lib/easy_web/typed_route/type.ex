@@ -63,7 +63,21 @@ defmodule EasyWeb.TypedRoute.Type do
       end) || raise ArgumentError, "#{inspect(module)} has no type #{name}"
 
     {:"::", _, [_lhs, rhs]} = Code.Typespec.type_to_quoted(spec)
-    expand(rhs, %{__ENV__ | module: module, aliases: []})
+    local_names = for {_, {name, _, []}} <- types, do: name
+
+    rhs
+    |> qualify_local_types(module, local_names)
+    |> expand(%{__ENV__ | module: module, aliases: []})
+  end
+
+  defp qualify_local_types(ast, module, local_names) do
+    Macro.postwalk(ast, fn
+      {name, metadata, []} = node when is_atom(name) ->
+        if name in local_names, do: {{:., metadata, [module, name]}, metadata, []}, else: node
+
+      node ->
+        node
+    end)
   end
 
   defp expand_aliases(ast, env) do

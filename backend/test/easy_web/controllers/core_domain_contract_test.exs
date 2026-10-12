@@ -1,7 +1,6 @@
 defmodule EasyWeb.CoreDomainContractTest do
   use Easy.ConnCase, async: true
-
-  alias Easy.Repo
+  alias Easy.Training.Content, as: TrainingContent
 
   setup do
     coach = insert(:coach)
@@ -21,7 +20,7 @@ defmodule EasyWeb.CoreDomainContractTest do
     }
   end
 
-  for {domain, factory} <- [{"training", :training_plan}, {"nutrition", :nutrition_plan}] do
+  for {domain, factory} <- [{"training", :training_plan}] do
     @domain domain
     @factory factory
 
@@ -79,7 +78,7 @@ defmodule EasyWeb.CoreDomainContractTest do
 
     test "#{domain} invalid plan values and missing resources have public error envelopes", f do
       path = "/v1/coach/#{@domain}-plans"
-      error = json_response(post(f.coach_conn, path, %{name: "", content: if(@domain == "training", do: Easy.Training.Content.empty(), else: Easy.Nutrition.Content.empty())}), 422)
+      error = json_response(post(f.coach_conn, path, %{name: "", content: TrainingContent.empty()}), 422)
       assert error["error_code"] == "invalid_input"
       assert error["error_detail"]["fields"]["name"] == ["can't be blank"]
       assert response(get(f.coach_conn, path <> "/#{Ecto.UUID.generate()}"), 404)
@@ -140,71 +139,5 @@ defmodule EasyWeb.CoreDomainContractTest do
     assert response(get(f.client_conn, "/v1/client/training-sessions/#{Ecto.UUID.generate()}"), 404)
   end
 
-  test "meal history and corrections cannot cross tenants or clients", f do
-    meal = meal()
-    path = "/v1/client/nutrition-days/#{Date.utc_today()}"
-    assert response(patch(f.client_conn, path, %{meals: [meal]}), 200)
-
-    for conn <- [f.foreign_conn, f.unassigned_conn] do
-      assert response(get(conn, "/v1/coach/clients/#{f.client.id}/nutrition-days"), 404)
-      assert response(get(conn, "/v1/coach/clients/#{f.client.id}/nutrition-food-metrics"), 404)
-    end
-
-    denied = %{meal | expected_revision: 1, request_id: Ecto.UUID.generate(), name: "Denied"}
-    assert json_response(patch(f.other_client_conn, path, %{meals: [denied]}), 409)["error_code"] == "conflict"
-
-    day = json_response(get(f.client_conn, "/v1/client/nutrition-days", %{date: Date.to_iso8601(Date.utc_today())}), 200)["data"] |> hd()
-    assert hd(day["extra_meals"])["name"] == "Snack"
-    other = json_response(get(f.other_client_conn, "/v1/client/nutrition-days", %{date: Date.to_iso8601(Date.utc_today())}), 200)["data"] |> hd()
-    assert other["extra_meals"] == []
-  end
-
-  test "meal validation and stale revisions return stable error envelopes", f do
-    meal = meal()
-    path = "/v1/client/nutrition-days/#{Date.utc_today()}"
-    assert response(patch(f.client_conn, path, %{meals: [meal]}), 200)
-    stale = %{meal | request_id: Ecto.UUID.generate(), name: "Stale"}
-    assert json_response(patch(f.client_conn, path, %{meals: [stale]}), 409)["error_code"] == "conflict"
-    [entry] = meal.entries
-    invalid_entry = %{entry | nutrients: %{protein_g: 10}}
-    invalid = %{meal | id: Ecto.UUID.generate(), request_id: Ecto.UUID.generate(), entries: [invalid_entry]}
-    error = json_response(patch(f.client_conn, path, %{meals: [invalid]}), 422)
-    assert error["error_detail"]["fields"]["nutrients"] == ["quick add requires a name and energy_kcal"]
-  end
-
-  test "write gate requires today's term as well as coverage of the path date", f do
-    today = Date.utc_today()
-    Repo.query!("UPDATE coaching_terms SET starts_on=$1 WHERE client_id=$2", [today, Ecto.UUID.dump!(f.client.id)])
-    assert json_response(patch(f.client_conn, "/v1/client/nutrition-days/#{Date.add(today, -1)}", %{meals: []}), 403)["error_code"] == "coaching_required"
-    assert response(patch(f.client_conn, "/v1/client/nutrition-days/#{today}", %{meals: [meal()]}), 200)
-    Repo.query!("UPDATE coaching_terms SET starts_on=$1, ends_on=$2 WHERE client_id=$3", [Date.add(today, -10), Date.add(today, -1), Ecto.UUID.dump!(f.client.id)])
-    assert json_response(patch(f.client_conn, "/v1/client/nutrition-days/#{Date.add(today, -1)}", %{meals: []}), 403)["error_code"] == "coaching_required"
-    assert json_response(post(f.client_conn, "/v1/client/training-sessions", %{}), 403)["error_code"] == "coaching_required"
-    assert response(get(f.client_conn, "/v1/client/nutrition-days"), 200)
-  end
-
   defp start_session(conn), do: json_response(post(conn, "/v1/client/training-sessions", %{request_id: Ecto.UUID.generate()}), 201)["data"]
-
-  defp meal do
-    entry = %{
-      id: Ecto.UUID.generate(),
-      request_id: Ecto.UUID.generate(),
-      planned_item_id: nil,
-      source: nil,
-      portion: nil,
-      name: "Apple",
-      nutrients: %{energy_kcal: 90}
-    }
-
-    %{
-      id: Ecto.UUID.generate(),
-      request_id: Ecto.UUID.generate(),
-      expected_revision: 0,
-      plan_revision_id: nil,
-      slot_id: nil,
-      chosen_meal_id: nil,
-      name: "Snack",
-      entries: [entry]
-    }
-  end
 end

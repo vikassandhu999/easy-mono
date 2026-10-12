@@ -49,14 +49,6 @@ try {
         page.getByText('Your coach hasn’t scheduled a training plan for today.', {exact: true}),
       ).toBeVisible();
       await expect(page.getByRole('button', {name: 'Find a plan'})).toHaveCount(0);
-      await page.goto('/nutrition/plans');
-      await expect(
-        page.getByText('Your coach hasn’t scheduled a nutrition plan for today. You can still record your meals.', {
-          exact: true,
-        }),
-      ).toBeVisible();
-      await page.getByRole('link', {name: 'Back', exact: true}).click();
-      await expect(page).toHaveURL(/\/nutrition$/);
       await page.goto('/');
       const token = await page.evaluate(
         () => JSON.parse(localStorage.getItem('clientapp.auth.v1')).tokens.access_token,

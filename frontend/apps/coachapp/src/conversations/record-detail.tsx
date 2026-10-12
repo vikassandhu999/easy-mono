@@ -1,7 +1,5 @@
 import {generatePath, Link} from 'react-router-dom';
 import {errorMessage} from '../api/client';
-import {useNutritionDay} from '../api/nutrition-days';
-import {portionLabel} from '../api/nutrition-values';
 import {useTrainingSession} from '../api/training-sessions';
 import {routes} from '../routes';
 import {setValues} from '../training-sessions/session';
@@ -22,14 +20,6 @@ export function RecordDetail({
     case 'training_session':
       return (
         <WorkoutRecord
-          clientId={clientId}
-          record={record}
-          onDiscuss={onDiscuss}
-        />
-      );
-    case 'meal':
-      return (
-        <MealRecord
           clientId={clientId}
           record={record}
           onDiscuss={onDiscuss}
@@ -92,60 +82,6 @@ function WorkoutRecord({clientId, record, onDiscuss}: Props) {
         to={generatePath(routes.trainingSession, {clientId, id: record.id})}
       >
         Full workout and prescription
-      </Link>
-    </div>
-  );
-}
-function MealRecord({clientId, record, onDiscuss}: Props) {
-  const query = useNutritionDay(clientId, record.occurredOn ?? undefined);
-  if (!query.data) {
-    return <RecordLoading query={query} />;
-  }
-  const day = query.data.data[0];
-  const meal = day
-    ? [...day.slots.flatMap((slot) => (slot.meal ? [slot.meal] : [])), ...day.extra_meals].find(
-        (value) => value.id === record.id,
-      )
-    : undefined;
-  return (
-    <div className="space-y-4">
-      <p className="text-sm">Recorded meal · {record.occurredOn}</p>
-      {meal ? (
-        <>
-          <Changed
-            current={meal.revision}
-            referenced={record.revision}
-          />
-          <Button
-            variant="outline"
-            onPress={() => onDiscuss({...record, revision: meal.revision})}
-          >
-            Discuss
-          </Button>
-          {meal.entries.length === 0 && (
-            <p className="text-sm text-muted-foreground">No foods recorded in this meal.</p>
-          )}
-          <ul className="space-y-3">
-            {meal.entries.map((food) => (
-              <li
-                key={food.id}
-                className="text-sm"
-              >
-                <p className="font-medium">{food.name}</p>
-                <p className="text-muted-foreground">{food.portion ? portionLabel(food.portion) : 'Quick add'}</p>
-              </li>
-            ))}
-          </ul>
-        </>
-      ) : (
-        <p className="text-sm">This meal is unavailable. Earlier message previews remain in the conversation.</p>
-      )}
-      <Link
-        className="text-link text-sm"
-        state={{returnTo: generatePath(routes.clientConversation, {clientId}), returnLabel: 'Back to conversation'}}
-        to={`${generatePath(routes.nutritionHistory, {clientId})}?date=${record.occurredOn ?? ''}`}
-      >
-        Nutrition history
       </Link>
     </div>
   );

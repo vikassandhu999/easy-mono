@@ -9,9 +9,10 @@ defmodule Easy.PlansTest do
     %{ctx: trainer_ctx(coach), client: client, today: Date.utc_today()}
   end
 
-  test "training reads and mutations cannot reach nutrition templates or plans", f do
-    template = insert(:training_plan, business: f.client.business, domain: :nutrition)
-    plan = nutrition_plan(f)
+  test "training reads and mutations cannot reach another business", f do
+    other_client = insert(:client)
+    template = insert(:training_plan, business: other_client.business)
+    plan = insert(:training_plan, business: other_client.business, client: other_client, start_date: f.today)
     client_ctx = %Easy.Ctx{business_id: f.ctx.business_id, user_id: f.client.user_id, client_id: f.client.id}
 
     for id <- [template.id, plan.id] do
@@ -37,8 +38,7 @@ defmodule Easy.PlansTest do
     assert {:error, :not_found} = Programming.withdraw_revision(f.ctx, :training, plan.id, hd(plan.revisions).id, 1)
   end
 
-  test "training and nutrition may cover the same date but two training plans cannot", f do
-    nutrition_plan(f)
+  test "two training plans cannot cover the same date", f do
     assert {:ok, template} = Programming.create_template(f.ctx, :training, %{name: "Training"})
 
     assert {:ok, training} =
@@ -61,11 +61,5 @@ defmodule Easy.PlansTest do
     assert Reader.revision_on(unassigned_coach, :training, plan.id, f.today) == nil
     assert Reader.revision_on(other_client_ctx, :training, plan.id, f.today) == nil
     assert Reader.revision_on(f.ctx, :training, plan.id, f.today).id == plan.current_revision.id
-  end
-
-  defp nutrition_plan(f) do
-    plan = build(:training_plan, business: f.client.business, client: f.client, start_date: f.today)
-    plan = %{plan | domain: :nutrition, revisions: Enum.map(plan.revisions, &%{&1 | domain: :nutrition})}
-    Repo.insert!(plan)
   end
 end

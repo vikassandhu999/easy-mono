@@ -122,7 +122,6 @@ defmodule EasyWeb.Types.TrackerEntry do
           required(:yes_no_value) => boolean() | nil,
           required(:text_value) => String.t() | nil,
           required(:about_session_id) => String.t() | nil,
-          required(:about_meal_id) => String.t() | nil,
           required(:attachments) => [EasyWeb.Types.TrackerAttachment.t()],
           required(:inserted_at) => DateTime.t(),
           required(:updated_at) => DateTime.t()
@@ -137,7 +136,6 @@ defmodule EasyWeb.Types.TrackerEntry do
           optional(:yes_no_value) => boolean() | nil,
           optional(:text_value) => String.t() | nil,
           optional(:about_session_id) => String.t() | nil,
-          optional(:about_meal_id) => String.t() | nil,
           optional(:attachment_ids) => [String.t()]
         }
   @type update :: %{
@@ -150,7 +148,6 @@ defmodule EasyWeb.Types.TrackerEntry do
           optional(:yes_no_value) => boolean() | nil,
           optional(:text_value) => String.t() | nil,
           optional(:about_session_id) => String.t() | nil,
-          optional(:about_meal_id) => String.t() | nil,
           optional(:attachment_ids) => [String.t()]
         }
   @type list_query :: %{
@@ -248,8 +245,7 @@ defmodule EasyWeb.Types.TrackerToday do
           required(:requests) => [EasyWeb.Types.TrackerRequest.t()]
         }
   @type prompt_query :: %{
-          optional(:about_session_id) => String.t(),
-          optional(:about_meal_id) => String.t()
+          optional(:about_session_id) => String.t()
         }
 end
 
@@ -286,8 +282,7 @@ defmodule EasyWeb.Types.TrackerMetrics do
           required(:max) => number() | nil,
           required(:average) => number() | nil,
           required(:series) => [EasyWeb.Types.TrackerSeriesPoint.t()],
-          required(:workout_coverage) => EasyWeb.Types.TrackerCoverage.t(),
-          required(:meal_coverage) => EasyWeb.Types.TrackerCoverage.t()
+          required(:workout_coverage) => EasyWeb.Types.TrackerCoverage.t()
         }
   @type query :: %{
           optional(:from) => Date.t(),

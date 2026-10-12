@@ -40,7 +40,6 @@ defmodule EasyWeb.ReviewContractTest do
     assert screen["reviewed_through_seq"] == 1
     assert hd(screen["changes"])["title"] == "Weight"
     assert screen["training_counts"] == %{"expected" => 0, "completed" => 0, "extra" => 0}
-    assert screen["nutrition_summary"]["days_logged"] == 0
     assert hd(screen["trackers"])["average"] == 82.5
     refute Jason.encode!(screen) =~ "business_id"
 

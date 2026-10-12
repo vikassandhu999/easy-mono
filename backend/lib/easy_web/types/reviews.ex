@@ -63,7 +63,7 @@ defmodule EasyWeb.Types.ReviewChangeGroup do
           required(:title) => String.t(),
           required(:local_date) => Date.t() | nil,
           required(:tracker_id) => String.t() | nil,
-          required(:record_type) => :workout | :meal | :tracker_entry,
+          required(:record_type) => :workout | :tracker_entry,
           required(:record_id) => String.t(),
           required(:changes) => [EasyWeb.Types.ReviewChange.t()]
         }
@@ -71,7 +71,7 @@ end
 
 defmodule EasyWeb.Types.ReviewPlanLink do
   use EasyWeb.Type
-  @type t :: %{required(:id) => String.t(), required(:name) => String.t(), required(:domain) => :training | :nutrition}
+  @type t :: %{required(:id) => String.t(), required(:name) => String.t(), required(:domain) => :training}
 end
 
 defmodule EasyWeb.Types.ReviewScreen do
@@ -91,12 +91,6 @@ defmodule EasyWeb.Types.ReviewScreen do
             required(:expected) => non_neg_integer(),
             required(:completed) => non_neg_integer(),
             required(:extra) => non_neg_integer()
-          },
-          required(:nutrition_days) => [EasyWeb.Types.Nutrition.NutritionDay.t()],
-          required(:nutrition_summary) => %{
-            required(:days_logged) => non_neg_integer(),
-            required(:days_count) => non_neg_integer(),
-            required(:average) => EasyWeb.Types.Nutrition.NutrientTotals.t()
           },
           required(:trackers) => [EasyWeb.Types.TrackerMetrics.t()],
           required(:requests) => [EasyWeb.Types.TrackerRequest.t()],

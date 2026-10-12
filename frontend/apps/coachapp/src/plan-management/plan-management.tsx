@@ -3,7 +3,6 @@ import {generatePath, Link, useBeforeUnload, useBlocker, useNavigate, useParams}
 import {ApiError, errorMessage} from '../api/client';
 import {
   type PlanAction,
-  type PlanResource,
   type PlanVersion,
   uncertainPlanWrite,
   useManagedPlan,
@@ -33,22 +32,21 @@ const description = {
     'Permanently delete this reusable template and its contents. Plans already assigned to clients remain independent and stay available. This cannot be undone.',
 };
 
-export function PlanManagement({resource}: {resource: PlanResource}) {
+export function PlanManagement() {
   const {id = ''} = useParams();
   return (
     <ManageTemplate
-      key={`${resource}:${id}`}
-      resource={resource}
+      key={id}
       id={id}
     />
   );
 }
-function ManageTemplate({resource, id}: {resource: PlanResource; id: string}) {
-  const query = useManagedPlan(resource, id);
-  const mutation = useManagePlan(resource);
+function ManageTemplate({id}: {id: string}) {
+  const query = useManagedPlan(id);
+  const mutation = useManagePlan();
   const navigate = useNavigate();
-  const library = resource === 'training' ? routes.trainingPlans : routes.nutritionPlans;
-  const editor = resource === 'training' ? routes.editTrainingPlan : routes.editNutritionPlan;
+  const library = routes.trainingPlans;
+  const editor = routes.editTrainingPlan;
   const {to, state} = useListLocation(library);
   const [confirmation, setConfirmation] = useState<Confirmation | null>(null);
   const [error, setError] = useState('');
@@ -150,8 +148,8 @@ function ManageTemplate({resource, id}: {resource: PlanResource; id: string}) {
     <Page>
       <PageHeader
         title="Manage template"
-        description={`${resource === 'training' ? 'Training' : 'Nutrition'} library`}
-        back={{to, label: `Back to ${resource} plans`, state}}
+        description="Training library"
+        back={{to, label: 'Back to training plans', state}}
       />
       {notice && (
         <p

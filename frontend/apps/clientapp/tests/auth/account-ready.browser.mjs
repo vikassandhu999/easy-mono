@@ -29,8 +29,8 @@ try {
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem('clientapp.auth.v1')).accountId)).toBe(
     fixture.clientId,
   );
-  await page.getByRole('link', {name: 'Nutrition', exact: true}).click();
-  await expect(page.getByRole('heading', {name: 'Nutrition', exact: true})).toBeVisible();
+  await page.getByRole('link', {name: 'Training', exact: true}).click();
+  await expect(page.getByRole('heading', {name: 'Training', exact: true})).toBeVisible();
   await page.waitForFunction(() => Object.keys(localStorage).some((key) => key.endsWith('.snapshot')));
 } finally {
   await context.close();

@@ -76,7 +76,7 @@ try {
       await page.getByRole('link', {name: 'Today', exact: true}).click();
       await expect(page.getByRole('navigation', {name: 'Main navigation'}).getByRole('link')).toHaveCount(4);
       await expect(page.getByRole('link', {name: /Weight goal|Weight & progress/})).toHaveCount(0);
-      for (const name of ['Training', 'Nutrition']) {
+      for (const name of ['Training']) {
         await page.getByRole('navigation', {name: 'Main navigation'}).getByRole('link', {name, exact: true}).click();
         await expect(page.getByRole('heading', {level: 1})).toBeVisible();
       }

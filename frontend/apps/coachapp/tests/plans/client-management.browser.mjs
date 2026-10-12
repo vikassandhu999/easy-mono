@@ -34,12 +34,7 @@ function shift(date, days) {
   return value.toISOString().slice(0, 10);
 }
 async function lifecycle(resource, plan, action, token) {
-  return send(
-    'post',
-    `/v1/coach/${resource}-plans/${plan.id}/${action}${resource === 'nutrition' ? `?expected_revision=${plan.revision}` : ''}`,
-    resource === 'training' ? {expected_revision: plan.revision} : undefined,
-    token,
-  );
+  return send('post', `/v1/coach/${resource}-plans/${plan.id}/${action}`, {expected_revision: plan.revision}, token);
 }
 try {
   for (const width of [375, 1280]) {
@@ -55,7 +50,7 @@ try {
       invitation_token,
       otp: '123456',
     });
-    const today = (await send('get', `/v1/coach/clients/${person.id}/nutrition-days`, undefined, token)).data[0].date;
+    const today = (await send('get', `/v1/coach/clients/${person.id}`, undefined, token)).data.local_date;
     const context = await browser.newContext({baseURL, viewport: {width, height: 900}});
     context.setDefaultTimeout(15000);
     const page = await context.newPage();
@@ -67,16 +62,9 @@ try {
       saveSession(value);
     }, tokens);
     let isolationPlan = '';
-    for (const resource of ['training', 'nutrition']) {
+    for (const resource of ['training']) {
       const base = `/v1/coach/${resource}-plans`;
-      let template = (
-        await send(
-          'post',
-          base,
-          {name: `Foundation ${resource}`, ...(resource === 'nutrition' ? {target_calories: 2400} : {})},
-          token,
-        )
-      ).data;
+      let template = (await send('post', base, {name: `Foundation ${resource}`}, token)).data;
       if (resource === 'training') {
         const exercise = (await send('post', '/v1/coach/training-exercises', {name: 'Daily squat'}, token)).data;
         template = (
@@ -135,35 +123,6 @@ try {
           )
         ).data;
         await send('post', `/v1/client/training-sessions/${history.id}/complete`, {}, clientTokens.access_token);
-      } else {
-        const food = (await send('post', '/v1/coach/nutrition-foods', {name: 'Oats', calories_per_100g: 380}, token))
-          .data;
-        history = (
-          await send(
-            'patch',
-            `/v1/client/nutrition-days/${today}`,
-            {
-              slots: [
-                {
-                  meal_slot: 'breakfast',
-                  meal_id: null,
-                  expected_revision: 0,
-                  entries: [
-                    {
-                      id: crypto.randomUUID(),
-                      planned_item_ref: null,
-                      food_id: food.id,
-                      recipe_id: null,
-                      portion: {kind: 'gram', grams: 100},
-                      notes: 'Recorded breakfast',
-                    },
-                  ],
-                },
-              ],
-            },
-            clientTokens.access_token,
-          )
-        ).data;
       }
       for (let index = 0; index < 43; index++) {
         const item = await assign(shift(today, -1000 - index * 4), shift(today, -998 - index * 4));
@@ -283,30 +242,21 @@ try {
       await page.getByRole('button', {name: 'Delete plan', exact: true}).click();
       await dialog.getByRole('button', {name: 'Delete plan', exact: true}).click();
       await expect(page.getByText(`${template.name} deleted.`, {exact: true})).toBeVisible();
-      expect((await send('get', `${base}/${template.id}`, undefined, token)).data).toEqual(
-        resource === 'nutrition' ? {...template, assigned_client_count: 1} : template,
-      );
+      expect((await send('get', `${base}/${template.id}`, undefined, token)).data).toEqual(template);
       if (resource === 'training') {
         const record = (
           await send('get', `/v1/coach/clients/${person.id}/training-sessions/${history.id}`, undefined, token)
         ).data;
         expect(record.prescription_snapshot).toEqual(history.prescription_snapshot);
-      } else {
-        const day = (await send('get', `/v1/coach/clients/${person.id}/nutrition-days?date=${today}`, undefined, token))
-          .data[0];
-        expect(day.targets).toEqual(history.targets);
-        expect(day.summary.logged.calories).toBe(380);
       }
       await chooseOption(selectTrigger(page, 'Status'), 'Archived');
       await expect(page.getByText('1 client plan', {exact: true})).toBeVisible();
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-      if (resource === 'nutrition') {
-        isolationPlan = (await assign(shift(today, 30), shift(today, 35))).id;
-      }
+      isolationPlan = (await assign(shift(today, 30), shift(today, 35))).id;
       console.log(`${resource} client-plan dates, history and lifecycle passed at ${width}px`);
     }
-    const isolationEndpoint = `/v1/coach/nutrition-plans/${isolationPlan}`;
-    await page.goto(`/clients/${person.id}/nutrition-plans/${isolationPlan}/manage`);
+    const isolationEndpoint = `/v1/coach/training-plans/${isolationPlan}`;
+    await page.goto(`/clients/${person.id}/training-plans/${isolationPlan}/manage`);
     await page.getByLabel('End date', {exact: true}).fill(shift(today, 36));
     await page.route(`**${isolationEndpoint}`, (route) =>
       route.request().method() === 'GET' ? route.fulfill({status: 503, json: {}}) : route.continue(),
@@ -341,8 +291,8 @@ try {
     }, other);
     release.resolve();
     await finished.promise;
-    await page.goto('/nutrition-plans');
-    await expect(page.getByRole('heading', {name: 'Create your first nutrition plan', exact: true})).toBeVisible();
+    await page.goto('/training-plans');
+    await expect(page.getByRole('heading', {name: 'Create your first training plan', exact: true})).toBeVisible();
     await page.waitForLoadState('networkidle');
     expect(
       await page.evaluate(async (id) => {

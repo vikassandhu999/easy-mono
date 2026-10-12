@@ -41,7 +41,7 @@ export function TrackerRecording({
 }) {
   const profile = useProfile().data?.data;
   const session = getSession();
-  const resource = `tracker.${tracker.id}.${entry?.id ?? event?.about_session_id ?? event?.about_meal_id ?? 'new'}`;
+  const resource = `tracker.${tracker.id}.${entry?.id ?? event?.about_session_id ?? 'new'}`;
   const initial = trackerDraft(resource, tracker, date, profile?.unit_system ?? 'metric', entry);
   const controller = useDurableDraft({
     initial,

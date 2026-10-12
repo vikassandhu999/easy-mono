@@ -6,7 +6,7 @@ defmodule Easy.Plans.Template do
   @foreign_key_type :binary_id
   @type t :: %__MODULE__{}
   schema "templates" do
-    field :domain, Ecto.Enum, values: [:training, :nutrition, :trackers]
+    field :domain, Ecto.Enum, values: [:training, :trackers]
     field :name, :string
     field :description, :string
     field :revision, :integer, default: 1

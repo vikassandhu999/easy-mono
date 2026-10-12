@@ -53,6 +53,7 @@ defmodule EasyWeb.FallbackController do
              :invalid_attachments,
              :invalid_prescription,
              :invalid_occurrence,
+             :invalid_nutrition_item,
              :invalid_unit,
              :invalid_exercise,
              :past_effective_date
@@ -153,7 +154,7 @@ defmodule EasyWeb.FallbackController do
       {:error,
        Error.new(
          :in_use,
-         "This item is still used by a plan or recipe. Remove it there first.",
+         "This item is still in use. Remove its uses first.",
          %{},
          :conflict
        )}
@@ -328,31 +329,6 @@ defmodule EasyWeb.FallbackController do
          :unprocessable_entity
        )}
     )
-  end
-
-  def call(conn, {:error, :cannot_start_past_slot}) do
-    call(
-      conn,
-      {:error,
-       Error.unprocessable(%{
-         fields: %{date: ["planned logging cannot start an unfrozen past Diary Slot"]}
-       })}
-    )
-  end
-
-  def call(conn, {:error, :cannot_switch_past_slot}) do
-    call(
-      conn,
-      {:error, Error.unprocessable(%{fields: %{date: ["option switching is limited to the current local date"]}})}
-    )
-  end
-
-  def call(conn, {:error, :invalid_quick_add}) do
-    call(conn, {:error, Error.unprocessable(%{fields: %{nutrients: ["quick add requires a name and energy_kcal"]}})})
-  end
-
-  def call(conn, {:error, :invalid_portion}) do
-    call(conn, {:error, Error.unprocessable(%{fields: %{portion: ["is invalid"]}})})
   end
 
   def call(conn, {:error, :invalid_date_range}) do

@@ -97,74 +97,8 @@ try {
       ),
     })
   ).data;
-  const oats = (
-    await send('post', '/v1/coach/nutrition-foods', {
-      name: 'Rolled oats',
-      calories_per_100g: 380,
-      protein_g_per_100g: 13,
-      carbs_g_per_100g: 67,
-      fat_g_per_100g: 7,
-    })
-  ).data;
-  const yogurt = (
-    await send('post', '/v1/coach/nutrition-foods', {
-      name: 'Greek yogurt',
-      calories_per_100g: 97,
-      protein_g_per_100g: 9,
-      carbs_g_per_100g: 4,
-      fat_g_per_100g: 5,
-    })
-  ).data;
-  let nutrition = (
-    await send('post', '/v1/coach/nutrition-plans', {
-      name: 'Everyday nourishment',
-      target_calories: 2200,
-      target_protein_g: 140,
-      target_carbs_g: 250,
-      target_fat_g: 70,
-    })
-  ).data;
-  const breakfast = crypto.randomUUID();
-  const snack = crypto.randomUUID();
-  const everyday = crypto.randomUUID();
-  const menu = {
-    meals: [
-      {
-        id: breakfast,
-        name: 'Overnight oats',
-        notes: 'Prepare the night before. Add your favourite berries.',
-        meal_items: [
-          {id: crypto.randomUUID(), kind: 'food', food_id: oats.id, portion: {kind: 'gram', grams: 60}},
-          {id: crypto.randomUUID(), kind: 'food', food_id: yogurt.id, portion: {kind: 'gram', grams: 150}},
-        ],
-      },
-      {
-        id: snack,
-        name: 'Yogurt bowl',
-        notes: 'A simple afternoon option.',
-        meal_items: [{id: crypto.randomUUID(), kind: 'food', food_id: yogurt.id, portion: {kind: 'gram', grams: 200}}],
-      },
-    ],
-    day_patterns: [
-      {
-        id: everyday,
-        name: 'Everyday',
-        slots: [
-          {meal_slot: 'breakfast', meal_ids: [breakfast]},
-          {meal_slot: 'afternoon', meal_ids: [snack]},
-        ],
-      },
-    ],
-    schedule: Object.fromEntries(
-      ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'].map((day) => [day, everyday]),
-    ),
-  };
-  nutrition = (
-    await send('put', `/v1/coach/nutrition-plans/${nutrition.id}/menu`, {expected_revision: nutrition.revision, menu})
-  ).data;
   const today = new Date().toISOString().slice(0, 10);
   await send('post', `/v1/coach/clients/${alex.person.id}/training-plans/${training.id}/assign`, {start_date: today});
-  await send('post', `/v1/coach/clients/${alex.person.id}/nutrition-plans/${nutrition.id}/assign`, {start_date: today});
   await send(
     'post',
     '/v1/client/conversation/messages',
@@ -185,7 +119,6 @@ try {
   const screens = [
     ['clients', `/clients/${alex.person.id}`, 'Alex Morgan'],
     ['training', `/training-plans/${training.id}`, 'Stronger every week'],
-    ['nutrition', `/nutrition-plans/${nutrition.id}`, 'Everyday nourishment'],
     ['workspace', `/clients/${alex.person.id}/conversation`, 'Can we make Wednesday a 30-minute session?'],
   ];
   for (const [device, width, height] of [

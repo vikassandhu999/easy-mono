@@ -1,112 +1,59 @@
-NimbleCSV.define(FoodsCSVParser, separator: ",", escape: "\"")
-
 defmodule Easy.Repo.Seeds.Foods do
-  alias Easy.Nutrition.Food
-  alias Easy.Repo
   import Ecto.Query
 
-  @batch_size 500
-  @source :system
-  @food_categories ["I", "PF"]
+  alias Easy.Nutrition.{Food, Nutrient}
+  alias Easy.Repo
 
   @spec run() :: :ok
   def run do
-    # Prefer the curated subset shipped in the release image; fall back to the full
-    # local-only database (foods_database.csv, excluded from the Docker image) when present.
-    seed_csv = Path.join(:code.priv_dir(:easy), "repo/foods_seed.csv")
-    full_csv = Path.join(:code.priv_dir(:easy), "repo/foods_database.csv")
+    Repo.all(Easy.Orgs.Business) |> Enum.each(&for_business/1)
+  end
 
-    {:ok, _} = Repo.transaction(fn ->
-    Repo.query!("SELECT pg_advisory_xact_lock(hashtext('nutrition_food_seed'))")
-    cond do
-      Repo.exists?(from(f in Food, where: f.source == :system)) -> IO.puts("  Foods already seeded")
-      File.exists?(full_csv) -> seed_foods(full_csv)
-      File.exists?(seed_csv) -> seed_foods(seed_csv)
-      true -> IO.puts("  Skipping foods — no foods CSV found")
+  @spec for_business(Easy.Orgs.Business.t()) :: %{String.t() => Food.t()}
+  def for_business(business) do
+    now = DateTime.utc_now(:second)
+
+    for attrs <- Nutrient.catalogue() do
+      Repo.insert!(struct(Nutrient, Map.merge(attrs, %{business_id: business.id, inserted_at: now, updated_at: now})),
+        on_conflict: :nothing,
+        conflict_target: [:business_id, :code]
+      )
     end
 
-    end, timeout: 120_000)
-    :ok
+    Map.new(catalogue(), fn attrs ->
+      row = Repo.one(from(f in Food, where: f.business_id == ^business.id and f.name == ^attrs.name, limit: 1))
+      food = row || business.id |> Food.insert_changeset(attrs) |> Repo.insert!()
+      {attrs.name, food}
+    end)
   end
 
-  defp seed_foods(csv_path) do
-    IO.puts("  Importing foods from CSV...")
-
-    now = DateTime.utc_now() |> DateTime.truncate(:second)
-
-    count =
-      csv_path
-      |> File.stream!([:trim_bom])
-      |> FoodsCSVParser.parse_stream(skip_headers: true)
-      |> Stream.map(&parse_row/1)
-      |> Stream.reject(&is_nil/1)
-      |> Stream.filter(&(&1["food"]["food_category"] in @food_categories))
-      |> Stream.map(&build_food_entry(&1, now))
-      |> Stream.chunk_every(@batch_size)
-      |> Enum.reduce(0, fn batch, total ->
-        {count, _} =
-          Repo.insert_all(Food, batch, timeout: 120_000)
-
-        inserted = total + count
-        IO.write("\r  Inserted #{inserted} foods...")
-        inserted
-      end)
-
-    IO.puts("\r  Foods: #{count} inserted            ")
+  @spec catalogue() :: [map()]
+  def catalogue do
+    [
+      food("Rolled oats", :"100g", [379, 13, 68, 6.5], [{"cup", 80}]),
+      food("Milk, semi-skimmed", :"100ml", [47, 3.4, 4.8, 1.7], [{"glass", 250}]),
+      food("Banana", :"100g", [89, 1.1, 23, 0.3], [{"medium banana", 118}]),
+      food("Egg", :"100g", [143, 12.6, 0.7, 9.5], [{"large egg", 50}]),
+      food("Wholegrain toast", :"100g", [247, 13, 41, 3.4], [{"slice", 30}]),
+      food("Greek yogurt 2%", :"100g", [73, 9.9, 3.9, 2], [{"pot", 170}]),
+      food("Mixed berries", :"100g", [50, 0.8, 12, 0.3]),
+      food("Basmati rice, cooked", :"100g", [121, 3.5, 25, 0.4], [{"cup", 160}]),
+      food("Chicken breast, cooked", :"100g", [165, 31, 0, 3.6]),
+      food("Salmon fillet, baked", :"100g", [206, 22, 0, 12], [{"fillet", 150}]),
+      food("Potatoes, boiled", :"100g", [87, 1.9, 20, nil]),
+      food("Whey protein", :"100g", [400, 80, 8, 6], [{"scoop", 30}]) |> Map.put(:kind, :supplement),
+      food("Creatine monohydrate", :"100g", [0, 0, 0, 0]) |> Map.put(:kind, :supplement),
+      %{name: "Vitamin D3 2000 IU", kind: :supplement, basis: :"1unit", unit_label: "capsule", nutrients: %{}, servings: []}
+    ]
   end
 
-  defp parse_row([_id, json_string]) do
-    case Jason.decode(json_string) do
-      {:ok, data} -> data
-      {:error, _} -> nil
-    end
+  defp food(name, basis, values, servings \\ []) do
+    nutrients =
+      ["energy_kcal", "protein_g", "carbs_g", "fat_g"]
+      |> Enum.zip(values)
+      |> Enum.reject(fn {_code, value} -> is_nil(value) end)
+      |> Map.new()
+
+    %{name: name, kind: :food, basis: basis, nutrients: nutrients, servings: Enum.map(servings, fn {label, amount} -> %{label: label, amount: amount} end)}
   end
-
-  defp parse_row(_), do: nil
-
-  defp build_food_entry(data, now) do
-    food = data["food"]
-    measures = data["food_measures"] || []
-
-    %{
-      id: Ecto.UUID.generate(),
-      name: food["food_name"] |> String.trim(),
-      nutrients: source_nutrients(food),
-      servings: build_servings(measures),
-      default_serving_id: nil,
-      source: @source,
-      category: map_category(food["food_category"]),
-      allergens: [],
-      dietary_tags: [],
-      notes: nil,
-      media_id: seed_image(food["food_image_url"], now),
-      creator_id: nil,
-      business_id: nil,
-      inserted_at: now,
-      updated_at: now
-    }
-  end
-
-  defp seed_image(url, now) when is_binary(url) and url != "" do
-    id = Ecto.UUID.generate()
-    Repo.insert_all(Easy.LibraryMedia.Media, [%{id: id, uploaded_by_type: :system, external_url: url, inserted_at: now, updated_at: now}])
-    id
-  end
-  defp seed_image(_url, _now), do: nil
-
-  defp build_servings(measures) do
-    measures |> Enum.filter(&(is_number(&1["measure_weight"]) and &1["measure_weight"] > 0 and &1["measure_name"] != "grams")) |> Enum.map(fn m -> %{"id" => Ecto.UUID.generate(), "label" => m["measure_name"], "grams" => round_macro(m["measure_weight"])} end)
-  end
-  @spec source_nutrients(map()) :: map()
-  def source_nutrients(food) do
-    %{"energy_kcal" => "calorie", "protein_g" => "proteins", "carbs_g" => "carbs", "fat_g" => "fats", "fiber_g" => "fibre", "sugar_g" => "sugar"}
-    |> Enum.flat_map(fn {code, field} -> case round_macro(food[field]) do nil -> []; n -> [{code, n}] end end) |> Map.new()
-  end
-
-  defp map_category("I"), do: "ingredient"
-  defp map_category("PF"), do: "packaged"
-
-  defp round_macro(nil), do: nil
-  defp round_macro(val) when is_number(val), do: Float.round(val / 1, 2)
-  defp round_macro(_), do: nil
 end

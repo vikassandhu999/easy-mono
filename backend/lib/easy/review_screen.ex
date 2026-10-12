@@ -2,7 +2,6 @@ defmodule Easy.Reviews.Screen do
   alias Easy.Clients
   alias Easy.Clients.Client
   alias Easy.Ctx
-  alias Easy.Nutrition.DayReader
   alias Easy.Repo
   alias Easy.Reviews
   alias Easy.Reviews.Review
@@ -24,7 +23,6 @@ defmodule Easy.Reviews.Screen do
 
       with {:ok, dates} <- dates(client, current, opts),
            {:ok, training} <- History.occurrences_for_client(ctx, client_id, dates.from, dates.to),
-           {:ok, nutrition} <- DayReader.list(ctx, client, from: dates.from, to: dates.to),
            {:ok, requests} <- Reader.requests_for_client(ctx, client_id),
            {:ok, trackers} <- metrics(ctx, client, dates, requests) do
         {:ok,
@@ -41,8 +39,6 @@ defmodule Easy.Reviews.Screen do
              completed: Enum.count(training.data, & &1.session_id),
              extra: length(training.extra_sessions)
            },
-           nutrition_days: nutrition.nutrition_days,
-           nutrition_summary: nutrition_summary(nutrition.nutrition_days),
            trackers: trackers,
            requests: requests,
            plans: plans(ctx, client_id)
@@ -81,7 +77,7 @@ defmodule Easy.Reviews.Screen do
   defp changes(ctx, client, current) do
     query =
       from(c in "record_changes",
-        where: c.business_id == type(^ctx.business_id, :binary_id) and c.client_id == type(^client.id, :binary_id),
+        where: c.business_id == type(^ctx.business_id, :binary_id) and c.client_id == type(^client.id, :binary_id) and c.record_type in ["workout", "tracker_entry"],
         order_by: [asc: c.seq, asc: c.changed_at, asc: c.id],
         select: %{
           seq: c.seq,
@@ -114,7 +110,6 @@ defmodule Easy.Reviews.Screen do
     schema =
       case type do
         "workout" -> Easy.Training.TrainingSession
-        "meal" -> Easy.Nutrition.DiaryMeal
         "tracker_entry" -> Entry
       end
 
@@ -125,7 +120,6 @@ defmodule Easy.Reviews.Screen do
   end
 
   defp record_title(nil, _), do: "Removed record"
-  defp record_title(row, "meal"), do: row.name
   defp record_title(row, "tracker_entry"), do: Repo.preload(row, :tracker).tracker.name
 
   defp record_title(row, "workout") do
@@ -191,33 +185,10 @@ defmodule Easy.Reviews.Screen do
       Repo.all(
         from(p in Easy.Plans.Plan,
           where:
-            p.business_id == ^ctx.business_id and p.client_id == ^client_id and p.domain in [:training, :nutrition] and
+            p.business_id == ^ctx.business_id and p.client_id == ^client_id and p.domain == :training and
               is_nil(p.archived_at),
           order_by: [asc: p.domain, asc: p.name, asc: p.id],
           select: %{id: p.id, name: p.name, domain: p.domain}
         )
       )
-
-  defp nutrition_summary(days) do
-    logged = Enum.filter(days, fn d -> Enum.any?(d.totals, fn {_key, total} -> total.total_entries > 0 end) end)
-    keys = logged |> Enum.flat_map(&Map.keys(&1.totals)) |> Enum.uniq()
-
-    average =
-      Map.new(keys, fn key ->
-        totals = Enum.map(logged, &Map.get(&1.totals, key)) |> Enum.reject(&is_nil/1)
-        known = Enum.filter(totals, &is_number(&1.value))
-
-        {key,
-         %{
-           value:
-             if(known != [] and length(known) == length(logged),
-               do: Enum.sum(Enum.map(known, & &1.value)) / length(known)
-             ),
-           known_entries: length(known),
-           total_entries: length(logged)
-         }}
-      end)
-
-    %{days_logged: length(logged), days_count: length(days), average: average}
-  end
 end

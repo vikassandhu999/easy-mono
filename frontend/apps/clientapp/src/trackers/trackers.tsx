@@ -408,11 +408,6 @@ function Metrics({metrics, factor, unit}: {metrics: TrackerMetrics; factor: numb
           {metrics.tracker.name} after {metrics.workout_coverage.recorded} of {metrics.workout_coverage.total} workouts
         </p>
       )}
-      {metrics.meal_coverage.total > 0 && (
-        <p className="text-sm">
-          {metrics.tracker.name} after {metrics.meal_coverage.recorded} of {metrics.meal_coverage.total} meals
-        </p>
-      )}
       {metrics.tracker.kind === 'photo' && metrics.latest && (
         <div>
           <h3 className="font-semibold">Latest photo</h3>

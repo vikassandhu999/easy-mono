@@ -1,13 +1,13 @@
 defmodule Easy.RevisionTest do
   use Easy.SchemaCase
 
-  alias Easy.Nutrition.Food
+  alias Easy.Plans.Template
   alias Easy.Repo
   alias Easy.Revision
 
   test "missing records do not invoke the mutation" do
     business = insert(:business)
-    query = Food.for_business(business.id)
+    query = Template.for_business(business.id, :training)
 
     assert {:error, :not_found} =
              Revision.locked(query, Ecto.UUID.generate(), :any, fn _record ->
@@ -16,37 +16,37 @@ defmodule Easy.RevisionTest do
   end
 
   test "stale revisions preserve the record and do not invoke the mutation" do
-    food = insert(:food)
+    template = insert(:training_plan)
 
     assert {:error, changeset} =
-             Revision.locked(Food.for_business(food.business_id), food.id, food.revision + 1, fn _record ->
+             Revision.locked(Template.for_business(template.business_id, :training), template.id, template.revision + 1, fn _record ->
                flunk("mutation must not run for a stale revision")
              end)
 
     assert changeset.action == :stale_revision
-    assert changeset.data.revision == food.revision
+    assert changeset.data.revision == template.revision
     assert %{revision: ["is stale"]} = errors_on(changeset)
-    assert Repo.get!(Food, food.id).revision == food.revision
+    assert Repo.get!(Template, template.id).revision == template.revision
   end
 
   test "callback failures roll back writes and successful results commit" do
-    food = insert(:food)
-    query = Food.for_business(food.business_id)
+    template = insert(:training_plan)
+    query = Template.for_business(template.business_id, :training)
 
     assert {:error, :rejected} =
-             Revision.locked(query, food.id, food.revision, fn locked ->
+             Revision.locked(query, template.id, template.revision, fn locked ->
                locked |> Ecto.Changeset.change(name: "Rolled back") |> Repo.update!()
                {:error, :rejected}
              end)
 
-    assert Repo.get!(Food, food.id).name == food.name
+    assert Repo.get!(Template, template.id).name == template.name
 
     assert {:ok, updated} =
-             Revision.locked(query, food.id, food.revision, fn locked ->
+             Revision.locked(query, template.id, template.revision, fn locked ->
                locked |> Ecto.Changeset.change(name: "Saved") |> Repo.update()
              end)
 
     assert updated.name == "Saved"
-    assert Repo.get!(Food, food.id).name == "Saved"
+    assert Repo.get!(Template, template.id).name == "Saved"
   end
 end

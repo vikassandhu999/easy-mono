@@ -287,12 +287,6 @@ function referencePath(embed: NonNullable<ChatMessage['embed']>) {
     case 'training_session':
       path = generatePath(routes.trainingSession, {id: embed.id});
       break;
-    case 'meal':
-      path =
-        snapshot.occurred_on && snapshot.meal_slot
-          ? generatePath(routes.nutritionMeal, {date: snapshot.occurred_on, slot: snapshot.meal_slot})
-          : routes.nutrition;
-      break;
   }
   return `${path}?${params}`;
 }

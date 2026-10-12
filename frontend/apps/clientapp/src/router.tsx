@@ -7,8 +7,6 @@ import {Login} from './auth/login';
 import {Verify} from './auth/verify';
 import {CheckIns} from './check-ins/check-ins';
 import {Messages} from './messages/messages';
-import {NutritionMeal} from './nutrition/meal';
-import {CurrentNutritionPlan, Nutrition, NutritionPlan} from './nutrition/nutrition';
 import {routes} from './routes';
 import {TrackerHistory, Trackers} from './trackers/trackers';
 import {TrainingSession} from './training/session';
@@ -32,10 +30,6 @@ export const router = createBrowserRouter([
       {path: routes.trainingPlan, element: <TrainingPlan />},
       {path: routes.workout, element: <TrainingPlan />},
       {path: routes.trainingSession, element: <TrainingSession />},
-      {path: routes.nutrition, element: <Nutrition />},
-      {path: routes.nutritionPlans, element: <CurrentNutritionPlan />},
-      {path: routes.nutritionPlan, element: <NutritionPlan />},
-      {path: routes.nutritionMeal, element: <NutritionMeal />},
     ],
   },
   {

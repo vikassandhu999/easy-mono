@@ -139,7 +139,7 @@ defmodule Easy.Clients.LastActiveTest do
     refute Enum.any?(small_queries ++ large_queries, fn query ->
              String.contains?(query, [
                ~s(FROM "training_sessions"),
-               ~s(FROM "diary_meals")
+               ~s(FROM "tracker_entries")
              ])
            end)
   end

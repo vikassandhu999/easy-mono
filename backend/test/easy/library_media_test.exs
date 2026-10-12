@@ -4,7 +4,6 @@ defmodule Easy.LibraryMediaTest do
   alias Easy.Ctx
   alias Easy.LibraryMedia
   alias Easy.LibraryMedia.Media
-  alias Easy.Nutrition.Library
 
   describe "create_upload/2" do
     test "rejects absent and cross-business coach membership without inserting media" do
@@ -87,26 +86,6 @@ defmodule Easy.LibraryMediaTest do
 
       refute Repo.exists?(Media.for_business(coach.business_id))
     end
-  end
-
-  test "shared external system images survive Food copies through the same media representation" do
-    coach = insert(:coach)
-    ctx = trainer_ctx(coach)
-
-    media =
-      Repo.insert!(%Media{
-        id: Ecto.UUID.generate(),
-        uploaded_by_type: :system,
-        external_url: "https://images.example.test/oats.jpg"
-      })
-
-    food = insert(:food, source: :system, business: nil, creator: nil, media: media)
-    assert :ok = LibraryMedia.authorize_attach(ctx, media.id)
-    assert {:ok, copy} = Library.copy_food(ctx, food.id)
-    assert copy.media_id == media.id
-
-    assert %{kind: :image, url: "https://images.example.test/oats.jpg", content_type: nil, byte_size: nil} =
-             LibraryMedia.public_representation(copy.media)
   end
 
   test "incomplete uploaded media cannot pass the source constraint through SQL NULL" do

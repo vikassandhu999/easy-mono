@@ -6,23 +6,23 @@ test('a correction shows old and new facts without database identity or unchange
   assert.deepEqual(
     changedValues(
       {
-        id: 'meal-1',
+        id: 'session-1',
         revision: 1,
-        name: 'Lunch',
+        name: 'Workout',
         notes: 'Before correction',
-        entries: [{id: 'food-1', name: 'Rice', nutrients: {energy_kcal: 100}}],
+        sets: [{id: 'set-1', exercise_name: 'Squat', reps: 8}],
       },
       {
-        id: 'meal-1',
+        id: 'session-1',
         revision: 2,
-        name: 'Lunch',
+        name: 'Workout',
         notes: 'After correction',
-        entries: [{id: 'food-1', name: 'Rice', nutrients: {energy_kcal: 150}}],
+        sets: [{id: 'set-1', exercise_name: 'Squat', reps: 10}],
       },
     ),
     [
       {field: 'notes', before: 'Before correction', after: 'After correction'},
-      {field: 'entries 1 · nutrients · energy kcal', before: '100', after: '150'},
+      {field: 'sets 1 · reps', before: '8', after: '10'},
     ],
   );
 });
@@ -42,11 +42,7 @@ test('roster labels use server due facts and retain overdue days', () => {
   assert.equal(dueLabel({current_term: null, due: false, overdue_days: 0, due_on: null}), 'No current term');
 });
 
-test('removing a meal entry or workout set does not mark the parent record removed', () => {
-  assert.equal(
-    groupAction({record_type: 'meal', changes: [{row_type: 'entry', action: 'removed', new_value: null}]}),
-    'changed',
-  );
+test('removing a workout set or Tracker attachment does not mark the parent record removed', () => {
   assert.equal(
     groupAction({
       record_type: 'workout',

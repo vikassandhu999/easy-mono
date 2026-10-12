@@ -4,7 +4,7 @@ defmodule Easy.PlanCoverageTest do
   alias Easy.Clients.Client
   alias Easy.PlanCoverage
 
-  for factory <- [:training_plan, :nutrition_plan] do
+  for factory <- [:training_plan] do
     @factory factory
 
     test "#{factory}: a prepared plan waits and covers acceptance through the inclusive term end" do

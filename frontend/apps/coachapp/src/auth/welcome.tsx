@@ -19,15 +19,6 @@ const slides = [
     caption: 'Training builder · reusable plans, personal prescriptions',
     alt: 'Training builder showing a full-body workout with exercises and compact set targets.',
   },
-  {
-    id: 'nutrition',
-    feature: 'Nutrition',
-    title: 'Make healthy choices easier.',
-    description:
-      'Turn nutrition targets into practical meals. Give clients food choices and day variations that fit their routine.',
-    caption: 'Nutrition builder · targets, meals, and everyday choices',
-    alt: 'Nutrition builder showing daily targets and meals arranged into a weekly plan.',
-  },
 ];
 
 function readStep(key: string) {

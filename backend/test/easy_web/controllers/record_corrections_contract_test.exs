@@ -2,7 +2,6 @@ defmodule EasyWeb.RecordCorrectionsContractTest do
   use Easy.ConnCase, async: true
 
   alias Easy.Clients.Client
-  alias Easy.Nutrition.DiaryEntry
   alias Easy.Repo
   alias Easy.Training.TrainingPerformedSet
 
@@ -46,55 +45,6 @@ defmodule EasyWeb.RecordCorrectionsContractTest do
     assert Repo.get!(Client, f.client.id).last_change_seq == 2
     assert json_response(post(f.client_conn, path, %{attrs | reps: 6}), 409)["error_code"] == "conflict"
     assert journal(set["id"]) == [["added", nil, 5]]
-  end
-
-  test "meal correction and removal retry do not duplicate records or journal rows", f do
-    entry = %{
-      id: Ecto.UUID.generate(),
-      request_id: Ecto.UUID.generate(),
-      planned_item_id: nil,
-      source: nil,
-      portion: nil,
-      name: "Apple",
-      nutrients: %{energy_kcal: 90}
-    }
-
-    meal = %{
-      id: Ecto.UUID.generate(),
-      request_id: Ecto.UUID.generate(),
-      expected_revision: 0,
-      plan_revision_id: nil,
-      slot_id: nil,
-      chosen_meal_id: nil,
-      name: "Snack",
-      entries: [entry]
-    }
-
-    path = "/v1/client/nutrition-days/#{Date.utc_today()}"
-    original = json_response(patch(f.client_conn, path, %{meals: [meal]}), 200)["data"]
-    assert json_response(patch(f.client_conn, path, %{meals: [meal]}), 200)["data"] == original
-    assert original["totals"]["energy_kcal"]["value"] == 90
-    corrected_entry = %{entry | nutrients: %{energy_kcal: 120}}
-    correction = %{meal | request_id: Ecto.UUID.generate(), expected_revision: 1, entries: [corrected_entry]}
-    corrected = json_response(patch(f.client_conn, path, %{meals: [correction]}), 200)["data"]
-    assert corrected["totals"]["energy_kcal"]["value"] == 120
-    assert json_response(patch(f.client_conn, path, %{meals: [correction]}), 200)["data"] == corrected
-    removal = %{correction | request_id: Ecto.UUID.generate(), expected_revision: 2, entries: []}
-    removed = json_response(patch(f.client_conn, path, %{meals: [removal]}), 200)["data"]
-    assert hd(removed["extra_meals"])["entries"] == []
-    assert json_response(patch(f.client_conn, path, %{meals: [removal]}), 200)["data"] == removed
-    assert Repo.get!(Client, f.client.id).last_change_seq == 3
-    assert %DateTime{} = Repo.get!(DiaryEntry, entry.id).deleted_at
-
-    assert Repo.query!("SELECT action,old_value->'nutrients'->'energy_kcal',new_value->'nutrients'->'energy_kcal' FROM record_changes WHERE row_id=$1 ORDER BY seq", [
-             Ecto.UUID.dump!(entry.id)
-           ]).rows == [["added", nil, 90], ["changed", 90, 120], ["removed", 120, nil]]
-
-    assert Repo.query!("SELECT record_type,row_type,action FROM record_changes WHERE row_id=$1 ORDER BY seq", [Ecto.UUID.dump!(meal.id)]).rows == [
-             ["meal", "meal", "added"],
-             ["meal", "meal", "changed"],
-             ["meal", "meal", "changed"]
-           ]
   end
 
   defp journal(id), do: Repo.query!("SELECT action,old_value->'reps',new_value->'reps' FROM record_changes WHERE row_id=$1 ORDER BY seq", [Ecto.UUID.dump!(id)]).rows

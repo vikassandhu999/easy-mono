@@ -4,7 +4,7 @@
  */
 
 /* typed-routes:types */
-/* typed-routes:hash 5c6dda7b0986cc3b030be10d557d699400bc252dbf82fd0f4bfbef1f96cb68a8 */
+/* typed-routes:hash c2e08b6b72dedeb844748b242432c5d03ba19ffb9acd30bafc3aa0ade46425f5 */
 export type Attachment = {
   id: string;
   content_type:
@@ -100,8 +100,8 @@ export type ChatMessageCoachCreate = {
   attachment_ids?: Array<string>;
   embed?: ChatMessageEmbedRequest | null;
 };
-export type ChatMessageEmbed = {type: 'training_session' | 'meal' | 'review'; id: string; snapshot: ChatRecordSnapshot};
-export type ChatMessageEmbedRequest = {type: 'training_session' | 'meal'; id: string; revision?: number};
+export type ChatMessageEmbed = {type: 'training_session' | 'review'; id: string; snapshot: ChatRecordSnapshot};
+export type ChatMessageEmbedRequest = {type: 'training_session'; id: string; revision?: number};
 export type ChatMessageHistory = {
   data: Array<ChatMessage>;
   count: number;
@@ -111,13 +111,7 @@ export type ChatMessageHistory = {
 export type ChatMessageHistoryQuery = {cursor?: string; limit?: number};
 export type ChatMessageListQuery = {before?: string; limit?: number};
 export type ChatMessagePage = {data: Array<ChatMessage>; has_more: boolean};
-export type ChatRecordSnapshot = {
-  title: string;
-  revision?: number;
-  occurred_on?: string;
-  meal_slot?: string;
-  recorded_at?: string;
-};
+export type ChatRecordSnapshot = {title: string; revision?: number; occurred_on?: string; recorded_at?: string};
 export type Client = {
   id: string;
   review_frequency_days: number;
@@ -140,7 +134,6 @@ export type Client = {
   invitation_expires_at: string | null;
   last_active_at: string | null;
   training_plan_name: string | null;
-  nutrition_plan_name: string | null;
   inserted_at: string;
   updated_at: string;
 };
@@ -212,31 +205,6 @@ export type ConversationInbox = {data: Array<Conversation>; count: number; next_
 export type ConversationInboxQuery = {cursor?: string; limit?: number; search?: string; status?: 'all' | 'unread'};
 export type ConversationListQuery = {offset?: number; limit?: number; search?: string};
 export type ConversationMarkReadQuery = {through?: string};
-export type DiaryEntry = {
-  id: string;
-  planned_item_id: string | null;
-  source: NutritionSource | null;
-  portion: NutritionPortion | null;
-  name: string;
-  grams: number | null;
-  nutrients: NutrientMap;
-  notes: string | null;
-  request_id: string;
-};
-export type DiaryMeal = {
-  id: string;
-  local_date: string;
-  timezone: string;
-  plan_revision_id: string | null;
-  slot_id: string | null;
-  name: string;
-  chosen_meal_id: string | null;
-  note_to_coach: string | null;
-  shared_at: string | null;
-  revision: number;
-  request_id: string;
-  entries: Array<DiaryEntry>;
-};
 export type Equipment = {id: string; name: string; description: string | null};
 export type EquipmentListQuery = {search?: string};
 export type Exercise = {
@@ -299,79 +267,32 @@ export type ExerciseUpdate = {
 export type Food = {
   id: string;
   name: string;
-  allergens: Array<string>;
-  dietary_tags: Array<string>;
-  tags: Array<string>;
-  brand: string | null;
-  category: string | null;
+  kind: 'food' | 'supplement';
+  basis: '100g' | '100ml' | '1unit';
+  unit_label: string | null;
   nutrients: NutrientMap;
   servings: Array<FoodServing>;
-  default_serving_id: string | null;
-  notes: string | null;
-  source: 'system' | 'custom';
-  media: FoodMedia | null;
-  revision: number;
-  archived_at: string | null;
-  creator_id: string | null;
   inserted_at: string;
   updated_at: string;
 };
-export type FoodCategoryList = {data: Array<string>};
 export type FoodCreate = {
   name: string;
-  allergens?: Array<string>;
-  dietary_tags?: Array<string>;
-  tags?: Array<string>;
-  brand?: string | null;
-  category?: string | null;
+  kind: 'food' | 'supplement';
+  basis: '100g' | '100ml' | '1unit';
+  unit_label?: string | null;
   nutrients?: NutrientMap;
   servings?: Array<FoodServing>;
-  default_serving_id?: string | null;
-  notes?: string | null;
-  media_id?: string | null;
-};
-export type FoodImpact = {
-  data: {recipes: Array<FoodRecipeRef>; templates: Array<FoodPlanRef>; client_plans: Array<FoodPlanRef>};
 };
 export type FoodIndex = {data: Array<Food>; count: number; next_cursor: string | null};
-export type FoodListQuery = {
-  cursor?: string;
-  offset?: number;
-  limit?: number;
-  search?: string;
-  categories?: Array<string>;
-};
-export type FoodMedia = {
-  id: string;
-  kind: 'image' | 'video';
-  content_type: string | null;
-  byte_size: number | null;
-  url: string | null;
-};
-export type FoodMetric = {
-  food_id: string;
-  name: string;
-  entries_count: number;
-  days_count: number;
-  average_grams: number;
-  nutrients: NutrientTotals;
-};
-export type FoodPlanRef = {id: string; name: string; client_id: string | null};
-export type FoodRecipeRef = {id: string; name: string};
-export type FoodServing = {id: string; label: string; grams: number};
+export type FoodListQuery = {search?: string; kind?: 'food' | 'supplement'; cursor?: string; limit?: number};
+export type FoodServing = {label: string; amount: number};
 export type FoodUpdate = {
-  expected_revision: number;
   name?: string;
-  allergens?: Array<string>;
-  dietary_tags?: Array<string>;
-  tags?: Array<string>;
-  brand?: string | null;
-  category?: string | null;
+  kind?: 'food' | 'supplement';
+  basis?: '100g' | '100ml' | '1unit';
+  unit_label?: string | null;
   nutrients?: NutrientMap;
   servings?: Array<FoodServing>;
-  default_serving_id?: string | null;
-  notes?: string | null;
-  media_id?: string | null;
 };
 export type Health = {status: string; service: string; timestamp: string; version: string};
 export type LibraryMedia = {
@@ -389,141 +310,117 @@ export type LibraryMediaCreate = {
   content_type: 'image/jpeg' | 'image/png' | 'image/webp' | 'video/mp4' | 'video/webm';
   byte_size: number;
 };
-export type LibraryUsage = {
-  item: LibraryUsageItem;
-  counts: LibraryUsageCounts;
-  delete_blocked_reason: 'shared_food' | 'in_use' | null;
-  data: Array<LibraryUsageReference>;
-  count: number;
-  next_cursor: string | null;
-};
-export type LibraryUsageCounts = {recipes: number; templates: number; client_plans: number};
-export type LibraryUsageItem = {id: string; name: string; read_only: boolean};
-export type LibraryUsageQuery = {
-  kind?: 'recipes' | 'templates' | 'client_plans';
-  search?: string;
-  cursor?: string;
-  limit?: number;
-};
-export type LibraryUsageReference = {
+export type MealItem = {
   id: string;
-  name: string;
-  client_id: string | null;
-  kind: 'recipe' | 'template' | 'client_plan';
-  inserted_at: string;
+  food_id: string;
+  amount: number;
+  unit: string;
+  position: number;
+  food: Food;
+  nutrients: NutrientMap;
 };
+export type MealItemCreate = {food_id: string; amount: number; unit: string};
+export type MealOption = {
+  id: string;
+  name: string | null;
+  position: number;
+  items: Array<MealItem>;
+  totals: NutrientTotals;
+};
+export type MealOptionCreate = {name?: string | null; items: Array<MealItemCreate>};
 export type Muscle = {id: string; name: string; description: string | null};
 export type MuscleListQuery = {search?: string};
+export type Nutrient = {code: string; name: string; unit: string};
+export type NutrientIndex = {data: Array<Nutrient>};
 export type NutrientMap = {[key: string]: number};
 export type NutrientTarget = {min?: number; max?: number};
-export type NutrientTotal = {value: number | null; known_entries: number; total_entries: number};
+export type NutrientTotal = {value: number | null; known_entries: number; total_entries: number; incomplete: boolean};
 export type NutrientTotals = {[key: string]: NutrientTotal};
-export type NutritionContent = {
-  targets: NutritionTargets;
-  meals: Array<NutritionMeal>;
-  day_patterns: Array<NutritionDayPattern>;
-  schedule: TrainingSchedule;
-};
-export type NutritionCoverage = {date: string; current: NutritionPlan | null; upcoming: Array<NutritionPlan>};
-export type NutritionDay = {
-  date: string;
-  timezone: string;
-  write_eligible: boolean;
-  plan_id: string | null;
-  plan_revision_id: string | null;
-  plan_revision_number: number | null;
-  targets: NutritionTargets;
-  target_changed: boolean;
-  totals: NutrientTotals;
-  counts: {expected: number; recorded: number};
-  slots: Array<NutritionSlot>;
-  extra_meals: Array<DiaryMeal>;
-};
-export type NutritionDayListQuery = {date?: string; from?: string; to?: string};
-export type NutritionDayPattern = {
+export type NutritionPreset = {
   id: string;
-  name: string;
-  targets?: NutritionTargets;
-  slots: Array<NutritionPatternSlot>;
+  type: 'meal' | 'food' | 'supplement';
+  name: string | null;
+  instructions: string | null;
+  food_id: string | null;
+  amount: number | null;
+  unit: string | null;
+  food: Food | null;
+  options: Array<MealOption>;
+  totals: NutrientTotals | null;
 };
-export type NutritionMeal = {id: string; name: string; notes?: string | null; items: Array<NutritionMealItem>};
-export type NutritionMealItem = {
-  id: string;
-  source: NutritionSource;
-  portion: NutritionPortion;
-  name?: string;
-  grams?: number;
-  nutrients?: NutrientMap;
+export type NutritionPresetCreate = {
+  type: 'meal' | 'food' | 'supplement';
+  name?: string | null;
+  instructions?: string | null;
+  food_id?: string | null;
+  amount?: number | null;
+  unit?: string | null;
+  options?: Array<MealOptionCreate>;
 };
-export type NutritionPatternSlot = {id: string; name: string; meal_ids: Array<string>};
-export type NutritionPlan = {
-  id: string;
-  kind: 'template' | 'client_plan';
-  name: string;
-  description: string | null;
-  revision: number;
-  archived_at: string | null;
-  status: 'active' | 'archived';
-  lifecycle: 'incomplete' | 'waiting' | 'upcoming' | 'current' | 'ended' | 'archived' | null;
-  meal_count: number;
-  client: NutritionPlanClient | null;
-  start_date: string | null;
-  end_date: string | null;
-  created_local_date: string | null;
-  client_id: string | null;
-  source_template_id: string | null;
-  content: NutritionContent;
-  current_revision: NutritionPlanRevision | null;
-  scheduled_revisions: Array<NutritionPlanRevision>;
-  stopped_on: string | null;
-  inserted_at: string;
-  updated_at: string;
-};
-export type NutritionPlanAssign = {expected_revision?: number; start_date?: string | null; end_date?: string | null};
-export type NutritionPlanClient = {id: string; full_name: string; preferred_name: string | null};
-export type NutritionPlanClientScopedListQuery = {
-  cursor?: string;
-  offset?: number;
-  limit?: number;
+export type NutritionPresetIndex = {data: Array<NutritionPreset>; count: number; next_cursor: string | null};
+export type NutritionPresetListQuery = {
   search?: string;
-  archived?: boolean;
-  status?: 'active' | 'archived';
-};
-export type NutritionPlanCreate = {name: string; description?: string | null; content: NutritionContent};
-export type NutritionPlanIndex = {data: Array<NutritionPlan>; count: number; next_cursor: string | null};
-export type NutritionPlanListQuery = {
+  type?: 'meal' | 'food' | 'supplement';
   cursor?: string;
-  offset?: number;
   limit?: number;
-  search?: string;
-  archived?: boolean;
 };
-export type NutritionPlanRevision = {
+export type NutritionPresetMutation = {data: NutritionPreset; undo_token: string};
+export type NutritionPresetUpdate = {
+  type?: 'meal' | 'food' | 'supplement';
+  name?: string | null;
+  instructions?: string | null;
+  food_id?: string | null;
+  amount?: number | null;
+  unit?: string | null;
+  options?: Array<MealOptionCreate>;
+};
+export type NutritionSchedule = {
   id: string;
-  number: number;
-  effective_on: string | null;
-  content: NutritionContent;
+  nutrition_preset_id: string;
+  date: string | null;
+  weekdays_mask: number | null;
+  from_date: string | null;
+  until_date: string | null;
+  time: string | null;
+  coach_id: string | null;
 };
-export type NutritionPlanUpdate = {
-  expected_revision: number;
-  name?: string;
-  description?: string | null;
-  content?: NutritionContent;
-  start_date?: string | null;
-  end_date?: string | null;
-  effective_on?: string;
+export type NutritionScheduleCreate = {
+  nutrition_preset_id?: string;
+  preset?: NutritionPresetCreate;
+  weekdays_mask: number;
+  time?: string | null;
 };
-export type NutritionPortion = {type: 'grams'; grams: number} | {type: 'serving'; serving_id: string; amount: number};
-export type NutritionSlot = {
-  id: string;
-  name: string;
-  plan_revision_id: string;
-  options: Array<NutritionMeal>;
-  meal: DiaryMeal | null;
-  status: 'recorded' | 'not_recorded';
+export type NutritionScheduleMutation = {data: NutritionSchedule; undo_token: string};
+export type NutritionScheduleRemoveQuery = {weekday?: number};
+export type NutritionScheduleUpdate = {
+  nutrition_preset_id?: string;
+  weekdays_mask?: number;
+  time?: string | null;
+  amount?: number;
+  unit?: string;
 };
-export type NutritionSource = {type: 'food' | 'recipe'; id: string};
-export type NutritionTargets = {[key: string]: NutrientTarget};
+export type NutritionTargets = {id: string; name: string; targets: TargetBounds};
+export type NutritionTargetsAssign = {
+  nutrition_targets_id: string | null;
+  target_updates?: Array<NutritionTargetsEdit>;
+  new_targets?: NutritionTargetsNew;
+};
+export type NutritionTargetsCreate = {name: string; targets: TargetBounds; weekdays_mask?: number};
+export type NutritionTargetsEdit = {id: string; name?: string; targets: TargetBounds};
+export type NutritionTargetsMutation = {data: NutritionTargets; undo_token: string};
+export type NutritionTargetsNew = {name: string; targets: TargetBounds};
+export type NutritionTargetsUpdate = {name?: string; targets?: TargetBounds; copy_for_day?: number};
+export type NutritionWeek = {
+  today: string;
+  nutrients: Array<Nutrient>;
+  presets: Array<NutritionPreset>;
+  schedules: Array<NutritionSchedule>;
+  nutrition_targets: Array<NutritionTargets>;
+  target_schedules: Array<TargetSchedule>;
+};
+export type NutritionWeekMutation = {data: NutritionWeek; undo_token: string};
+export type NutritionWeekQuery = {on?: string};
+export type NutritionWeekUndo = {token: string};
 export type PendingBillingCheckout = {
   key_id: string;
   subscription_id: string | null;
@@ -557,60 +454,6 @@ export type PerformedSet = {
   inserted_at: string;
   updated_at: string;
 };
-export type Recipe = {
-  id: string;
-  name: string;
-  allergens: Array<string>;
-  dietary_tags: Array<string>;
-  tags: Array<string>;
-  description: string | null;
-  instructions: string | null;
-  servings_count: number;
-  cooked_weight_g: number | null;
-  ingredients: Array<RecipeIngredient>;
-  nutrients: NutrientMap;
-  grams: number;
-  revision: number;
-  archived_at: string | null;
-  creator_id: string | null;
-  inserted_at: string;
-  updated_at: string;
-};
-export type RecipeCreate = {
-  name: string;
-  allergens?: Array<string>;
-  dietary_tags?: Array<string>;
-  tags?: Array<string>;
-  description?: string | null;
-  instructions?: string | null;
-  servings_count?: number;
-  cooked_weight_g?: number | null;
-  ingredients?: Array<RecipeIngredient>;
-};
-export type RecipeImpact = {
-  data: {recipes: Array<FoodRecipeRef>; templates: Array<FoodPlanRef>; client_plans: Array<FoodPlanRef>};
-};
-export type RecipeIndex = {data: Array<Recipe>; count: number; next_cursor: string | null};
-export type RecipeIngredient = {food_id: string; portion: NutritionPortion};
-export type RecipeListQuery = {
-  cursor?: string;
-  offset?: number;
-  limit?: number;
-  search?: string;
-  categories?: Array<string>;
-};
-export type RecipeUpdate = {
-  expected_revision: number;
-  name?: string;
-  allergens?: Array<string>;
-  dietary_tags?: Array<string>;
-  tags?: Array<string>;
-  description?: string | null;
-  instructions?: string | null;
-  servings_count?: number;
-  cooked_weight_g?: number | null;
-  ingredients?: Array<RecipeIngredient>;
-};
 export type Review = {
   id: string;
   client_id: string;
@@ -636,7 +479,7 @@ export type ReviewChangeGroup = {
   title: string;
   local_date: string | null;
   tracker_id: string | null;
-  record_type: 'workout' | 'meal' | 'tracker_entry';
+  record_type: 'workout' | 'tracker_entry';
   record_id: string;
   changes: Array<ReviewChange>;
 };
@@ -648,7 +491,7 @@ export type ReviewCreate = {
 };
 export type ReviewIndex = {data: Array<Review>; count: number; next_cursor: string | null};
 export type ReviewListQuery = {cursor?: string; limit?: number};
-export type ReviewPlanLink = {id: string; name: string; domain: 'training' | 'nutrition'};
+export type ReviewPlanLink = {id: string; name: string; domain: 'training'};
 export type ReviewRoster = {data: Array<ReviewRosterRow>; count: number; next_cursor: string | null};
 export type ReviewRosterRow = {
   id: string;
@@ -694,8 +537,6 @@ export type ReviewScreen = {
   changes: Array<ReviewChangeGroup>;
   training: TrainingOccurrences;
   training_counts: {expected: number; completed: number; extra: number};
-  nutrition_days: Array<NutritionDay>;
-  nutrition_summary: {days_logged: number; days_count: number; average: NutrientTotals};
   trackers: Array<TrackerMetrics>;
   requests: Array<TrackerRequest>;
   plans: Array<ReviewPlanLink>;
@@ -738,6 +579,15 @@ export type SessionCoachListQuery = {
   state?: 'active' | 'completed' | 'discarded';
 };
 export type SessionIndex = {data: Array<Session>; count: number; next_cursor: string | null};
+export type TargetBounds = {[key: string]: NutrientTarget};
+export type TargetSchedule = {
+  id: string;
+  nutrition_targets_id: string;
+  date: string | null;
+  weekdays_mask: number | null;
+  from_date: string | null;
+  until_date: string | null;
+};
 export type TeamMember = {
   id: string;
   full_name: string | null;
@@ -823,7 +673,6 @@ export type TrackerEntry = {
   yes_no_value: boolean | null;
   text_value: string | null;
   about_session_id: string | null;
-  about_meal_id: string | null;
   attachments: Array<TrackerAttachment>;
   inserted_at: string;
   updated_at: string;
@@ -838,7 +687,6 @@ export type TrackerEntryCreate = {
   yes_no_value?: boolean | null;
   text_value?: string | null;
   about_session_id?: string | null;
-  about_meal_id?: string | null;
   attachment_ids?: Array<string>;
 };
 export type TrackerEntryIndex = {data: Array<TrackerEntry>; count: number; next_cursor: string | null};
@@ -860,7 +708,6 @@ export type TrackerEntryUpdate = {
   yes_no_value?: boolean | null;
   text_value?: string | null;
   about_session_id?: string | null;
-  about_meal_id?: string | null;
   attachment_ids?: Array<string>;
 };
 export type TrackerIndex = {data: Array<Tracker>; count: number; next_cursor: string | null};
@@ -884,7 +731,6 @@ export type TrackerMetrics = {
   average: number | null;
   series: Array<TrackerSeriesPoint>;
   workout_coverage: TrackerCoverage;
-  meal_coverage: TrackerCoverage;
 };
 export type TrackerMetricsQuery = {from?: string; to?: string; previous_date?: string};
 export type TrackerRequest = {
@@ -928,7 +774,7 @@ export type TrackerTemplateUpdate = {
   content?: TrackerTemplateContent;
 };
 export type TrackerToday = {date: string; due: Array<TrackerAssignment>; requests: Array<TrackerRequest>};
-export type TrackerTodayPromptQuery = {about_session_id?: string; about_meal_id?: string};
+export type TrackerTodayPromptQuery = {about_session_id?: string};
 export type TrackerUnit = {unit: string; to_base_factor: number};
 export type TrackerUpdate = {name: string};
 export type TrainingBlock = {
@@ -1078,7 +924,7 @@ export type UploadDownloadUrls = {attachment_ids: Array<string>};
 
 export interface paths {
   /* typed-routes:paths */
-  /* typed-routes:hash 5953b1c9d74f4697091f41cc40180639b06e342c5af70d14fb67b192eaa13cf2 */
+  /* typed-routes:hash 0c12c108d8c23758765f819bc78bba586f95d6064be40abac8daf37d13101e6a */
   '/api/health': {
     get: {
       parameters: {
@@ -1275,69 +1121,161 @@ export interface paths {
       };
     };
   };
-  '/v1/coach/clients/{client_id}/nutrition-coverage': {
+  '/v1/coach/clients/{client_id}/nutrition-presets': {
     get: {
+      parameters: {
+        query?: NutritionPresetListQuery;
+        header?: {Authorization?: string};
+        path: {client_id: string};
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': NutritionPresetIndex}};
+      };
+    };
+    post: {
       parameters: {
         query?: never;
         header?: {Authorization?: string};
         path: {client_id: string};
         cookie?: never;
       };
+      requestBody: {content: {'application/json': NutritionPresetCreate}};
       responses: {
-        200: {content: {'application/json': {data: NutritionCoverage}}};
+        201: {content: {'application/json': NutritionPresetMutation}};
       };
     };
   };
-  '/v1/coach/clients/{client_id}/nutrition-days': {
-    get: {
-      parameters: {
-        query?: NutritionDayListQuery;
-        header?: {Authorization?: string};
-        path: {client_id: string};
-        cookie?: never;
-      };
-      responses: {
-        200: {content: {'application/json': {data: Array<NutritionDay>}}};
-      };
-    };
-  };
-  '/v1/coach/clients/{client_id}/nutrition-food-metrics': {
-    get: {
-      parameters: {
-        query?: NutritionDayListQuery;
-        header?: {Authorization?: string};
-        path: {client_id: string};
-        cookie?: never;
-      };
-      responses: {
-        200: {content: {'application/json': {data: Array<FoodMetric>}}};
-      };
-    };
-  };
-  '/v1/coach/clients/{client_id}/nutrition-plans': {
-    get: {
-      parameters: {
-        query?: NutritionPlanClientScopedListQuery;
-        header?: {Authorization?: string};
-        path: {client_id: string};
-        cookie?: never;
-      };
-      responses: {
-        200: {content: {'application/json': NutritionPlanIndex}};
-      };
-    };
-  };
-  '/v1/coach/clients/{client_id}/nutrition-plans/{id}/assign': {
-    post: {
+  '/v1/coach/clients/{client_id}/nutrition-presets/{id}': {
+    delete: {
       parameters: {
         query?: never;
         header?: {Authorization?: string};
         path: {client_id: string; id: string};
         cookie?: never;
       };
-      requestBody: {content: {'application/json': NutritionPlanAssign}};
       responses: {
-        201: {content: {'application/json': {data: NutritionPlan}}};
+        200: {content: {'application/json': NutritionWeekMutation}};
+      };
+    };
+    patch: {
+      parameters: {
+        query?: never;
+        header?: {Authorization?: string};
+        path: {client_id: string; id: string};
+        cookie?: never;
+      };
+      requestBody: {content: {'application/json': NutritionPresetUpdate}};
+      responses: {
+        200: {content: {'application/json': NutritionPresetMutation}};
+      };
+    };
+  };
+  '/v1/coach/clients/{client_id}/nutrition-schedules': {
+    post: {
+      parameters: {
+        query?: never;
+        header?: {Authorization?: string};
+        path: {client_id: string};
+        cookie?: never;
+      };
+      requestBody: {content: {'application/json': NutritionScheduleCreate}};
+      responses: {
+        201: {content: {'application/json': NutritionScheduleMutation}};
+      };
+    };
+  };
+  '/v1/coach/clients/{client_id}/nutrition-schedules/{id}': {
+    delete: {
+      parameters: {
+        query?: NutritionScheduleRemoveQuery;
+        header?: {Authorization?: string};
+        path: {client_id: string; id: string};
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': NutritionWeekMutation}};
+      };
+    };
+    patch: {
+      parameters: {
+        query?: never;
+        header?: {Authorization?: string};
+        path: {client_id: string; id: string};
+        cookie?: never;
+      };
+      requestBody: {content: {'application/json': NutritionScheduleUpdate}};
+      responses: {
+        200: {content: {'application/json': NutritionScheduleMutation}};
+      };
+    };
+  };
+  '/v1/coach/clients/{client_id}/nutrition-target-days/{weekday}': {
+    put: {
+      parameters: {
+        query?: never;
+        header?: {Authorization?: string};
+        path: {client_id: string; weekday: number};
+        cookie?: never;
+      };
+      requestBody: {content: {'application/json': NutritionTargetsAssign}};
+      responses: {
+        200: {content: {'application/json': NutritionWeekMutation}};
+      };
+    };
+  };
+  '/v1/coach/clients/{client_id}/nutrition-targets': {
+    post: {
+      parameters: {
+        query?: never;
+        header?: {Authorization?: string};
+        path: {client_id: string};
+        cookie?: never;
+      };
+      requestBody: {content: {'application/json': NutritionTargetsCreate}};
+      responses: {
+        201: {content: {'application/json': NutritionTargetsMutation}};
+      };
+    };
+  };
+  '/v1/coach/clients/{client_id}/nutrition-targets/{id}': {
+    patch: {
+      parameters: {
+        query?: never;
+        header?: {Authorization?: string};
+        path: {client_id: string; id: string};
+        cookie?: never;
+      };
+      requestBody: {content: {'application/json': NutritionTargetsUpdate}};
+      responses: {
+        200: {content: {'application/json': NutritionTargetsMutation}};
+      };
+    };
+  };
+  '/v1/coach/clients/{client_id}/nutrition-undo': {
+    post: {
+      parameters: {
+        query?: never;
+        header?: {Authorization?: string};
+        path: {client_id: string};
+        cookie?: never;
+      };
+      requestBody: {content: {'application/json': NutritionWeekUndo}};
+      responses: {
+        200: {content: {'application/json': {data: NutritionWeek}}};
+      };
+    };
+  };
+  '/v1/coach/clients/{client_id}/nutrition-week': {
+    get: {
+      parameters: {
+        query?: NutritionWeekQuery;
+        header?: {Authorization?: string};
+        path: {client_id: string};
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': {data: NutritionWeek}}};
       };
     };
   };
@@ -1891,6 +1829,56 @@ export interface paths {
       };
     };
   };
+  '/v1/coach/foods': {
+    get: {
+      parameters: {
+        query?: FoodListQuery;
+        header?: {Authorization?: string};
+        path?: never;
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': FoodIndex}};
+      };
+    };
+    post: {
+      parameters: {
+        query?: never;
+        header?: {Authorization?: string};
+        path?: never;
+        cookie?: never;
+      };
+      requestBody: {content: {'application/json': FoodCreate}};
+      responses: {
+        201: {content: {'application/json': {data: Food}}};
+      };
+    };
+  };
+  '/v1/coach/foods/{id}': {
+    get: {
+      parameters: {
+        query?: never;
+        header?: {Authorization?: string};
+        path: {id: string};
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': {data: Food}}};
+      };
+    };
+    patch: {
+      parameters: {
+        query?: never;
+        header?: {Authorization?: string};
+        path: {id: string};
+        cookie?: never;
+      };
+      requestBody: {content: {'application/json': FoodUpdate}};
+      responses: {
+        200: {content: {'application/json': {data: Food}}};
+      };
+    };
+  };
   '/v1/coach/library-media/uploads': {
     post: {
       parameters: {
@@ -1930,32 +1918,7 @@ export interface paths {
       };
     };
   };
-  '/v1/coach/nutrition-foods': {
-    get: {
-      parameters: {
-        query?: FoodListQuery;
-        header?: {Authorization?: string};
-        path?: never;
-        cookie?: never;
-      };
-      responses: {
-        200: {content: {'application/json': FoodIndex}};
-      };
-    };
-    post: {
-      parameters: {
-        query?: never;
-        header?: {Authorization?: string};
-        path?: never;
-        cookie?: never;
-      };
-      requestBody: {content: {'application/json': FoodCreate}};
-      responses: {
-        201: {content: {'application/json': {data: Food}}};
-      };
-    };
-  };
-  '/v1/coach/nutrition-foods/categories': {
+  '/v1/coach/nutrients': {
     get: {
       parameters: {
         query?: never;
@@ -1964,297 +1927,7 @@ export interface paths {
         cookie?: never;
       };
       responses: {
-        200: {content: {'application/json': FoodCategoryList}};
-      };
-    };
-  };
-  '/v1/coach/nutrition-foods/{id}': {
-    delete: {
-      parameters: {
-        query?: never;
-        header?: {Authorization?: string};
-        path: {id: string};
-        cookie?: never;
-      };
-      responses: {
-        204: {content?: never};
-      };
-    };
-    get: {
-      parameters: {
-        query?: never;
-        header?: {Authorization?: string};
-        path: {id: string};
-        cookie?: never;
-      };
-      responses: {
-        200: {content: {'application/json': {data: Food}}};
-      };
-    };
-    patch: {
-      parameters: {
-        query?: never;
-        header?: {Authorization?: string};
-        path: {id: string};
-        cookie?: never;
-      };
-      requestBody: {content: {'application/json': FoodUpdate}};
-      responses: {
-        200: {content: {'application/json': {data: Food}}};
-      };
-    };
-  };
-  '/v1/coach/nutrition-foods/{id}/copy': {
-    post: {
-      parameters: {
-        query?: never;
-        header?: {Authorization?: string};
-        path: {id: string};
-        cookie?: never;
-      };
-      responses: {
-        201: {content: {'application/json': {data: Food}}};
-      };
-    };
-  };
-  '/v1/coach/nutrition-foods/{id}/impact': {
-    get: {
-      parameters: {
-        query?: never;
-        header?: {Authorization?: string};
-        path: {id: string};
-        cookie?: never;
-      };
-      responses: {
-        200: {content: {'application/json': FoodImpact}};
-      };
-    };
-  };
-  '/v1/coach/nutrition-foods/{id}/usage': {
-    get: {
-      parameters: {
-        query?: LibraryUsageQuery;
-        header?: {Authorization?: string};
-        path: {id: string};
-        cookie?: never;
-      };
-      responses: {
-        200: {content: {'application/json': LibraryUsage}};
-      };
-    };
-  };
-  '/v1/coach/nutrition-plans': {
-    get: {
-      parameters: {
-        query?: NutritionPlanListQuery;
-        header?: {Authorization?: string};
-        path?: never;
-        cookie?: never;
-      };
-      responses: {
-        200: {content: {'application/json': NutritionPlanIndex}};
-      };
-    };
-    post: {
-      parameters: {
-        query?: never;
-        header?: {Authorization?: string};
-        path?: never;
-        cookie?: never;
-      };
-      requestBody: {content: {'application/json': NutritionPlanCreate}};
-      responses: {
-        201: {content: {'application/json': {data: NutritionPlan}}};
-      };
-    };
-  };
-  '/v1/coach/nutrition-plans/{id}': {
-    delete: {
-      parameters: {
-        query: Revision;
-        header?: {Authorization?: string};
-        path: {id: string};
-        cookie?: never;
-      };
-      responses: {
-        204: {content?: never};
-      };
-    };
-    get: {
-      parameters: {
-        query?: never;
-        header?: {Authorization?: string};
-        path: {id: string};
-        cookie?: never;
-      };
-      responses: {
-        200: {content: {'application/json': {data: NutritionPlan}}};
-      };
-    };
-    patch: {
-      parameters: {
-        query?: never;
-        header?: {Authorization?: string};
-        path: {id: string};
-        cookie?: never;
-      };
-      requestBody: {content: {'application/json': NutritionPlanUpdate}};
-      responses: {
-        200: {content: {'application/json': {data: NutritionPlan}}};
-      };
-    };
-  };
-  '/v1/coach/nutrition-plans/{id}/archive': {
-    post: {
-      parameters: {
-        query?: never;
-        header?: {Authorization?: string};
-        path: {id: string};
-        cookie?: never;
-      };
-      requestBody: {content: {'application/json': Revision}};
-      responses: {
-        200: {content: {'application/json': {data: NutritionPlan}}};
-      };
-    };
-  };
-  '/v1/coach/nutrition-plans/{id}/duplicate': {
-    post: {
-      parameters: {
-        query?: never;
-        header?: {Authorization?: string};
-        path: {id: string};
-        cookie?: never;
-      };
-      responses: {
-        201: {content: {'application/json': {data: NutritionPlan}}};
-      };
-    };
-  };
-  '/v1/coach/nutrition-plans/{id}/restore': {
-    post: {
-      parameters: {
-        query?: never;
-        header?: {Authorization?: string};
-        path: {id: string};
-        cookie?: never;
-      };
-      requestBody: {content: {'application/json': Revision}};
-      responses: {
-        200: {content: {'application/json': {data: NutritionPlan}}};
-      };
-    };
-  };
-  '/v1/coach/nutrition-plans/{id}/revisions/{revision_id}': {
-    delete: {
-      parameters: {
-        query: Revision;
-        header?: {Authorization?: string};
-        path: {id: string; revision_id: string};
-        cookie?: never;
-      };
-      responses: {
-        200: {content: {'application/json': {data: NutritionPlan}}};
-      };
-    };
-  };
-  '/v1/coach/nutrition-recipes': {
-    get: {
-      parameters: {
-        query?: RecipeListQuery;
-        header?: {Authorization?: string};
-        path?: never;
-        cookie?: never;
-      };
-      responses: {
-        200: {content: {'application/json': RecipeIndex}};
-      };
-    };
-    post: {
-      parameters: {
-        query?: never;
-        header?: {Authorization?: string};
-        path?: never;
-        cookie?: never;
-      };
-      requestBody: {content: {'application/json': RecipeCreate}};
-      responses: {
-        201: {content: {'application/json': {data: Recipe}}};
-      };
-    };
-  };
-  '/v1/coach/nutrition-recipes/{id}': {
-    delete: {
-      parameters: {
-        query?: never;
-        header?: {Authorization?: string};
-        path: {id: string};
-        cookie?: never;
-      };
-      responses: {
-        204: {content?: never};
-      };
-    };
-    get: {
-      parameters: {
-        query?: never;
-        header?: {Authorization?: string};
-        path: {id: string};
-        cookie?: never;
-      };
-      responses: {
-        200: {content: {'application/json': {data: Recipe}}};
-      };
-    };
-    patch: {
-      parameters: {
-        query?: never;
-        header?: {Authorization?: string};
-        path: {id: string};
-        cookie?: never;
-      };
-      requestBody: {content: {'application/json': RecipeUpdate}};
-      responses: {
-        200: {content: {'application/json': {data: Recipe}}};
-      };
-    };
-  };
-  '/v1/coach/nutrition-recipes/{id}/copy': {
-    post: {
-      parameters: {
-        query?: never;
-        header?: {Authorization?: string};
-        path: {id: string};
-        cookie?: never;
-      };
-      responses: {
-        201: {content: {'application/json': {data: Recipe}}};
-      };
-    };
-  };
-  '/v1/coach/nutrition-recipes/{id}/impact': {
-    get: {
-      parameters: {
-        query?: never;
-        header?: {Authorization?: string};
-        path: {id: string};
-        cookie?: never;
-      };
-      responses: {
-        200: {content: {'application/json': RecipeImpact}};
-      };
-    };
-  };
-  '/v1/coach/nutrition-recipes/{id}/usage': {
-    get: {
-      parameters: {
-        query?: LibraryUsageQuery;
-        header?: {Authorization?: string};
-        path: {id: string};
-        cookie?: never;
-      };
-      responses: {
-        200: {content: {'application/json': LibraryUsage}};
+        200: {content: {'application/json': NutrientIndex}};
       };
     };
   };

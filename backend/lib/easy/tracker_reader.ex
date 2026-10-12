@@ -3,7 +3,6 @@ defmodule Easy.Trackers.Reader do
   alias Easy.CoachingTerms.CoachingTerm
   alias Easy.Ctx
   alias Easy.LocalCalendar
-  alias Easy.Nutrition.DiaryMeal
   alias Easy.Repo
   alias Easy.Trackers
   alias Easy.Trackers.Assignment
@@ -170,13 +169,9 @@ defmodule Easy.Trackers.Reader do
   end
 
   defp event(ctx, client_id, params) do
-    session = Map.get(params, "about_session_id", Map.get(params, :about_session_id))
-    meal = Map.get(params, "about_meal_id", Map.get(params, :about_meal_id))
-
-    cond do
-      session && is_nil(meal) -> find_event(ctx, client_id, TrainingSession, session, :after_workout, :about_session_id)
-      meal && is_nil(session) -> find_event(ctx, client_id, DiaryMeal, meal, :after_meal, :about_meal_id)
-      true -> {:error, :invalid_tracker_value}
+    case Map.get(params, "about_session_id", Map.get(params, :about_session_id)) do
+      nil -> {:error, :invalid_tracker_value}
+      session -> find_event(ctx, client_id, TrainingSession, session, :after_workout, :about_session_id)
     end
   end
 
@@ -220,8 +215,7 @@ defmodule Easy.Trackers.Reader do
           Enum.flat_map(rows, fn row ->
             if numeric(row), do: [%{date: row.local_date, value: numeric(row), entry_id: row.id}], else: []
           end),
-        workout_coverage: coverage(ctx, client_id, tracker_id, from_date, to_date, :after_workout),
-        meal_coverage: coverage(ctx, client_id, tracker_id, from_date, to_date, :after_meal)
+        workout_coverage: coverage(ctx, client_id, tracker_id, from_date, to_date, :after_workout)
       }
 
       {:ok, result}
@@ -263,10 +257,6 @@ defmodule Easy.Trackers.Reader do
 
   defp completed_events(:after_workout) do
     {from(e in TrainingSession, where: e.state == :completed), :about_session_id}
-  end
-
-  defp completed_events(:after_meal) do
-    {from(e in DiaryMeal, where: not is_nil(e.shared_at)), :about_meal_id}
   end
 
   defp assigned_events(query, ctx, client_id, tracker_id, timing) do

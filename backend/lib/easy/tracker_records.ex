@@ -2,7 +2,6 @@ defmodule Easy.Trackers.Records do
   alias Easy.Attachments.Attachment
   alias Easy.Ctx
   alias Easy.LocalCalendar
-  alias Easy.Nutrition.DiaryMeal
   alias Easy.RecordJournal
   alias Easy.Repo
   alias Easy.Result
@@ -110,7 +109,7 @@ defmodule Easy.Trackers.Records do
   defp normalize_patch(_, _, attrs), do: {:ok, attrs}
 
   defp event_attrs(old, attrs) do
-    old |> Map.take([:about_session_id, :about_meal_id]) |> string_keys() |> Map.merge(string_keys(attrs))
+    old |> Map.take([:about_session_id]) |> string_keys() |> Map.merge(string_keys(attrs))
   end
 
   defp attachment_ids(old, attrs) do
@@ -140,14 +139,9 @@ defmodule Easy.Trackers.Records do
 
   @spec event_links(Ctx.t(), String.t(), map()) :: :ok | {:error, term()}
   def event_links(ctx, client_id, attrs) do
-    session_id = value(attrs, :about_session_id)
-    meal_id = value(attrs, :about_meal_id)
-
-    cond do
-      session_id && meal_id -> {:error, :invalid_tracker_value}
+    case value(attrs, :about_session_id) do
+      nil -> :ok
       session_id -> exists_event(TrainingSession, ctx, client_id, session_id, :completed)
-      meal_id -> exists_event(DiaryMeal, ctx, client_id, meal_id, :shared)
-      true -> :ok
     end
   end
 
@@ -158,7 +152,6 @@ defmodule Easy.Trackers.Records do
   end
 
   defp completed_event(query, :completed), do: where(query, [e], e.state == :completed)
-  defp completed_event(query, :shared), do: where(query, [e], not is_nil(e.shared_at))
 
   defp attachments(ctx, client_id, kind, ids) when is_list(ids) do
     valid_count = length(ids) <= 50 and length(Enum.uniq(ids)) == length(ids)
@@ -274,7 +267,7 @@ defmodule Easy.Trackers.Records do
 
   defp retry_matches?(snapshot, attrs, mode) do
     fields = [:local_date, :number_value, :entered_unit, :rating_value, :yes_no_value, :text_value]
-    fields = fields ++ [:about_session_id, :about_meal_id]
+    fields = fields ++ [:about_session_id]
     fields = if mode == :update, do: Enum.filter(fields, &supplied?(attrs, &1)), else: fields
     same_values = Enum.all?(fields, fn key -> equal_value?(key, snapshot[to_string(key)], value(attrs, key)) end)
     check_attachments? = mode == :create or supplied?(attrs, :attachment_ids)
@@ -331,7 +324,6 @@ defmodule Easy.Trackers.Records do
       :yes_no_value,
       :text_value,
       :about_session_id,
-      :about_meal_id,
       :inserted_at,
       :updated_at
     ])

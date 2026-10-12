@@ -10,9 +10,9 @@ export type {Tracker, TrackerAssignment, TrackerEntry, TrackerMetrics} from './s
 export type TrackerInput = paths['/v1/client/tracker-entries']['post']['requestBody']['content']['application/json'];
 export type TrackerCorrection =
   paths['/v1/client/tracker-entries/{id}']['patch']['requestBody']['content']['application/json'];
-export type TrackerEvent =
-  | {about_session_id: string; about_meal_id?: never}
-  | {about_meal_id: string; about_session_id?: never};
+export type TrackerEvent = Required<
+  Pick<NonNullable<paths['/v1/client/tracker-prompts']['get']['parameters']['query']>, 'about_session_id'>
+>;
 export function useTrackers(search: string, archived = false) {
   return useInfiniteQuery({
     queryKey: trackerKeys.library(search, archived),

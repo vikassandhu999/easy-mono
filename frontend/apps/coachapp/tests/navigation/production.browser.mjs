@@ -89,7 +89,7 @@ try {
         ['Messages', '/messages', 'Messages'],
         ['Clients', '/clients', 'Clients'],
         ['Training', '/training-plans', 'Training plans'],
-        ['Nutrition', '/nutrition-plans', 'Nutrition plans'],
+        ['Foods', '/foods', 'Food catalogue'],
       ]) {
         await page
           .getByRole('navigation', {name: 'Coaching', exact: true})

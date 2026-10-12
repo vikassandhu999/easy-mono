@@ -4,7 +4,7 @@ defmodule Easy.Plans.Revision do
   @foreign_key_type :binary_id
   @type t :: %__MODULE__{}
   schema "plan_revisions" do
-    field :domain, Ecto.Enum, values: [:training, :nutrition]
+    field :domain, Ecto.Enum, values: [:training]
     field :number, :integer
     field :effective_on, :date
     field :content, :map

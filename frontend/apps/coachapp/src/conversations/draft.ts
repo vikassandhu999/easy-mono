@@ -1,5 +1,5 @@
 export type RecordReference = {
-  type: 'training_session' | 'meal';
+  type: 'training_session';
   id: string;
   title: string;
   revision: number;
@@ -66,7 +66,7 @@ export function parseDraft(raw: string | null): ConversationDraft | null {
         !ref ||
         typeof ref !== 'object' ||
         !('type' in ref) ||
-        (ref.type !== 'training_session' && ref.type !== 'meal') ||
+        ref.type !== 'training_session' ||
         !('id' in ref) ||
         typeof ref.id !== 'string' ||
         !('title' in ref) ||

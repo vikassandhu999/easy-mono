@@ -9,7 +9,6 @@ defmodule Easy.Factory do
   alias Easy.Identity.UserSession
   alias Easy.LibraryMedia.Media, as: LibraryMedia
   alias Easy.Nutrition.Food
-  alias Easy.Nutrition.Recipe
   alias Easy.Orgs.Business
   alias Easy.Orgs.Coach
   alias Easy.Plans.Plan, as: TrainingPlan
@@ -125,54 +124,23 @@ defmodule Easy.Factory do
     }
   end
 
-  def food_factory do
+  def food_factory(attrs) do
+    business = attrs[:business] || insert(:business)
+    {:ok, _} = Easy.Nutrition.ensure_nutrients(%Easy.Ctx{business_id: business.id, user_id: business.owner_user_id})
+
     %Food{
       name: sequence(:food_name, &"Food #{&1}"),
-      source: :custom,
-      category: "protein",
-      nutrients: %{"energy_kcal" => 200.0, "protein_g" => 20.0, "carbs_g" => 30.0, "fat_g" => 5.0, "fiber_g" => 2.0},
-      allergens: [],
-      dietary_tags: ["high_protein"],
-      notes: "Test food",
+      kind: :food,
+      basis: :"100g",
+      nutrients: %{"energy_kcal" => 200.0, "protein_g" => 20.0},
       servings: [],
-      revision: 1,
-      creator: build(:coach),
-      business: build(:business)
+      business: business
     }
+    |> merge_attributes(attrs)
   end
 
   def food_attrs_factory do
-    %{
-      "name" => sequence(:food_attr_name, &"New Food #{&1}"),
-      "nutrients" => %{"energy_kcal" => 150.0, "protein_g" => 10.0, "carbs_g" => 20.0, "fat_g" => 3.0, "fiber_g" => 1.0, "sugar_g" => 6.0},
-      "servings" => [%{"id" => "cup", "label" => "1 cup", "grams" => 100.0}]
-    }
-  end
-
-  def recipe_factory do
-    %Recipe{
-      name: sequence(:recipe_name, &"Recipe #{&1}"),
-      description: "Test recipe",
-      instructions: "Mix and serve",
-      servings_count: 2,
-      cooked_weight_g: 400.0,
-      revision: 1,
-      allergens: [],
-      dietary_tags: [],
-      ingredients: [],
-      creator: build(:coach),
-      business: build(:business)
-    }
-  end
-
-  def recipe_attrs_factory do
-    %{
-      "name" => sequence(:recipe_attr_name, &"New Recipe #{&1}"),
-      "description" => "New recipe",
-      "instructions" => "Cook",
-      "servings_count" => 2,
-      "cooked_weight_g" => 400.0
-    }
+    %{"name" => sequence(:food_attr_name, &"New food #{&1}"), "kind" => "food", "basis" => "100g", "nutrients" => %{"energy_kcal" => 150.0}}
   end
 
   def exercise_factory do
@@ -240,28 +208,6 @@ defmodule Easy.Factory do
         Map.merge(base, %{content: Content.empty(), creator: if(match?(%Coach{}, creator), do: creator, else: nil)})
       )
       |> merge_attributes(Map.drop(attrs, [:start_date, :end_date]))
-    end
-  end
-
-  def nutrition_plan_factory(attrs) do
-    attrs = Map.new(attrs)
-    business = attrs[:business] || build(:business)
-    base = %{domain: :nutrition, name: sequence(:nutrition_plan_name, &"Nutrition Plan #{&1}"), business: business}
-
-    if attrs[:client] || attrs[:client_id] || attrs[:kind] == :client_plan do
-      client = attrs[:client] || build(:client, business: business)
-
-      struct(
-        TrainingPlan,
-        Map.merge(base, %{
-          client: client,
-          revisions: [%PlanRevision{domain: :nutrition, number: 1, content: Easy.Nutrition.Content.empty()}],
-          created_local_date: Client.local_date(%{client | business: business}, DateTime.utc_now(:second))
-        })
-      )
-      |> merge_attributes(Map.drop(attrs, [:kind]))
-    else
-      struct(Template, Map.merge(base, %{content: Easy.Nutrition.Content.empty()})) |> merge_attributes(Map.drop(attrs, [:kind, :start_date, :end_date]))
     end
   end
 

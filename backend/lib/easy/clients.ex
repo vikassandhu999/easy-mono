@@ -4,7 +4,6 @@ defmodule Easy.Clients do
   alias Easy.Clients.Client
   alias Easy.Ctx
   alias Easy.Orgs.Coach
-  alias Easy.Plans.Reader, as: PlanReader
   alias Easy.Plans.Reader, as: TrainingPlanReader
   alias Easy.Repo
 
@@ -161,13 +160,11 @@ defmodule Easy.Clients do
     local_dates = Map.new(clients, &{&1.id, Client.local_date(&1, now)})
 
     {:ok, training} = TrainingPlanReader.current_plan_names_for_clients(ctx, :training, local_dates)
-    {:ok, nutrition} = PlanReader.current_plan_names_for_clients(ctx, :nutrition, local_dates)
 
     Enum.map(clients, fn client ->
       %{
         client
-        | training_plan_name: Map.get(training, client.id),
-          nutrition_plan_name: Map.get(nutrition, client.id)
+        | training_plan_name: Map.get(training, client.id)
       }
     end)
   end

@@ -1,30 +1,23 @@
 import {useCallback, useEffect, useRef, useState} from 'react';
 import {flushSync} from 'react-dom';
-import {useForm} from 'react-hook-form';
+import {Controller, useForm} from 'react-hook-form';
 import {generatePath, useBeforeUnload, useBlocker, useNavigate, useParams} from 'react-router-dom';
 import {ApiError, errorMessage} from '../api/client';
-import {type Food, useFood, useFoods, useSaveFood} from '../api/foods';
+import {type Food, useFood, useFoods, useNutrients, useSaveFood} from '../api/foods';
 import {routes} from '../routes';
 import {Button} from '../ui/button';
 import {Dialog, DialogHeader, DialogTitle} from '../ui/dialog';
 import {FormError} from '../ui/form-error';
+import {setFormError} from '../ui/form-errors';
 import {FormField} from '../ui/form-field';
 import {InfiniteList} from '../ui/infinite-list';
 import {useListLocation} from '../ui/list-location';
-import {NutritionTags} from '../ui/nutrition-tags';
 import {FormActions, Page, PageHeader, Surface} from '../ui/page';
-import {body, fields} from './food';
-import {FoodMedia} from './food-media';
+import {SelectItem} from '../ui/select';
+import {SelectField} from '../ui/select-field';
+import {basisLabel, body, type FoodFields, fields} from './food';
 import {FoodServings} from './food-servings';
 
-const nutrients = [
-  ['nutrients.energy_kcal', 'Calories · kcal'],
-  ['nutrients.protein_g', 'Protein · g'],
-  ['nutrients.carbs_g', 'Carbs · g'],
-  ['nutrients.fat_g', 'Fat · g'],
-  ['nutrients.fiber_g', 'Fiber · g'],
-  ['nutrients.sugar_g', 'Sugar · g'],
-] as const;
 export function FoodEditor() {
   const {id} = useParams();
   return id ? (
@@ -33,10 +26,7 @@ export function FoodEditor() {
       id={id}
     />
   ) : (
-    <Editor
-      key="new"
-      initial={undefined}
-    />
+    <Editor key="new" />
   );
 }
 function LoadEditor({id}: {id: string}) {
@@ -48,10 +38,9 @@ function LoadEditor({id}: {id: string}) {
       setInitial(query.data.data);
     }
   }, [initial, query.data, query.isSuccess, query.isFetchedAfterMount]);
-  if (initial) {
-    return <Editor initial={initial} />;
-  }
-  return (
+  return initial ? (
+    <Editor initial={initial} />
+  ) : (
     <Page className="editor-page">
       <PageHeader
         title="Food"
@@ -77,143 +66,94 @@ function LoadEditor({id}: {id: string}) {
     </Page>
   );
 }
-function Editor({initial}: {initial: Food | undefined}) {
-  const [food, setFood] = useState(initial);
-  const form = useForm({defaultValues: fields(initial)});
+function Editor({initial}: {initial?: Food}) {
+  const form = useForm<FoodFields>({defaultValues: fields(initial), mode: 'onBlur'});
   const save = useSaveFood();
-  const query = useFood(food?.id ?? '');
-  const [conflict, setConflict] = useState(false);
+  const nutrients = useNutrients();
+  const saved = useFood(initial?.id ?? '');
+  const [notice, setNotice] = useState('');
+  const [savedVersion, setSavedVersion] = useState(0);
   const [uncertain, setUncertain] = useState(false);
   const [checking, setChecking] = useState(false);
   const [reload, setReload] = useState(false);
   const [reloading, setReloading] = useState(false);
-  const [notice, setNotice] = useState('');
-  const [uploading, setUploading] = useState(false);
-  const mounted = useRef(true);
   const leaving = useRef(false);
-  const errorRef = useRef<HTMLDivElement>(null);
-  const noticeRef = useRef<HTMLParagraphElement>(null);
+  const errorRef = useRef<HTMLParagraphElement>(null);
   const navigate = useNavigate();
   const {to, state} = useListLocation(routes.foods);
   const dirty = form.formState.isDirty;
-  const pending = form.formState.isSubmitting || reloading || uploading;
-  const readOnly = food?.source === 'system';
-  useEffect(() => {
-    mounted.current = true;
-    return () => {
-      mounted.current = false;
-    };
-  }, []);
-  useEffect(() => {
-    if (form.formState.errors.root) {
-      errorRef.current?.focus();
-      errorRef.current?.scrollIntoView({block: 'center'});
-    }
-  }, [form.formState.errors.root]);
+  const pending = form.formState.isSubmitting || reloading;
+  const basis = form.watch('basis');
+  const unitLabel = form.watch('unit_label');
+  const knownNutrients = nutrients.data?.data ?? [];
   const blocker = useBlocker(
     useCallback(
       ({currentLocation, nextLocation}) =>
-        !leaving.current && (dirty || pending) && currentLocation.pathname !== nextLocation.pathname,
-      [dirty, pending],
+        !leaving.current && (dirty || pending || uncertain) && currentLocation.pathname !== nextLocation.pathname,
+      [dirty, pending, uncertain],
     ),
   );
   useBeforeUnload(
     useCallback(
       (event) => {
-        if (dirty || pending) {
+        if (dirty || pending || uncertain) {
           event.preventDefault();
           event.returnValue = '';
         }
       },
-      [dirty, pending],
+      [dirty, pending, uncertain],
     ),
   );
   useEffect(() => {
-    if (notice) {
-      noticeRef.current?.focus();
+    if (form.formState.errors.root) {
+      errorRef.current?.focus();
     }
-  }, [notice]);
-  function resetFood(saved: Food) {
-    setFood(saved);
-    form.reset(fields(saved));
-    setConflict(false);
-    setUncertain(false);
-    setChecking(false);
-  }
+  }, [form.formState.errors.root]);
   return (
     <Page className="editor-page">
       <PageHeader
-        title={initial ? (readOnly ? 'Food details' : 'Edit food') : 'Create food'}
-        description={
-          initial
-            ? readOnly
-              ? 'This shared food is read-only.'
-              : 'Changes update this library food and recipe calculations. Published plans keep their values until the coach publishes again.'
-            : 'Enter the values from a reliable food label or source.'
-        }
+        title={initial ? 'Edit food' : 'Create food'}
+        description="Enter known values from a food label or a reliable source. Catalogue changes apply from now on."
         back={{to, label: 'Back to foods', state}}
-        actions={
-          food && (
-            <Button
-              variant="ghost"
-              isDisabled={pending || conflict || uncertain}
-              onPress={() => navigate(generatePath(routes.manageFood, {id: food.id}), {state})}
-            >
-              Manage food
-            </Button>
-          )
-        }
       />
       <form
         noValidate
         className="has-mobile-actions min-w-0 space-y-6"
+        onChange={() => setNotice('')}
         onSubmit={form.handleSubmit(async (values) => {
-          if (readOnly || conflict || uncertain || pending) {
+          if (pending || uncertain || !nutrients.data) {
             return;
           }
           form.clearErrors();
           setNotice('');
           try {
-            const input = body(values, food);
+            const input = body(values);
             const result = await save.mutateAsync(
-              food
-                ? {kind: 'update', id: food.id, body: {...input, expected_revision: food.revision}}
-                : {kind: 'create', body: input},
+              initial ? {kind: 'update', id: initial.id, body: input} : {kind: 'create', body: input},
             );
-            if (!mounted.current) {
-              return;
-            }
-            resetFood(result.data);
+            form.reset(fields(result.data));
+            setSavedVersion((version) => version + 1);
             setNotice('Food saved.');
             if (!initial) {
               leaving.current = true;
               navigate(generatePath(routes.food, {id: result.data.id}), {replace: true, state});
             }
           } catch (error) {
-            if (!mounted.current) {
-              return;
-            }
-            const stale = error instanceof ApiError && error.code === 'stale_revision';
-            setConflict(stale);
-            const unknownCreate = !food && (!(error instanceof ApiError) || error.status >= 500);
+            const unknownCreate = !initial && (!(error instanceof ApiError) || error.status >= 500);
             setUncertain(unknownCreate);
-            form.setError('root', {
-              message: stale
-                ? 'This food changed elsewhere. Your edits are still here. Load the saved version before editing again.'
-                : unknownCreate
-                  ? 'Creation could not be confirmed. Check saved foods before trying again; your draft is still here.'
-                  : error instanceof ApiError && error.code === 'in_use'
-                    ? 'A recipe or draft uses a serving you removed. Keep that serving or update those uses. You can change a serving name without changing its identity.'
-                    : errorMessage(
-                        error,
-                        'The save could not be confirmed. Your edits are still here. Check the saved version before retrying.',
-                      ),
-            });
+            setFormError(
+              error,
+              unknownCreate
+                ? 'Creation could not be confirmed. Check saved foods before trying again. Your draft is still here.'
+                : 'Could not confirm this save. Your edits are still here. Review the saved food before trying again.',
+              form.setError,
+              ['name', 'kind', 'basis', 'unit_label', 'nutrients', 'servings'],
+            );
           }
         })}
       >
         <fieldset
-          disabled={pending || readOnly || uncertain}
+          disabled={pending || uncertain}
           className="min-w-0 space-y-6"
         >
           <legend className="sr-only">Food information</legend>
@@ -224,120 +164,167 @@ function Editor({initial}: {initial: Food | undefined}) {
             emphasis="title"
             isRequired
             maxLength={255}
-            rules={{validate: (value) => Boolean(String(value).trim()) || 'Enter a food name.'}}
+            rules={{validate: (value) => Boolean(String(value ?? '').trim()) || 'Enter a food name.'}}
           />
-          <section
-            className="editor-section space-y-4"
-            aria-label="Nutrition per 100 grams"
-          >
+          <div className="grid items-start gap-4 sm:grid-cols-2">
+            <Controller
+              control={form.control}
+              name="kind"
+              render={({field, fieldState}) => (
+                <div className="grid gap-2">
+                  <label
+                    id="editor-food-kind-label"
+                    htmlFor="editor-food-kind"
+                    className="text-sm font-medium"
+                  >
+                    Kind
+                  </label>
+                  <SelectField
+                    id="editor-food-kind"
+                    value={field.value}
+                    onChange={field.onChange}
+                    triggerRef={field.ref}
+                    onBlur={field.onBlur}
+                    isDisabled={pending || uncertain}
+                    isInvalid={Boolean(fieldState.error)}
+                    aria-describedby="editor-food-kind-error"
+                  >
+                    <SelectItem id="food">Food</SelectItem>
+                    <SelectItem id="supplement">Supplement</SelectItem>
+                  </SelectField>
+                  <div id="editor-food-kind-error">
+                    <FormError message={fieldState.error?.message} />
+                  </div>
+                </div>
+              )}
+            />
+            <Controller
+              control={form.control}
+              name="basis"
+              render={({field, fieldState}) => (
+                <div className="grid gap-2">
+                  <label
+                    id="editor-food-basis-label"
+                    htmlFor="editor-food-basis"
+                    className="text-sm font-medium"
+                  >
+                    Nutrient values per
+                  </label>
+                  <SelectField
+                    id="editor-food-basis"
+                    value={field.value}
+                    onChange={field.onChange}
+                    triggerRef={field.ref}
+                    onBlur={field.onBlur}
+                    isDisabled={pending || uncertain}
+                    isInvalid={Boolean(fieldState.error)}
+                    aria-describedby="editor-food-basis-error"
+                  >
+                    <SelectItem id="100g">100 g</SelectItem>
+                    <SelectItem id="100ml">100 ml</SelectItem>
+                    <SelectItem id="1unit">1 unit</SelectItem>
+                  </SelectField>
+                  <div id="editor-food-basis-error">
+                    <FormError message={fieldState.error?.message} />
+                  </div>
+                </div>
+              )}
+            />
+          </div>
+          {basis === '1unit' && (
+            <FormField
+              control={form.control}
+              name="unit_label"
+              label="Unit name"
+              isRequired
+              maxLength={80}
+              description="For example, capsule or tablet. Serving amounts count these units."
+              rules={{validate: (value) => Boolean(String(value ?? '').trim()) || 'Enter a unit name.'}}
+            />
+          )}
+          <section className="editor-section space-y-4">
             <div>
-              <h2 className="editor-section-title">Nutrition per 100 g</h2>
+              <h2 className="editor-section-title">Nutrients per {basisLabel({basis, unit_label: unitLabel})}</h2>
               <p className="mt-1 text-sm text-muted-foreground">
-                Use per-100-g values, not per-serving values. Leave unknown values blank; enter 0 only when known.
+                Leave an unknown value blank. Enter 0 only when it is known to be zero.
               </p>
             </div>
+            {!nutrients.data && !nutrients.isError && <p role="status">Loading nutrients…</p>}
+            {nutrients.isError && (
+              <div className="space-y-3">
+                <FormError message="Could not load nutrients. Your draft is still here." />
+                <Button
+                  variant="outline"
+                  isPending={nutrients.isFetching}
+                  onPress={() => {
+                    nutrients.refetch();
+                  }}
+                >
+                  Retry nutrients
+                </Button>
+              </div>
+            )}
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-              {nutrients.map(([name, label]) => (
+              {knownNutrients.map((nutrient) => (
                 <FormField
-                  key={name}
+                  key={nutrient.code}
                   control={form.control}
-                  name={name}
-                  label={label}
+                  name={`nutrients.${nutrient.code}`}
+                  label={`${nutrient.name} · ${nutrient.unit}`}
                   inputMode="decimal"
                   rules={{
                     validate: (value) =>
-                      !String(value).trim() ||
+                      !String(value ?? '').trim() ||
                       (Number.isFinite(Number(value)) && Number(value) >= 0) ||
                       'Enter zero or a positive number.',
                   }}
                 />
               ))}
             </div>
+            <FormError
+              message={
+                typeof form.formState.errors.nutrients?.message === 'string'
+                  ? form.formState.errors.nutrients.message
+                  : undefined
+              }
+            />
           </section>
           <FoodServings
-            key={food?.revision ?? 'new'}
+            key={savedVersion}
             form={form}
-            isDisabled={pending || readOnly || uncertain}
+            isDisabled={pending || uncertain}
           />
-          <details>
-            <summary className="w-fit cursor-pointer py-2 font-medium">Brand, allergens and other details</summary>
-            <div className="mt-3 space-y-4">
-              <FormField
-                control={form.control}
-                name="brand"
-                label="Brand"
-                maxLength={255}
-              />
-              <FormField
-                control={form.control}
-                name="category"
-                label="Category"
-                maxLength={255}
-              />
-              <NutritionTags
-                value={{allergens: form.watch('allergens'), dietary_tags: form.watch('dietary_tags')}}
-                isDisabled={pending || readOnly || uncertain}
-                onChange={(field, values) => form.setValue(field, values, {shouldDirty: true})}
-              />
-              <FormField
-                control={form.control}
-                name="notes"
-                label="Notes"
-                multiline
-                maxLength={5000}
-              />
-            </div>
-          </details>
+          <FormError message={form.formState.errors.servings?.message} />
         </fieldset>
-        <FoodMedia
-          key={food?.revision ?? 'new'}
-          media={form.watch('media')}
-          disabled={pending || readOnly || uncertain}
-          readOnly={readOnly}
-          onBusy={setUploading}
-          onChange={(media) => form.setValue('media', media, {shouldDirty: true})}
-        />
-        <div
+        <FormError
           ref={errorRef}
           tabIndex={-1}
-          className="space-y-3"
+          message={form.formState.errors.root?.message}
+        />
+        {form.formState.errors.root && initial && (
+          <Button
+            variant="outline"
+            isDisabled={pending}
+            onPress={() => setReload(true)}
+          >
+            Review saved food
+          </Button>
+        )}
+        {uncertain && (
+          <Button
+            variant="outline"
+            onPress={() => setChecking(true)}
+          >
+            Check saved foods
+          </Button>
+        )}
+        {notice && !dirty && <p role="status">{notice}</p>}
+        <p
+          role="status"
+          className="text-xs text-muted-foreground"
         >
-          <FormError message={form.formState.errors.root?.message} />
-          {form.formState.errors.root && food && (
-            <Button
-              variant="outline"
-              isDisabled={pending}
-              onPress={() => setReload(true)}
-            >
-              Review saved version
-            </Button>
-          )}
-          {uncertain && (
-            <Button
-              variant="outline"
-              onPress={() => setChecking(true)}
-            >
-              Check saved foods
-            </Button>
-          )}
-        </div>
-        {notice && !dirty && (
-          <p
-            ref={noticeRef}
-            tabIndex={-1}
-            role="status"
-          >
-            {notice}
-          </p>
-        )}
-        {!readOnly && (
-          <p
-            role="status"
-            className="text-xs text-muted-foreground"
-          >
-            {dirty ? 'Unsaved changes' : food ? 'All changes saved' : 'New food'}
-          </p>
-        )}
+          {dirty ? 'Unsaved changes' : initial ? 'All changes saved' : 'New food'}
+        </p>
         <FormActions>
           <Button
             variant="ghost"
@@ -346,24 +333,22 @@ function Editor({initial}: {initial: Food | undefined}) {
           >
             Back to foods
           </Button>
-          {!readOnly && (
-            <Button
-              type="submit"
-              isPending={pending}
-              isDisabled={!dirty || conflict || uncertain}
-            >
-              Save food
-            </Button>
-          )}
+          <Button
+            type="submit"
+            isPending={pending}
+            isDisabled={!dirty || uncertain || !nutrients.data}
+          >
+            Save food
+          </Button>
         </FormActions>
       </form>
       {checking && (
         <CreationRecovery
           name={form.getValues('name')}
           onClose={() => setChecking(false)}
-          onUse={(saved) => {
+          onUse={(food) => {
             leaving.current = true;
-            navigate(generatePath(routes.food, {id: saved.id}), {replace: true, state});
+            navigate(generatePath(routes.food, {id: food.id}), {replace: true, state});
           }}
           onRetry={() => {
             flushSync(() => {
@@ -379,6 +364,7 @@ function Editor({initial}: {initial: Food | undefined}) {
         isOpen={reload}
         isDismissable={!reloading}
         showCloseButton={!reloading}
+        isKeyboardDismissDisabled={reloading}
         onOpenChange={(open) => {
           if (!reloading) {
             setReload(open);
@@ -404,26 +390,23 @@ function Editor({initial}: {initial: Food | undefined}) {
               onPress={async () => {
                 setReloading(true);
                 try {
-                  const result = await query.refetch();
+                  const result = await saved.refetch();
                   if (result.error) {
                     throw result.error;
                   }
-                  if (result.data && mounted.current) {
-                    resetFood(result.data.data);
+                  if (result.data) {
+                    form.reset(fields(result.data.data));
+                    setSavedVersion((version) => version + 1);
                     setReload(false);
-                    setNotice('Saved version loaded.');
+                    setNotice('Saved food loaded.');
                   }
                 } catch (error) {
-                  if (mounted.current) {
-                    setReload(false);
-                    form.setError('root', {
-                      message: errorMessage(error, 'Could not load the saved food. Your edits are still here.'),
-                    });
-                  }
+                  setReload(false);
+                  form.setError('root', {
+                    message: errorMessage(error, 'Could not load the saved food. Your edits are still here.'),
+                  });
                 } finally {
-                  if (mounted.current) {
-                    setReloading(false);
-                  }
+                  setReloading(false);
                 }
               }}
             >
@@ -434,11 +417,9 @@ function Editor({initial}: {initial: Food | undefined}) {
       </Dialog>
       <Dialog
         isOpen={blocker.state === 'blocked'}
-        onOpenChange={(open) => {
-          if (!open && blocker.state === 'blocked') {
-            blocker.reset();
-          }
-        }}
+        isDismissable={false}
+        isKeyboardDismissDisabled
+        showCloseButton={false}
       >
         <DialogHeader>
           <DialogTitle>Leave without saving?</DialogTitle>
@@ -465,7 +446,7 @@ function Editor({initial}: {initial: Food | undefined}) {
                 }
               }}
             >
-              Discard changes
+              Discard and leave
             </Button>
           </div>
         </div>
@@ -498,9 +479,7 @@ function CreationRecovery({
         <DialogTitle>Check saved foods</DialogTitle>
       </DialogHeader>
       <div className="dialog-body space-y-4">
-        <p>
-          Check whether the interrupted save created your food. Opening one replaces this draft with its saved details.
-        </p>
+        <p>Check whether the interrupted save created your food. Opening one replaces this draft.</p>
         <InfiniteList
           query={query}
           label="matching foods"
@@ -510,12 +489,7 @@ function CreationRecovery({
           {(food) => (
             <div className="space-y-2 p-4">
               <p className="break-words font-semibold">{food.name}</p>
-              {food.brand && <p className="text-sm">{food.brand}</p>}
-              <p className="text-sm text-muted-foreground">
-                {food.nutrients.energy_kcal == null
-                  ? 'Calories unknown'
-                  : `${food.nutrients.energy_kcal} kcal per 100 g`}
-              </p>
+              <p className="text-sm text-muted-foreground">Per {basisLabel(food)}</p>
               <Button
                 variant="outline"
                 onPress={() => onUse(food)}

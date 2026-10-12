@@ -47,11 +47,6 @@ export function TrackerMetricsDisplay({value, unit}: {value: TrackerMetrics; uni
             {value.tracker.name} after {value.workout_coverage.recorded} of {value.workout_coverage.total} workouts
           </p>
         )}
-        {value.meal_coverage.total > 0 && (
-          <p>
-            {value.tracker.name} after {value.meal_coverage.recorded} of {value.meal_coverage.total} meals
-          </p>
-        )}
       </div>
       {value.tracker.kind === 'photo' && value.latest && (
         <section className="space-y-4">

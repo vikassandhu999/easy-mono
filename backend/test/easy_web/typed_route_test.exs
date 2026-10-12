@@ -1,12 +1,10 @@
 defmodule EasyWeb.TypedRouteTest do
   use Easy.ConnCase, async: true
 
-  alias EasyWeb.Clients.NutritionDayController
   alias EasyWeb.TypedRoute
   alias EasyWeb.TypedRoute.{Cast, Check, Dump, Emit, Generator, SchemaMerge, Type}
   alias EasyWeb.TypedRouteAdapter, as: RouteAdapter
   alias EasyWeb.TypedRouteTestController, as: Controller
-  alias EasyWeb.Types.Nutrition.NutritionTargets
   alias EasyWeb.Types.{TypedComputed, TypedDictionary, TypedItem, TypedStructComputed}
   alias Phoenix.Router.Route
 
@@ -99,10 +97,22 @@ defmodule EasyWeb.TypedRouteTest do
     assert TypedDictionary.__wire_type__(:t) == {:dict, :string}
   end
 
+  test "loads locally declared nested record and dictionary types from BEAM metadata" do
+    alias EasyWeb.Types.TypedLocal
+
+    assert Type.from_beam!(TypedLocal, :index) ==
+             {:record, [{:data, :required, {:list, {:remote, TypedLocal, :t}}}]}
+
+    assert Dump.dump(%{data: [%{name: "Breakfast"}]}, {:remote, TypedLocal, :index}) ==
+             %{data: [%{name: "Breakfast"}]}
+
+    assert Dump.dump(%{targets: %{"protein_g" => %{min: 160}}}, {:remote, TypedLocal, :write}) ==
+             %{targets: %{"protein_g" => %{min: 160}}}
+  end
+
   test "take preserves dictionary keys without inventing missing values" do
     assert TypedDictionary.take(%{"energy_kcal" => "200"}) == %{"energy_kcal" => "200"}
     assert TypedItem.take(%{"id" => "food-1", "name" => "Oats"}) == %{id: "food-1", name: "Oats"}
-    assert NutritionTargets.take(%{"protein_g" => %{"min" => 100}}) == %{"protein_g" => %{min: 100}}
   end
 
   test "dump uses format/1 for map-backed computed types" do
@@ -206,7 +216,7 @@ defmodule EasyWeb.TypedRouteTest do
     named = Emit.named_aliases({:remote, TypedItem, :t})
     assert named[{TypedItem, :t}] == "TypedItem"
     assert Emit.export_named_types(named) =~ "export type TypedItem"
-    assert Emit.path_template("/v1/coach/nutrition-recipes/:id") == "/v1/coach/nutrition-recipes/{id}"
+    assert Emit.path_template("/v1/coach/training-exercises/:id") == "/v1/coach/training-exercises/{id}"
     assert Emit.ir_to_ts({:record, [{:name, :optional, :string}]}) == "{ name?: string }"
   end
 
@@ -246,12 +256,6 @@ defmodule EasyWeb.TypedRouteTest do
     assert SchemaMerge.current?(formatted, types, paths)
     refute SchemaMerge.current?(String.replace(formatted, "status", "state"), types, paths)
     refute SchemaMerge.current?(formatted, types <> "\nexport type Extra = string;", paths)
-  end
-
-  test "typed controller records the save operation without custom headers" do
-    assert NutritionDayController.__typed_route_adapter__() == RouteAdapter
-    refute Map.has_key?(NutritionDayController.__typed_route__(:save), :headers)
-    refute Map.has_key?(NutritionDayController.__typed_route__(:index), :headers)
   end
 
   test "application adapter derives authentication headers" do

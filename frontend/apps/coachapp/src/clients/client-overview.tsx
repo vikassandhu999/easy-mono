@@ -1,8 +1,7 @@
 import {RefreshCw} from 'lucide-react';
-import {generatePath, Link, useLocation, useParams} from 'react-router-dom';
+import {generatePath, Link, NavLink, useLocation, useParams} from 'react-router-dom';
 import {ApiError, errorMessage} from '../api/client';
 import {useClient} from '../api/clients';
-import {useNutritionCoverage} from '../api/nutrition-plans';
 import {useClientTrainingPlans} from '../api/training-plans';
 import {routes} from '../routes';
 import {Button, buttonVariants} from '../ui/button';
@@ -10,16 +9,15 @@ import {FormError} from '../ui/form-error';
 import {useListLocation} from '../ui/list-location';
 import {Page, PageHeader, Surface} from '../ui/page';
 import {ClientCoaching} from './client-coaching';
-import {ClientNutritionPlans} from './client-nutrition-plans';
 import {ClientTrainingPlans} from './client-training-plans';
 import {coachingSummary} from './coaching';
 
 export function ClientOverview() {
-  const {id = ''} = useParams();
+  const {id, clientId} = useParams();
   return (
     <Overview
-      key={id}
-      id={id}
+      key={id ?? clientId ?? ''}
+      id={id ?? clientId ?? ''}
     />
   );
 }
@@ -28,12 +26,11 @@ function Overview({id}: {id: string}) {
   const {to: listLocation, state: listState} = useListLocation(routes.home);
   const client = useClient(id);
   const trainingPlans = useClientTrainingPlans(id);
-  const nutrition = useNutritionCoverage(id);
-  const notice: unknown = useLocation().state;
+  const location = useLocation();
+  const notice: unknown = location.state;
   const refresh = () => {
     client.refetch();
     trainingPlans.refetch();
-    nutrition.refetch();
   };
   if (!client.data) {
     return (
@@ -102,7 +99,7 @@ function Overview({id}: {id: string}) {
             </Link>
             <Button
               variant="ghost"
-              isPending={client.isFetching || trainingPlans.isFetching || nutrition.isFetching}
+              isPending={client.isFetching || trainingPlans.isFetching}
               onPress={refresh}
             >
               <RefreshCw aria-hidden="true" />
@@ -133,17 +130,6 @@ function Overview({id}: {id: string}) {
             {notice.trainingPlanSaved} saved for this client.
           </p>
         )}
-      {notice !== null &&
-        typeof notice === 'object' &&
-        'nutritionPlanSaved' in notice &&
-        typeof notice.nutritionPlanSaved === 'string' && (
-          <p
-            role="status"
-            className="text-sm"
-          >
-            {notice.nutritionPlanSaved} saved for this client.
-          </p>
-        )}
       {notice !== null && typeof notice === 'object' && 'assigned' in notice && typeof notice.assigned === 'string' && (
         <p
           role="status"
@@ -152,6 +138,24 @@ function Overview({id}: {id: string}) {
           {notice.assigned} assigned.
         </p>
       )}
+      <nav
+        aria-label="Client sections"
+        className="flex gap-2 border-b border-border pb-3"
+      >
+        <NavLink
+          end
+          to={generatePath(routes.client, {id})}
+          className={({isActive}) => buttonVariants({variant: isActive ? 'default' : 'ghost'})}
+        >
+          Training and coaching
+        </NavLink>
+        <NavLink
+          to={generatePath(routes.clientNutrition, {clientId: id})}
+          className={({isActive}) => buttonVariants({variant: isActive ? 'default' : 'ghost'})}
+        >
+          Nutrition
+        </NavLink>
+      </nav>
       <ClientCoaching person={person} />
       <Surface className="space-y-4">
         <h2 className="section-title">Trackers</h2>
@@ -174,10 +178,6 @@ function Overview({id}: {id: string}) {
       <ClientTrainingPlans
         person={person}
         query={trainingPlans}
-      />
-      <ClientNutritionPlans
-        person={person}
-        query={nutrition}
       />
     </Page>
   );

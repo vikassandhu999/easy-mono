@@ -241,89 +241,6 @@ final class AuthenticationTests: XCTestCase {
         add(saved)
     }
 
-    func testMealDraftAndSavedResult() throws {
-        continueAfterFailure = false
-        let url = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "fixture", withExtension: "json"))
-        let fixture = try JSONDecoder().decode(Fixture.self, from: Data(contentsOf: url))
-        let app = XCUIApplication(bundleIdentifier: "com.easy.client")
-        app.launch()
-        app.open(try XCTUnwrap(URL(string: "easy://app/invite/\(fixture.mealToken)")))
-        let signOut = app.buttons["Sign out to continue"]
-        if signOut.waitForExistence(timeout: 2) { signOut.tap() }
-        XCTAssertTrue(app.buttons["Continue with email"].waitForExistence(timeout: 15))
-        app.buttons["Continue with email"].tap()
-        let code = app.webViews.textFields["Verification code"]
-        XCTAssertTrue(code.waitForExistence(timeout: 15))
-        code.tap()
-        code.typeText("123456")
-        app.buttons["Verify and continue"].tap()
-        XCTAssertTrue(app.links["Training"].waitForExistence(timeout: 15))
-        let mealURL = try XCTUnwrap(URL(string: "easy://app/nutrition/days/\(fixture.nutritionDate)/lunch"))
-        app.open(mealURL)
-        let addItem = app.buttons["Add food or recipe"]
-        XCTAssertTrue(addItem.waitForExistence(timeout: 15), app.debugDescription)
-        addItem.tap()
-        let search = app.webViews.searchFields["Search library"]
-        XCTAssertTrue(search.waitForExistence(timeout: 15), app.debugDescription)
-        search.tap()
-        search.typeText("iPhone rice")
-        app.buttons["Search"].tap()
-        let choose = app.buttons["Choose iPhone rice"]
-        XCTAssertTrue(choose.waitForExistence(timeout: 15), app.debugDescription)
-        if !choose.isHittable { app.swipeUp() }
-        choose.tap()
-        let portion = app.webViews.textFields["Portion (g)"]
-        XCTAssertTrue(portion.waitForExistence(timeout: 15))
-        portion.tap()
-        portion.coordinate(withNormalizedOffset: CGVector(dx: 0.85, dy: 0.5)).tap()
-        portion.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: 3) + "150")
-        XCTAssertEqual(portion.value as? String, "150")
-        XCTAssertTrue(app.staticTexts["Draft saved on this device."].waitForExistence(timeout: 10))
-        let keyboard = XCTAttachment(screenshot: app.screenshot())
-        keyboard.name = "iPhone meal keyboard"
-        keyboard.lifetime = .keepAlways
-        add(keyboard)
-        app.terminate()
-        app.launch()
-        app.open(mealURL)
-        XCTAssertTrue(portion.waitForExistence(timeout: 15))
-        XCTAssertEqual(portion.value as? String, "150")
-        let save = app.buttons["Save meal"]
-        XCTAssertTrue(save.waitForExistence(timeout: 15))
-        portion.tap()
-        portion.coordinate(withNormalizedOffset: CGVector(dx: 0.85, dy: 0.5)).tap()
-        portion.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: 3) + "150")
-        XCTAssertEqual(portion.value as? String, "150")
-        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5))
-        XCTAssertGreaterThan(app.keyboards.firstMatch.frame.height, 150)
-        XCTAssertLessThan(app.keyboards.firstMatch.frame.minY, app.frame.maxY - 150)
-        XCTAssertLessThanOrEqual(save.frame.maxY, app.keyboards.firstMatch.frame.minY)
-        let beforeSave = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
-        beforeSave.name = "iPhone meal save above keyboard"
-        beforeSave.lifetime = .keepAlways
-        add(beforeSave)
-        save.tap()
-        XCTAssertTrue(app.staticTexts["Meal saved."].waitForExistence(timeout: 15), app.debugDescription)
-        let total = app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "195 kcal")).firstMatch
-        XCTAssertTrue(total.waitForExistence(timeout: 10), app.debugDescription)
-        XCUIDevice.shared.press(.home)
-        app.activate()
-        XCTAssertTrue(total.waitForExistence(timeout: 15), app.debugDescription)
-        app.terminate()
-        app.launch()
-        app.open(mealURL)
-        XCTAssertTrue(portion.waitForExistence(timeout: 15))
-        XCTAssertEqual(portion.value as? String, "150")
-        let savedMeal = app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "View saved meal")).firstMatch
-        XCTAssertTrue(savedMeal.waitForExistence(timeout: 10), app.debugDescription)
-        savedMeal.tap()
-        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "150 g")).firstMatch.waitForExistence(timeout: 15), app.debugDescription)
-        let saved = XCTAttachment(screenshot: app.screenshot())
-        saved.name = "iPhone saved meal"
-        saved.lifetime = .keepAlways
-        add(saved)
-    }
-
     @MainActor
     func testMessageDraftPhotoAndSavedResult() throws {
         continueAfterFailure = false
@@ -471,12 +388,10 @@ final class AuthenticationTests: XCTestCase {
     struct Fixture: Decodable {
         let email: String
         let token: String
-        let mealToken: String
         let messageToken: String
         let workoutToken: String
         let migrationToken: String
         let migrationEmail: String
         let credentialMigration: Bool?
-        let nutritionDate: String
     }
 }

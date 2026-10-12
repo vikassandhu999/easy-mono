@@ -6,7 +6,6 @@ export const trackerTimings = [
   ['daily', 'Daily'],
   ['weekly', 'Weekly'],
   ['after_workout', 'After each workout'],
-  ['after_meal', 'After each meal'],
 ] as const;
 export const trackerWeekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 

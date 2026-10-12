@@ -39,6 +39,6 @@ defmodule EasyWeb.Coaches.FoodController do
 
   @spec nutrients(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def nutrients(conn, _params) do
-    with {:ok, rows} <- Nutrition.ensure_nutrients(conn.assigns.ctx), do: ok(conn, %{data: rows})
+    ok(conn, %{data: Nutrition.list_nutrients()})
   end
 end

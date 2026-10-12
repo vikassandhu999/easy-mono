@@ -103,17 +103,18 @@ defmodule Easy.Nutrition.WeekTest do
     totals = Values.totals([%{"energy_kcal" => 100, "protein_g" => 0}, %{"energy_kcal" => 50}])
     assert totals["energy_kcal"] == %{value: 150, known_entries: 2, total_entries: 2, incomplete: false}
     assert totals["protein_g"] == %{value: 0, known_entries: 1, total_entries: 2, incomplete: true}
-    assert totals["fat_g"] == %{value: nil, known_entries: 0, total_entries: 2, incomplete: true}
+    # No entry lists fat: the key is absent, which means unknown (N32), never a zero total.
+    refute Map.has_key?(totals, "fat_g")
 
     assert {:error, %Ecto.Changeset{}} =
              Nutrition.create_food(f.ctx, %{name: "Unknown", kind: :food, basis: :"100g", nutrients: %{fat_g: nil}})
   end
 
   @tag criticality: 10
-  test "food codes use the tenant catalogue and cannot change a prescribed kind or serving", f do
+  test "food codes use the shared catalogue and cannot change a prescribed kind or serving", f do
     # WHY: Catalogue edits must leave every saved prescription valid.
     assert {:error, %Ecto.Changeset{}} = Nutrition.update_food(f.ctx, f.food.id, %{nutrients: %{not_registered: 1}})
-    Repo.insert!(%Nutrient{business_id: f.ctx.business_id, code: "custom_mg", name: "Custom", unit: "mg"})
+    Repo.insert!(%Nutrient{code: "custom_mg", name: "Custom", unit: "mg", position: 100})
     assert {:ok, food} = Nutrition.update_food(f.ctx, f.food.id, %{nutrients: %{custom_mg: 2}})
     assert food.nutrients == %{"custom_mg" => 2}
     create_meal(f)

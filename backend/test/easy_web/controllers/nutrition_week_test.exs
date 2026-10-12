@@ -167,6 +167,8 @@ defmodule EasyWeb.NutritionWeekTest do
     f.conn |> patch("/v1/coach/foods/" <> created["data"]["id"], %{nutrients: %{unknown: 1}}) |> json_response(422)
     catalogue = f.conn |> get("/v1/coach/nutrients") |> json_response(200)
     assert Enum.any?(catalogue["data"], &(&1 == %{"code" => "vitamin_d_ug", "name" => "Vitamin D", "unit" => "µg"}))
+    # One shared registry in its fixed order; every business reads the same list.
+    assert [%{"code" => "energy_kcal"}, %{"code" => "protein_g"} | _] = catalogue["data"]
     refute Map.has_key?(updated["data"], "business_id")
     f.conn |> get("/v1/coach/foods?cursor=invalid") |> json_response(422)
   end

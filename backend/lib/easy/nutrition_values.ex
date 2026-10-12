@@ -1,5 +1,4 @@
 defmodule Easy.Nutrition.Values do
-  alias Easy.Nutrition.Nutrient
   @spec encode(map()) :: map()
   def encode(attrs), do: attrs |> Jason.encode!() |> Jason.decode!()
   @spec nutrients?(term()) :: boolean()
@@ -24,7 +23,7 @@ defmodule Easy.Nutrition.Values do
   defp bounds?(_bounds), do: false
   @spec totals([map()]) :: map()
   def totals(entries) do
-    codes = Enum.uniq(Nutrient.codes() ++ Enum.flat_map(entries, &Map.keys/1))
+    codes = entries |> Enum.flat_map(&Map.keys/1) |> Enum.uniq()
 
     Map.new(codes, fn code ->
       values = Enum.flat_map(entries, &known_value(&1, code))

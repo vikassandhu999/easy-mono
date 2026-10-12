@@ -1,7 +1,7 @@
 defmodule Easy.Repo.Seeds.Foods do
   import Ecto.Query
 
-  alias Easy.Nutrition.{Food, Nutrient}
+  alias Easy.Nutrition.Food
   alias Easy.Repo
 
   @spec run() :: :ok
@@ -11,15 +11,6 @@ defmodule Easy.Repo.Seeds.Foods do
 
   @spec for_business(Easy.Orgs.Business.t()) :: %{String.t() => Food.t()}
   def for_business(business) do
-    now = DateTime.utc_now(:second)
-
-    for attrs <- Nutrient.catalogue() do
-      Repo.insert!(struct(Nutrient, Map.merge(attrs, %{business_id: business.id, inserted_at: now, updated_at: now})),
-        on_conflict: :nothing,
-        conflict_target: [:business_id, :code]
-      )
-    end
-
     Map.new(catalogue(), fn attrs ->
       row = Repo.one(from(f in Food, where: f.business_id == ^business.id and f.name == ^attrs.name, limit: 1))
       food = row || business.id |> Food.insert_changeset(attrs) |> Repo.insert!()

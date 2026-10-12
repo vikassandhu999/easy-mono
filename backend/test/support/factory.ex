@@ -126,7 +126,6 @@ defmodule Easy.Factory do
 
   def food_factory(attrs) do
     business = attrs[:business] || insert(:business)
-    {:ok, _} = Easy.Nutrition.ensure_nutrients(%Easy.Ctx{business_id: business.id, user_id: business.owner_user_id})
 
     %Food{
       name: sequence(:food_name, &"Food #{&1}"),

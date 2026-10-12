@@ -1,7 +1,7 @@
 defmodule Easy.NutritionSeedTest do
   use Easy.DataCase, async: true
 
-  alias Easy.Nutrition.{Food, Nutrient}
+  alias Easy.Nutrition.Food
   alias Easy.Repo.Seeds.Foods
 
   Code.require_file("../../priv/repo/seeds/food_seeds.exs", __DIR__)
@@ -22,6 +22,5 @@ defmodule Easy.NutritionSeedTest do
     refute Map.has_key?(first_foods["Potatoes, boiled"].nutrients, "fat_g")
     assert first_foods["Creatine monohydrate"].nutrients["energy_kcal"] == 0
     assert Repo.aggregate(Food.for_business(first.id), :count) == 14
-    assert Repo.aggregate(Nutrient.for_business(first.id), :count) == length(Nutrient.catalogue())
   end
 end

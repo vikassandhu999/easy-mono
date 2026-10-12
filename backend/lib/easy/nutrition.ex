@@ -19,19 +19,9 @@ defmodule Easy.Nutrition do
 
   @type result :: {:ok, map() | struct() | [struct()]} | {:error, atom() | Ecto.Changeset.t()}
 
-  @spec ensure_nutrients(Ctx.t()) :: result()
-  def ensure_nutrients(ctx) do
-    now = DateTime.utc_now(:second)
-
-    rows =
-      Enum.map(
-        Nutrient.catalogue(),
-        &Map.merge(&1, %{id: Ecto.UUID.generate(), business_id: ctx.business_id, inserted_at: now, updated_at: now})
-      )
-
-    Repo.insert_all(Nutrient, rows, on_conflict: :nothing, conflict_target: [:business_id, :code])
-    {:ok, Nutrient.for_business(ctx.business_id) |> order_by([n], asc: n.code) |> Repo.all()}
-  end
+  # A shared reference read (N21): no tenant, like the muscle list.
+  @spec list_nutrients() :: [Nutrient.t()]
+  def list_nutrients, do: Nutrient.ordered() |> Repo.all()
 
   @spec list_foods(Ctx.t(), keyword()) :: result()
   def list_foods(ctx, opts \\ []) do
@@ -48,8 +38,8 @@ defmodule Easy.Nutrition do
 
   @spec create_food(Ctx.t(), map()) :: result()
   def create_food(ctx, attrs) do
-    with :ok <- Ctx.ensure_coach(ctx), {:ok, _} <- ensure_nutrients(ctx) do
-      cs = Food.insert_changeset(ctx.business_id, attrs) |> validate_codes(ctx, :nutrients)
+    with :ok <- Ctx.ensure_coach(ctx) do
+      cs = Food.insert_changeset(ctx.business_id, attrs) |> validate_codes(:nutrients)
       Repo.insert(cs)
     end
   end
@@ -59,7 +49,7 @@ defmodule Easy.Nutrition do
     with :ok <- Ctx.ensure_coach(ctx), {:ok, _} <- get_food(ctx, id) do
       Repo.transaction(fn ->
         food = Food.for_business(ctx.business_id) |> where([f], f.id == ^id) |> lock("FOR UPDATE") |> Repo.one()
-        cs = Food.update_changeset(food, attrs) |> validate_codes(ctx, :nutrients) |> validate_food_dependents(ctx)
+        cs = Food.update_changeset(food, attrs) |> validate_codes(:nutrients) |> validate_food_dependents(ctx)
         unwrap(Repo.update(cs))
       end)
     end
@@ -68,8 +58,7 @@ defmodule Easy.Nutrition do
   @spec read_week_for_client(Ctx.t(), String.t(), keyword()) :: result()
   def read_week_for_client(ctx, client_id, opts \\ []) do
     with :ok <- Ctx.ensure_coach(ctx),
-         {:ok, client} <- ClientAccess.authorize_client(ctx, client_id),
-         {:ok, _} <- ensure_nutrients(ctx) do
+         {:ok, client} <- ClientAccess.authorize_client(ctx, client_id) do
       effective_today = client |> Repo.preload(:business) |> today()
       with {:ok, on} <- on_date(opts[:on], effective_today), do: {:ok, week(ctx, client_id, on, effective_today)}
     end
@@ -223,7 +212,7 @@ defmodule Easy.Nutrition do
   defp insert_targets(ctx, client_id, attrs),
     do:
       NutritionTargets.insert_changeset(ctx.business_id, client_id, attrs)
-      |> validate_codes(ctx, :targets)
+      |> validate_codes(:targets)
       |> Repo.insert()
 
   @spec undo_for_client(Ctx.t(), String.t(), String.t()) :: result()
@@ -243,7 +232,6 @@ defmodule Easy.Nutrition do
       Repo.transaction(fn ->
         client = lock_client(ctx, client_id)
         effective_today = today(client)
-        unwrap(ensure_nutrients(ctx))
         before = Undo.snapshot(ctx, client_id)
         value = unwrap(operation.(effective_today))
         %{data: value, undo_token: Undo.token(ctx, client_id, before, effective_today)}
@@ -294,9 +282,9 @@ defmodule Easy.Nutrition do
   defp schedule(ctx, client_id, id),
     do: NutritionSchedule.for_client(ctx.business_id, client_id) |> Repo.get(id) |> found()
 
-  defp validate_codes(cs, ctx, field) do
+  defp validate_codes(cs, field) do
     codes = (Ecto.Changeset.get_field(cs, field) || %{}) |> Map.keys() |> Enum.map(&to_string/1)
-    registered = Nutrient.for_business(ctx.business_id) |> where([n], n.code in ^codes) |> Repo.aggregate(:count)
+    registered = Nutrient.for_codes(codes) |> Repo.aggregate(:count)
     if registered == length(codes), do: cs, else: Ecto.Changeset.add_error(cs, field, "use registered nutrient codes")
   end
 
@@ -363,7 +351,7 @@ defmodule Easy.Nutrition do
 
     %{
       today: today,
-      nutrients: Repo.all(Nutrient.for_business(ctx.business_id) |> order_by([n], asc: n.code)),
+      nutrients: list_nutrients(),
       presets: presets,
       schedules: schedules,
       nutrition_targets: sets,
@@ -478,7 +466,7 @@ defmodule Easy.Nutrition do
 
       if Enum.any?(schedules, &Timing.last_fact(&1, today)),
         do: copy_target_version(ctx, client_id, row, schedules, attrs, today),
-        else: Repo.update(NutritionTargets.update_changeset(row, attrs) |> validate_codes(ctx, :targets))
+        else: Repo.update(NutritionTargets.update_changeset(row, attrs) |> validate_codes(:targets))
     end
   end
 

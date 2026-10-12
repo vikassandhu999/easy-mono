@@ -32,6 +32,7 @@ import {NutritionHistory} from './nutrition-history/nutrition-history';
 import {LibraryManagement} from './nutrition-library/library-management';
 import {NutritionPlanEditor} from './nutrition-plans/nutrition-plan-editor';
 import {NutritionPlans} from './nutrition-plans/nutrition-plans';
+import {NutritionWeekPrototype} from './nutrition-week-prototype/nutrition-week-prototype';
 import {ClientPlanManagement} from './plan-management/client-plan-management';
 import {ClientPlans} from './plan-management/client-plans';
 import {PlanManagement} from './plan-management/plan-management';
@@ -162,6 +163,7 @@ export const router = createBrowserRouter([
       // PROTOTYPE — throwaway route, no login or API.
       {path: routes.workoutBuilderPrototype, element: <WorkoutBuilderPrototype />},
       {path: routes.clientWeekPrototype, element: <ClientWeekPrototype />},
+      {path: routes.nutritionWeekPrototype, element: <NutritionWeekPrototype />},
       {
         element: <Gate />,
         children: [

@@ -120,19 +120,19 @@ Expected and recorded meals, daily nutrient totals with known-entry counts, and 
 The following terms belong to the nutrition redesign. The Nutrition Template, Client Nutrition Plan, Day Pattern, Slot, and Diary terms above describe the implemented model while the redesign is in progress.
 
 **NutritionPreset**:
-A nutrition instruction of type meal, food, or supplement. A meal contains complete alternatives. A food or supplement prescribes one item and amount.
+A nutrition instruction of type meal, food, or supplement. A meal contains complete alternatives. A food or supplement prescribes one item and amount. Internal term: the UI says Meal, or names the food or supplement.
 
 **MealOption**:
-One complete choice within a meal NutritionPreset.
+One complete choice within a meal NutritionPreset. Its name is optional; without one, it is shown by its foods.
 
 **MealItem**:
 A food or supplement and its prescribed amount within a MealOption.
 
 **NutritionSchedule**:
-The dates and optional time at which a NutritionPreset applies. Several schedules can use the same preset; shared content edits affect its future uses. Weekday groups are a planning view.
+The weekdays, optional time and validity dates at which a NutritionPreset applies. It has no label or content of its own. Several schedules can use the same preset; shared content edits affect its future uses. Weekday groups are a planning view.
 
 **NutritionTargets**:
-One complete set of daily nutrient targets, independent of presets. Each nutrient target is exact, minimum, maximum, or range. One client-local date has one applicable target set; a date-specific replacement replaces the whole set.
+One complete set of daily nutrient targets, independent of presets. Each nutrient target is stored as a minimum, a maximum, or both; exact, at least, at most and between are editor views of those bounds. Target schedules give the weekdays, apart from the values. One client-local date has one applicable target set; a date-specific replacement replaces the whole set.
 
 **NutritionLog**:
 One recorded consumption occasion of type meal, food, or supplement. A meal groups one or more FoodLogs. Food and supplement occasions each contain exactly one FoodLog of the corresponding kind.

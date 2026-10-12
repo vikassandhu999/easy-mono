@@ -1,6 +1,6 @@
 # Nutrition concept
 
-Status: core concepts agreed, 9 October 2026. Detailed model and storage design remains open. Records the nutrition restart. Replaces the earlier N1–N8 draft in this file. These are domain decisions, not implemented tables. The current code does not constrain the design.
+Status: core concepts agreed, 9 October 2026; preset model reaffirmed and refined, 12 October 2026 (N29–N34). Detailed model and storage design remains open. Records the nutrition restart. Replaces the earlier N1–N8 draft in this file. These are domain decisions, not implemented tables. The current code does not constrain the design.
 
 Reference: [Workout concept](../workout/concept.md). Only the workout rules explicitly agreed below carry over.
 
@@ -26,43 +26,47 @@ Reference: [Workout concept](../workout/concept.md). Only the workout rules expl
 | N16 | Log nutrient totals are calculated from FoodLogs. Prescribed and consumed amounts remain separate. Nutrient storage and snapshot rules need their own decisions. |
 | N17 | A preset is the shared content. Editing it changes all its future scheduled uses. Editing one schedule changes that schedule only. Grouped weekday tabs introduce no further prescription owner. |
 | N18 | Weekday groups come from schedule masks. Matching masks can be displayed under one tab, but do not permanently link records. Preset and target schedules remain independent even when their masks match. |
-| N19 | Target schedules use regular weekday rules and one-off replacements, like prescription schedules. One client-local calendar date resolves to one complete target set. A replacement replaces the whole set; it does not add to regular targets. The regular rule continues after the replacement date. |
+| N19 | Target schedules use regular weekday rules and one-off replacements, like prescription schedules. One client-local calendar date resolves to at most one complete target set; overlapping target schedules are rejected. A replacement replaces the whole set; it does not add to regular targets. The regular rule continues after the replacement date. |
 | N20 | Each nutrient target is exact, minimum, maximum, or range. An omitted nutrient has no target. |
 | N21 | Foods, consumption records, and targets use one nutrient catalogue. Each nutrient has one code and registered unit. Catalogue entries and storage are still to be designed. |
+| N29 | (12 Oct 2026) The preset model N3–N7 and N17 stands. A draft from 10–11 Oct (N22–N28: Meal plus a ScheduledMeal join that put alternatives on the schedule) is withdrawn: it gave the schedule two jobs, timing and choice, and copied the same alternatives into every schedule. NutritionSchedule holds only `preset_id`, `weekdays_mask`, optional time, `from` and `until`; it has no label. The preset name is the occasion ("Breakfast"). Breakfast at 08:00 Mon–Fri and 10:30 Sat–Sun is two schedules of one preset. |
+| N30 | A MealOption has an optional name ("Oats bowl"). Without a name it is shown by its foods ("Greek yogurt, Mixed berries"). |
+| N31 | The UI never says "preset". A meal preset is a **Meal**, and its options are **Option 1, Option 2** joined by "or". A food or supplement preset is shown as its item ("Creatine monohydrate · 5 g"). A day's Add offers Meal, Food and Supplement. |
+| N32 | Catalogue (from the Cronometer study): a supplement is a food with `kind = supplement`, so food and supplement share portion and nutrient rules. Preset type `food` or `supplement` must match its item's kind. A food's nutrients are per 100 g, per 100 ml or per 1 unit (capsule, tablet); servings convert into that basis, and a gram mass is optional. A nutrient that is not listed is unknown, never zero. Recipes stay a separate aggregate (ADR 0002). |
+| N33 | Targets (from the Cronometer study): a nutrient target is stored as bounds `{min?, max?}` with at least one bound; exact is `min = max`. The editor derives exact / at least / at most / between, and keeps the N20 wording. Negative or inverted bounds are rejected; an empty input removes the target. NutritionTargets hold only values; their target schedules (N19) hold the weekdays, at most one per weekday. Energy, protein, carbs (total) and fat are always shown; other nutrients are added per set. |
+| N34 | A calculated total adds the known values. When any value is unknown, the total says "incomplete"; a total of only unknown values says "Nutrients not listed". |
+| N35 | (12 Oct 2026) Presets and NutritionTargets belong to one client (`client_id`). There is no nutrition library and no sharing between clients. Within the client, several schedules can use one preset (N7). Program nutrition stays open. |
+| N36 | History without version tables (answers N11). A preset or NutritionTargets row that applied on a past date never changes. An edit before that is made in place. An edit after it copies the row (with its options and items); every schedule that uses it ends on its last fact date and a new row starts on the copy (W14); the old row is archived (W32). A log points to the preset and option it used, which never change. |
+| N37 | A food edit changes the catalogue from now on (as W31). Meal items keep their amounts; food logs keep a copy of the nutrients they used. |
 
-## Model responsibilities
+## Tables (12 Oct 2026)
 
-These are concepts, not a final list of PostgreSQL tables.
+One table per concept, with the concept's name. Every table also has `id`, `business_id` (W35) and timestamps. There are no other tables: a day is a query (N2), totals are calculated (N16, N34), and history is the rows themselves (N36).
 
-| Model | Responsibility |
-|---|---|
-| NutritionTargets | One complete set of daily nutrient targets |
-| NutritionPreset | Name, instructions, type, and prescribed content |
-| MealOption | One complete alternative within a meal preset |
-| MealItem | Item reference, prescribed amount, and unit within an option |
-| Food / Supplement catalogue | Item identity, units, nutrients, and preparation where applicable; separate versus shared models remains open |
-| NutritionSchedule | Preset reference and timing |
-| Target schedule | Target-set reference and applicable days; canonical model name and table boundary remain open |
-| Nutrient catalogue | Shared nutrient codes and registered units |
-| NutritionLog | Consumption occasion, type, time, and optional prescription reference |
-| FoodLog | Consumed item and amount within a log |
+| Concept | Table | Columns |
+|---|---|---|
+| Nutrient catalogue | `nutrients` | `code` (PK, `protein_g`), `name`, `unit` |
+| Food catalogue | `foods` | `name`, `kind` (`food \| supplement`), `basis` (`100g \| 100ml \| 1unit`), `unit_label` (capsule), `nutrients` jsonb by code (a missing key is unknown), `servings` jsonb `[{label, amount}]` in the basis unit |
+| NutritionPreset | `nutrition_presets` | `client_id`, `type` (`meal \| food \| supplement`), `name`, `instructions`; `food_id`, `amount`, `unit` only for food or supplement (N6); `archived_at` |
+| MealOption | `meal_options` | `nutrition_preset_id` (type meal), `name` (optional, N30), `position` |
+| MealItem | `meal_items` | `meal_option_id`, `food_id`, `amount`, `unit` (basis unit or serving label), `position` |
+| NutritionSchedule | `nutrition_schedules` | `client_id`, `nutrition_preset_id`, `date` or `weekdays_mask` + `from_date` + `until_date` (N8), `time`, `coach_id` |
+| NutritionTargets | `nutrition_targets` | `client_id`, `name`, `targets` jsonb `{code: {min?, max?}}` (N33), `archived_at` |
+| Target schedule | `target_schedules` | `client_id`, `nutrition_targets_id`, `date` or `weekdays_mask` + `from_date` + `until_date` (N19) |
+| NutritionLog | `nutrition_logs` | `client_id`, `type`, `logged_on`, `logged_at`, `nutrition_schedule_id` + `scheduled_date` (the occurrence, as W13), `nutrition_preset_id`, `meal_option_id` |
+| FoodLog | `food_logs` | `nutrition_log_id`, `food_id`, `amount`, `unit`, `nutrients` jsonb (copy at save) |
+
+Rules: a meal preset has one or more options, each with one or more items, and no `food_id`. A food or supplement preset has `food_id`, `amount` and `unit`, no options, and its food's kind matches its type. `weekdays_mask` is 1–127 and `until_date >= from_date`. Saved logs obey N13; drafts are not decided.
 
 ```text
-Target schedule -> NutritionTargets -> nutrient targets
-                                     exact / minimum / maximum / range
+target_schedules -> nutrition_targets -> {code: {min?, max?}}
 
-NutritionSchedule -> NutritionPreset
-                       meal -> MealOption[] -> MealItem[]
-                       food -> Food + amount + unit
-                       supplement -> Supplement + dose + unit
+nutrition_schedules -> nutrition_presets
+                         meal -> meal_options[] -> meal_items[] -> foods
+                         food | supplement -> foods + amount + unit
 
-NutritionLog
-  meal -> FoodLog[1 or more]
-  food -> FoodLog[exactly 1 food]
-  supplement -> FoodLog[exactly 1 supplement]
+nutrition_logs -> food_logs[] (nutrients copied)
 ```
-
-Each preset has exactly one content shape selected by its type. It cannot contain both meal options and a standalone item. Saved logs obey the item-count and item-kind rules. Incomplete drafts have not been decided.
 
 ## Examples
 
@@ -79,16 +83,7 @@ If Monday prescribed oats and the client recorded nothing, a Tuesday edit to egg
 
 The coach selects weekdays with buttons. Every day selects all seven bits. Sun, Mon, Tue is `64 | 1 | 2 = 67`. The mask is stored data, not a coach-facing number. Membership uses `(weekdays_mask & day_bit) != 0`.
 
-A grouped tab can show Sun, Mon, Tue together. Adding a schedule there selects those days. Grouping is a view over schedule facts, not an EatingDay or a separate group entity. Divergent schedules must remain visible rather than being silently changed to match a tab.
-
-The editor must distinguish content edits from schedule edits. Proposed UX, to validate during screen design:
-
-| Action | Visible scope |
-|---|---|
-| Edit shared breakfast contents | Show all scheduled uses and a clear save action for those uses |
-| Change Monday's time | Change only that schedule; if its row covers several days, split its timing explicitly |
-| Give Monday different contents | Copy the preset and change Monday's reference, splitting the schedule if needed |
-| Replace breakfast on one date | Replace only that occurrence; retain the regular rule |
+Content edits and schedule edits are separate; NU4 and NU7 show their scope on screen.
 
 ## Daily targets
 
@@ -103,17 +98,33 @@ A shared target set can apply on Sun, Mon, Tue through its target schedule. A on
 
 One date means one calendar date in the client's timezone. Preset schedules can supply several consumption occasions on that date; target schedules resolve to one complete daily target set. Target sets and presets have independent schedules. Editing one never silently edits the other.
 
+## Nutrition week and meal editor UX (decided 12 Oct 2026)
+
+Settled with a clickable prototype in the coach app: `/prototype/nutrition-week` (`frontend/apps/coachapp/src/nutrition-week-prototype/`). The meal editor opens inside it and shares its state. It follows the training week UX (workout concept V1–V7).
+
+| # | Decision |
+|---|---|
+| NU1 | The coach designs one repeating week, Monday to Sunday, with no dates. Date-specific changes (N9) are deferred, as for workouts. |
+| NU2 | Each day shows its target set first, as its name and energy only ("Training day · 2500–2700 kcal"), then its schedules in time order. A schedule without a time shows "Any time". |
+| NU3 | A schedule card shows time and meal name, then the options joined by "or". A food or supplement card shows time and name, then its amount; a supplement has a pill icon. |
+| NU4 | The schedule dialog edits time and weekdays. For a meal it lists the options and offers "Edit meal" and "Use a different meal". For a food or supplement it edits the amount and unit in place. It names the other days that use the same preset ("Also on Sat–Sun at 10:30") and what an edit changes there. It also has "Remove from <day>" and Save. |
+| NU5 | "Add" on a day offers Meal, Food and Supplement as tabs. Meal picks one of this client's meals (the same preset, N35) or "Create a new meal". Food and Supplement search the catalogue, then ask for amount and unit. Every path ends on one step that asks for the time. |
+| NU6 | The targets dialog chooses the day's set (or none, or a new set) and edits its values: no target, exactly, at least, at most, between. "Add nutrient" shows further nutrients. When other days share the set, the dialog names them first and offers "Use a copy for <day> only". Errors show after a Save attempt, on the field ("Enter both numbers", "From must not be above to"). |
+| NU7 | The meal editor edits name, instructions and options. Each option has an optional name, foods (amount, serving unit, calculated values) and a total. "Add option" adds a choice; two or more read "The client chooses one of these N options". It lists the days that use the meal and saves explicitly, naming the days ("Save for every day"); a new meal saves as "Add to <day>". Days and times are edited in the week. |
+| NU8 | Every change applies from today; earlier weeks stay as they were. Add, remove and save show Undo for 8 seconds. From 1280px the week shows seven columns; below that it shows one day at a time with Mon–Sun tabs. |
+| NU9 | Recovery rules: a dialog with unsaved edits does not close on an outside click or Escape and has Cancel. "Edit meal" is disabled while the schedule dialog has unsaved changes, with the reason shown. The meal editor's Save shows its errors in place and moves focus to the first ("Add a name", "Add a food to option 2"); leaving or Discard with unsaved edits asks first. Removing a food or an option offers Undo. Focus returns to the card or the day's Add after a dialog closes. |
+
 ## Prescription archive
 
 The archive answers: what was prescribed in a given day or week? Consumption records separately answer: what was recorded as consumed?
 
 ```text
-Date -> schedule that applied -> preset version that applied
-Date -> target schedule that applied -> daily target values
-Log  -> exact prescription version used, when prescribed
+Date -> nutrition_schedules that applied -> nutrition_presets they point to (never changed, N36)
+Date -> target_schedules that applied -> nutrition_targets they point to
+Log  -> nutrition_preset + meal_option it used
 ```
 
-Preserving unused future drafts is not required. Preserving prescriptions that applied on past dates is required, including dates without logs. Target history must support the same daily archive; its version mechanism is an open storage decision. No background job or specific history table has been chosen.
+Preserving unused future drafts is not required. Preserving prescriptions that applied on past dates is required, including dates without logs; N36 does this with the concept tables only.
 
 ## Check against Simple Made Easy
 
@@ -126,20 +137,18 @@ Preserving unused future drafts is not required. Preserving prescriptions that a
 | Different content shapes | An explicit type selects the shape. Supplements do not need meal options. |
 | Consumption grouping | NutritionLog groups FoodLogs. Its type has precise rules instead of standalone booleans. |
 | Nutrient totals | Calculated from FoodLogs, so duplicate totals do not need synchronisation. |
+| History | Rows that applied never change (N36), so the past is read, not reconstructed. No version tables. |
 
 The core concepts are agreed. Detailed design is required before implementation. A common selection UI does not by itself justify combining catalogue tables.
 
 ## Open questions
 
-1. Catalogue: shared or separate Food and Supplement models; recipe and ingredient storage.
-2. Targets: catalogue entries and units, validation, target-set ownership, schedule overlap resolution, and history storage. Daily scope, four target forms, and complete-set replacement are agreed.
-3. Ownership: library, program, and client presets. Copy on assign, never linked, is the user's stated principle; nutrition ownership fields and program schedules need explicit decisions.
-4. Schedule shape: weekday masks are agreed; exact bounds, occurrence identity, overlapping schedules, and replacement representation remain open.
-5. Past facts: exact schedule change/deletion and same-day rules, including days with no log.
-6. History: snapshot/version storage, log references, and same-day boundaries. Past prescriptions survive without logs; log-only history is superseded.
-7. Logging: drafts, photo-only records, substitutions, corrections, duplicates, permissions, and type changes. Saved log counts are agreed; draft counts are not.
-8. Portions and nutrients: base amounts, servings, recipe calculations, unknown values, and preservation of consumed nutrient values.
-9. Water, medicine, and tracker boundaries. Earlier draft decisions are not carried forward as locked rules.
-10. Integration: tenancy, journal, reviews, coaching-term access, API, and complete implementation slices.
+1. Recipes: ingredient storage and yield calculation (ADR 0002).
+2. Programs: whether nutrition has program presets and program schedules (as W11).
+3. One-off changes (N9): how a replacement names the occurrence it replaces (as W15).
+4. Same-day edits: W14 makes today a fact only when a log claims today's occurrence, but NU8 and V5 always end the old row yesterday. Proposed: W14 wins; a change starts tomorrow when today's occurrence is already logged.
+5. Logging: drafts, photo-only records, substitutions, corrections, duplicates, permissions, and type changes. FoodLog may carry a prescribed-item reference, to tell "rice replaced toast" from "toast skipped, rice added". From the Cronometer study, not decided: one "Add food" with no occasion type (against N12–N14), corrections that rescale from the copied nutrients, and "Not recorded" for an empty day.
+6. Water, medicine, and tracker boundaries.
+7. Integration: tenancy, journal, reviews, coaching-term access, API, and complete implementation slices.
 
 No code or migrations are changed by this document.

@@ -58,6 +58,7 @@ export const routes = {
   previewNutritionPlan: '/clients/:id/nutrition-plans/assign/:templateId',
   workoutBuilderPrototype: '/prototype/workout-builder',
   clientWeekPrototype: '/prototype/client-week',
+  nutritionWeekPrototype: '/prototype/nutrition-week',
   login: '/login',
   signup: '/signup',
   verify: '/verify',

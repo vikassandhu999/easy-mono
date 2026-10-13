@@ -69,7 +69,8 @@ defmodule EasyWeb.TrackerContractTest do
       assert row["tracker"]["kind"] == kind
       assert row["recorded_by_type"] == "client" && row["recorded_by_id"] == f.client.id
       assert row["attachments"] == []
-      assert Map.has_key?(row, "about_session_id") && row["revision"] == 1
+      assert row["revision"] == 1
+      refute Map.has_key?(row, "about_session_id")
     end
 
     for kind <- ["photo", "document"] do
@@ -157,20 +158,6 @@ defmodule EasyWeb.TrackerContractTest do
     assert response(get(f.foreign_conn, "/v1/coach/tracker-templates/#{template["id"]}"), 404)
     assert response(get(f.coach_conn, "/v1/coach/tracker-settings"), 200)
     assert response(patch(f.coach_conn, "/v1/coach/tracker-settings", %{default_tracker_template_id: template["id"]}), 403)
-  end
-
-  test "metrics and completed-event prompt routes return server values and deny other clients", f do
-    tracker = tracker(f.coach_conn, "rating", %{scale_max: 5})
-    prefix = "/v1/coach/clients/#{f.client.id}"
-    assert response(post(f.coach_conn, prefix <> "/tracker-assignments", %{tracker_id: tracker["id"], timing: "after_workout"}), 201)
-    session = insert(:workout_session, business: f.coach.business, client: f.client, state: :completed)
-    assert length(json_response(get(f.client_conn, "/v1/client/tracker-prompts", %{about_session_id: session.id}), 200)["data"]) == 1
-    assert response(get(f.other_conn, "/v1/client/tracker-prompts", %{about_session_id: session.id}), 404)
-    assert response(get(f.client_conn, "/v1/client/tracker-prompts", %{}), 422)
-    assert response(post(f.client_conn, "/v1/client/tracker-entries", attrs(tracker, %{rating_value: 4, about_session_id: session.id})), 201)
-    metrics = json_response(get(f.client_conn, "/v1/client/trackers/#{tracker["id"]}/metrics"), 200)["data"]
-    assert metrics["workout_coverage"] == %{"recorded" => 1, "total" => 1}
-    assert metrics["average"] == 4.0 && metrics["latest"]["rating_value"] == 4
   end
 
   test "ended coaching blocks client writes while history stays readable", f do

@@ -4,7 +4,6 @@ import {inviteClient} from './fixtures.mjs';
 const fixture = await inviteClient({fullName: 'Client'});
 // Each native scenario accepts its own single-use invitation.
 fixture.messageToken = (await inviteClient()).token;
-fixture.workoutToken = (await inviteClient()).token;
 const migrationClient = await inviteClient();
 fixture.migrationToken = migrationClient.token;
 fixture.migrationEmail = migrationClient.email;

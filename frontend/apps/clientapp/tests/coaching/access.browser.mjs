@@ -1,7 +1,6 @@
 import {mkdir} from 'node:fs/promises';
 import {chromium, expect} from '@playwright/test';
 import {emptyMessageDraft, messageAttempt} from '../../src/messages/message-draft.ts';
-import {emptySet, initialWorkoutDraft} from '../../src/training/recording.ts';
 
 const browser = await chromium.launch();
 const context = await browser.newContext({
@@ -22,32 +21,6 @@ const profile = {
   current_term: null,
   terms: [],
   coach: {full_name: 'Sam Coach', preferred_name: 'Sam', business_name: 'Everyday Coaching', phone: null},
-};
-const session = {
-  id: 'workout-1',
-  date: '2026-09-30',
-  state: 'completed',
-  revision: 1,
-  notes: 'A steady workout',
-  soreness_rating: 2,
-  prescription_snapshot: null,
-  performed_sets: [
-    {
-      id: 'set-1',
-      exercise_name: 'Squat',
-      reps: '8',
-      load_value: '50',
-      load_unit: 'lbs',
-      rpe: '7',
-      notes: null,
-      duration_seconds: null,
-      distance_value: null,
-      distance_unit: null,
-      set_type: 'working',
-      snapshot_exercise_ref: null,
-      exercise_id: null,
-    },
-  ],
 };
 const writes = [];
 const downloads = [];
@@ -98,27 +71,23 @@ await page.route('**/v1/client/**', (route) => {
   const data =
     path === '/v1/client/me'
       ? profile
-      : path === '/v1/client/training-sessions/active'
-        ? null
-        : path === '/v1/client/training-sessions/workout-1'
-          ? session
-          : path === '/v1/client/training-sessions'
-            ? [session]
-            : path === '/v1/client/conversation'
-              ? {id: 'conversation-1', unread_count: 0}
-              : path === '/v1/client/conversation/history'
-                ? [
-                    {
-                      id: 'message-1',
-                      body: 'Great progress, Alex!',
-                      sender_type: 'coach',
-                      sender_name: 'Sam',
-                      inserted_at: '2026-09-30T09:00:00Z',
-                      attachments: [{id: 'photo-1', content_type: 'image/png'}],
-                      embed: null,
-                    },
-                  ]
-                : null;
+      : path === '/v1/client/tracker-today'
+        ? {due: [], requests: []}
+        : path === '/v1/client/conversation'
+          ? {id: 'conversation-1', unread_count: 0}
+          : path === '/v1/client/conversation/history'
+            ? [
+                {
+                  id: 'message-1',
+                  body: 'Great progress, Alex!',
+                  sender_type: 'coach',
+                  sender_name: 'Sam',
+                  inserted_at: '2026-09-30T09:00:00Z',
+                  attachments: [{id: 'photo-1', content_type: 'image/png'}],
+                  embed: null,
+                },
+              ]
+            : null;
   return route.fulfill({
     json: {
       data,
@@ -131,7 +100,7 @@ await page.route('**/v1/client/**', (route) => {
 
 try {
   await mkdir('tests/coaching/artifacts', {recursive: true});
-  for (const path of ['/', '/messages', '/training/sessions/workout-1', '/account/details']) {
+  for (const path of ['/', '/messages', '/trackers', '/account/details']) {
     await page.goto(path);
     await expect(page.getByRole('heading', {name: 'Coaching starts soon', exact: true})).toBeVisible();
     await expect(page.getByRole('button', {name: 'Sign out', exact: true})).toBeVisible();
@@ -148,18 +117,6 @@ try {
   const message = {...emptyMessageDraft(), body: 'An unsent message'};
   const drafts = {
     message: {...message, attempt: messageAttempt(message, [])},
-    'training.workout-1': {
-      ...initialWorkoutDraft(session),
-      entries: [
-        {
-          key: 'freestyle',
-          exerciseId: null,
-          values: {...emptySet(undefined, 'lbs'), exercise_name: 'Squat', reps: '10'},
-          operation: {kind: 'create', requestId: crypto.randomUUID()},
-          attempted: true,
-        },
-      ],
-    },
     profile: {full_name: 'Unsaved name', preferred_name: 'Unsaved', phone: ''},
   };
   await page.evaluate((drafts) => {
@@ -167,17 +124,6 @@ try {
       localStorage.setItem(`clientapp.private.client-1.draft.${resource}`, JSON.stringify(draft));
     }
   }, drafts);
-  await page.goto('/training/sessions/workout-1');
-  await expect(page.getByText('Coaching ended Sep 30', {exact: true})).toBeVisible();
-  await expect(page.getByText('A steady workout', {exact: true})).toBeVisible();
-  await expect(page.getByRole('button', {name: /Correct|Save|Finish|Discard|Edit|Remove/})).toHaveCount(0);
-  await page.screenshot({path: 'tests/coaching/artifacts/ended-workout-375.png', fullPage: true});
-  session.state = 'active';
-  await page.reload();
-  await expect(page.getByText('A steady workout', {exact: true})).toBeVisible();
-  await expect(page.getByRole('textbox')).toHaveCount(0);
-  await expect(page.getByRole('button', {name: /Save|Finish|Discard/})).toHaveCount(0);
-
   await page.goto('/messages');
   await expect(page.getByRole('status').filter({hasText: 'Conversation history'})).toBeVisible();
   await expect(page.getByText('Great progress, Alex!', {exact: true})).toBeVisible();
@@ -205,15 +151,13 @@ try {
 
   profile.state = 'ending_soon';
   profile.current_term = {id: 'term-2', starts_on: '2026-10-03', ends_on: '2026-10-03'};
-  await page.goto('/training');
-  await expect(page.getByRole('button', {name: 'Start freestyle workout'})).toBeVisible();
+  await page.goto('/');
+  await expect(page.getByRole('heading', {name: 'Today', exact: true})).toBeVisible();
   await expect(page.getByText('Coaching ended Sep 30', {exact: true})).toHaveCount(0);
   await page.evaluate(() => localStorage.removeItem('clientapp.private.client-1.draft.profile'));
   await page.goto('/account/details');
   await expect(page.getByLabel('Full name', {exact: true})).toHaveValue('Alex Client');
   await expect(page.getByLabel('What should we call you?', {exact: true})).toHaveValue('Alex');
-  await page.goto('/training/sessions/workout-1');
-  await expect(page.getByRole('button', {name: 'Retry set save', exact: true})).toBeVisible();
   await page.goto('/account');
   await expect(page.getByText('Unit system · Imperial', {exact: true})).toBeVisible();
   await expect(page.getByText('Sam', {exact: true})).toBeVisible();

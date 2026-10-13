@@ -5,8 +5,6 @@ defmodule Easy.TrackersTest do
   alias Easy.CoachingTerms
   alias Easy.CoachingTerms.CoachingTerm
   alias Easy.Ctx
-  alias Easy.Plans.Programming
-  alias Easy.Plans.Template
   alias Easy.Repo
   alias Easy.Trackers
   alias Easy.Trackers.Assignment
@@ -15,6 +13,8 @@ defmodule Easy.TrackersTest do
   alias Easy.Trackers.Reader
   alias Easy.Trackers.Records
   alias Easy.Trackers.Request
+  alias Easy.Trackers.Template
+  alias Easy.Trackers.Templates
   alias Easy.Units
   use Easy.DataCase, async: false
   import Ecto.Query
@@ -83,7 +83,7 @@ defmodule Easy.TrackersTest do
 
   test "unused deletion prunes templates and assignments; used tracker archives with history", %{ctx: ctx, client: client, today: today} do
     row = custom(ctx)
-    {:ok, template} = Programming.create_template(ctx, :trackers, %{name: "List", content: %{items: [%{tracker_id: row.id, timing: :daily}]}})
+    {:ok, template} = Templates.create_template(ctx, %{name: "List", content: %{items: [%{tracker_id: row.id, timing: :daily}]}})
     {:ok, _} = Assignments.add_for_client(ctx, client.id, %{tracker_id: row.id, timing: :daily})
     assert {:ok, _} = Trackers.delete_tracker(ctx, row.id)
     assert Repo.get!(Template, template.id).content == %{"items" => []}
@@ -119,19 +119,19 @@ defmodule Easy.TrackersTest do
     tracker = custom(ctx)
     item = %{tracker_id: tracker.id, timing: :daily}
     duplicate = %{name: "Duplicate", content: %{items: [item, item]}}
-    assert {:error, :invalid_tracker} = Programming.create_template(ctx, :trackers, duplicate)
+    assert {:error, :invalid_tracker} = Templates.create_template(ctx, duplicate)
     foreign = insert(:business)
     foreign_coach = insert(:coach, business: foreign)
     other = custom(%Ctx{business_id: foreign.id, user_id: foreign_coach.user_id, coach_id: foreign_coach.id})
-    assert {:error, :not_found} = Programming.create_template(ctx, :trackers, %{name: "Foreign", content: %{items: [%{item | tracker_id: other.id}]}})
-    {:ok, template} = Programming.create_template(ctx, :trackers, %{name: "One", content: %{items: [item]}})
+    assert {:error, :not_found} = Templates.create_template(ctx, %{name: "Foreign", content: %{items: [%{item | tracker_id: other.id}]}})
+    {:ok, template} = Templates.create_template(ctx, %{name: "One", content: %{items: [item]}})
     assert {:ok, [a]} = Assignments.apply_for_client(ctx, client.id, template.id, 1)
     assert {:ok, [same]} = Assignments.apply_for_client(ctx, client.id, template.id, 1)
     assert a.id == same.id
     {:ok, _} = Trackers.archive_tracker(ctx, tracker.id)
     assert {:error, _} = Assignments.apply_for_client(ctx, client.id, template.id, 1)
     assert Repo.aggregate(Assignment, :count) == 1
-    assert Repo.aggregate(Easy.Plans.Plan, :count) == 0
+    assert Repo.aggregate(Easy.Workouts.Workout, :count) == 0
   end
 
   test "coach-start copies default once and returns do not copy it again", %{ctx: ctx, business: business, coach: coach, today: today} do
@@ -172,7 +172,7 @@ defmodule Easy.TrackersTest do
 
   test "owner default apply-to-existing is atomic and optional", %{ctx: ctx, client: client} do
     tracker = custom(ctx)
-    {:ok, template} = Programming.create_template(ctx, :trackers, %{name: "Daily", content: %{items: [%{tracker_id: tracker.id, timing: :daily}]}})
+    {:ok, template} = Templates.create_template(ctx, %{name: "Daily", content: %{items: [%{tracker_id: tracker.id, timing: :daily}]}})
     assert {:ok, _} = Defaults.update_settings(ctx, %{default_tracker_template_id: template.id})
     assert {:ok, []} = Assignments.list_for_client(ctx, client.id)
     assert {:ok, _} = Defaults.update_settings(ctx, %{default_tracker_template_id: template.id, apply_to_existing: true})
@@ -292,26 +292,6 @@ defmodule Easy.TrackersTest do
     assert {:ok, []} = Reader.requests_for_client(ctx, client.id)
   end
 
-  test "event links, prompts and coverage count distinct completed events only while assigned", %{ctx: ctx, client: client, business: business, today: today} do
-    tracker = custom(ctx, :rating, %{scale_max: 5})
-    {:ok, _} = Assignments.add_for_client(ctx, client.id, %{tracker_id: tracker.id, timing: :after_workout})
-    session = insert(:workout_session, business: business, client: client, state: :completed, local_date: today)
-    insert(:workout_session, business: business, client: client, state: :completed, local_date: Date.add(today, -1))
-    insert(:workout_session, business: business, client: client, state: :active, local_date: today)
-    assert {:ok, [_]} = Reader.prompts_for_client(ctx, client.id, %{about_session_id: session.id})
-
-    for _ <- 1..2 do
-      assert {:ok, _} = Records.create_for_client(ctx, client.id, entry(tracker, today, %{rating_value: 4, about_session_id: session.id}))
-    end
-
-    assert {:ok, []} = Reader.prompts_for_client(ctx, client.id, %{about_session_id: session.id})
-    assert {:ok, metrics} = Reader.metrics_for_client(ctx, client.id, tracker.id)
-    assert metrics.workout_coverage == %{recorded: 1, total: 1}
-    other_client = insert(:client)
-    foreign = insert(:workout_session, business: other_client.business, client: other_client, state: :completed)
-    assert {:error, :not_found} = Records.create_for_client(ctx, client.id, entry(tracker, today, %{rating_value: 3, about_session_id: foreign.id}))
-  end
-
   test "numeric and photo metrics supply server series and previous photo", %{ctx: ctx, client: client, business: business, today: today} do
     tracker = builtin(ctx, 1)
 
@@ -354,7 +334,7 @@ defmodule Easy.TrackersTest do
 
   test "archiving a default tracker prunes templates and keeps first coaching start usable", f do
     tracker = custom(f.ctx)
-    {:ok, template} = Programming.create_template(f.ctx, :trackers, %{name: "Default", content: %{items: [%{tracker_id: tracker.id, timing: :daily}]}})
+    {:ok, template} = Templates.create_template(f.ctx, %{name: "Default", content: %{items: [%{tracker_id: tracker.id, timing: :daily}]}})
     {:ok, _} = Defaults.update_settings(f.ctx, %{default_tracker_template_id: template.id})
     {:ok, _} = Records.create_for_client(f.ctx, f.client.id, entry(tracker, f.today, %{text_value: "Existing"}))
     assert {:ok, _} = Trackers.archive_tracker(f.ctx, tracker.id)
@@ -399,33 +379,6 @@ defmodule Easy.TrackersTest do
   test "SQL rejects scale changes", f do
     tracker = custom(f.ctx, :rating, %{scale_max: 5})
     assert_raise Postgrex.Error, fn -> Repo.query!("UPDATE trackers SET scale_max=10 WHERE id=$1", [Ecto.UUID.dump!(tracker.id)]) end
-  end
-
-  test "SQL rejects a session link that is not a client event", f do
-    tracker = custom(f.ctx)
-    {:ok, row} = Records.create_for_client(f.ctx, f.client.id, entry(tracker, f.today, %{text_value: "Value"}))
-    foreign_client = insert(:client)
-    foreign = insert(:workout_session, business: foreign_client.business, client: foreign_client, state: :completed)
-
-    assert_raise Postgrex.Error, fn ->
-      Repo.query!("UPDATE tracker_entries SET about_session_id=$1 WHERE id=$2", [
-        Ecto.UUID.dump!(foreign.id),
-        Ecto.UUID.dump!(row.id)
-      ])
-    end
-  end
-
-  test "partial text corrections retain value and event and retry from the journal", f do
-    tracker = custom(f.ctx)
-    session = insert(:workout_session, business: f.business, client: f.client, state: :completed)
-    {:ok, original} = Records.create_for_client(f.ctx, f.client.id, entry(tracker, f.today, %{text_value: "Original", about_session_id: session.id}))
-    patch = %{request_id: Ecto.UUID.generate(), expected_revision: 1, local_date: Date.add(f.today, -1)}
-    assert {:ok, corrected} = Records.update_for_client(f.ctx, f.client.id, original.id, patch)
-    assert corrected.text_value == "Original" && corrected.about_session_id == session.id
-    assert {:ok, replay} = Records.update_for_client(f.ctx, f.client.id, original.id, patch)
-    assert replay.revision == 2
-    assert Repo.get!(Client, f.client.id).last_change_seq == 2
-    assert {:error, :conflict} = Records.update_for_client(f.ctx, f.client.id, original.id, Map.put(patch, :text_value, "Changed replay"))
   end
 
   test "partial numeric correction keeps base values and retries without conversion", f do

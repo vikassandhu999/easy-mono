@@ -11,19 +11,11 @@ import {Dialog, DialogHeader, DialogTitle} from '../ui/dialog';
 import {FormError} from '../ui/form-error';
 import {useMessageScroller} from '../ui/message-scroller';
 import {Textarea} from '../ui/textarea';
-import {type ConversationDraft, draftKey, emptyDraft, loadDraft, type RecordReference, saveDraft} from './draft';
+import {type ConversationDraft, draftKey, emptyDraft, loadDraft, saveDraft} from './draft';
 import {VoiceNote} from './voice-note';
 
 type Upload = {key: string; file: File; state: 'uploading' | 'error'; message: string};
-export function MessageComposer({
-  conversation,
-  requestedReference,
-  onReferenceConsumed,
-}: {
-  conversation: Conversation;
-  requestedReference: RecordReference | null;
-  onReferenceConsumed: () => void;
-}) {
+export function MessageComposer({conversation}: {conversation: Conversation}) {
   const key = draftKey(getSession()?.id ?? '', conversation.id);
   const [loaded, setLoaded] = useState(() => loadDraft(key));
   const [draft, setDraft] = useState(() => (loaded.kind === 'ready' ? loaded.draft : emptyDraft()));
@@ -41,7 +33,7 @@ export function MessageComposer({
   const textarea = useRef<HTMLTextAreaElement>(null);
   const mounted = useRef(true);
   const pending = send.isPending || upload.isPending;
-  const dirty = Boolean(draft.body || draft.reference || draft.attachments.length);
+  const dirty = Boolean(draft.body || draft.attachments.length);
   const latestHistory = messages.data?.pages[0]?.latest_message_at ?? null;
   useEffect(() => {
     mounted.current = true;
@@ -54,24 +46,6 @@ export function MessageComposer({
       setStored(saveDraft(key, draft));
     }
   }, [key, draft, loaded.kind]);
-  useEffect(() => {
-    if (
-      loaded.kind === 'failed' ||
-      !messages.data ||
-      !requestedReference ||
-      draft.state === 'uncertain' ||
-      send.isPending
-    ) {
-      return;
-    }
-    setDraft((previous) => ({
-      ...previous,
-      reference: requestedReference,
-      teammateThrough: previous.teammateThrough === undefined ? latestHistory : previous.teammateThrough,
-    }));
-    onReferenceConsumed();
-    textarea.current?.focus({preventScroll: true});
-  }, [requestedReference, onReferenceConsumed, latestHistory, draft.state, send.isPending, loaded.kind, messages.data]);
   const blocker = useBlocker(
     ({currentLocation, nextLocation}) =>
       (pending || voiceOpen || (!stored && dirty)) && currentLocation.pathname !== nextLocation.pathname,
@@ -156,7 +130,7 @@ export function MessageComposer({
     if (pending || !messages.data) {
       return;
     }
-    if (!draft.body.trim() && !draft.attachments.length && !draft.reference) {
+    if (!draft.body.trim() && !draft.attachments.length) {
       setError('Write a message or attach a file.');
       textarea.current?.focus();
       return;
@@ -183,9 +157,6 @@ export function MessageComposer({
         body: {
           body: sending.body.trim() || null,
           request_id: sending.requestId,
-          ...(sending.reference
-            ? {embed: {type: sending.reference.type, id: sending.reference.id, revision: sending.reference.revision}}
-            : {}),
           attachment_ids: sending.attachments.flatMap((item) => (item.id ? [item.id] : [])),
         },
       });
@@ -282,27 +253,6 @@ export function MessageComposer({
           placeholder="Write your message…"
           className="min-h-16 max-h-40"
         />
-        {draft.reference && (
-          <div
-            role="group"
-            aria-label="Attached record"
-            className="flex items-center gap-3 rounded-xl bg-muted p-3"
-          >
-            <div className="min-w-0 flex-1 text-sm">
-              <p className="break-words font-medium">{draft.reference.title}</p>
-              <p className="text-xs text-muted-foreground">Reference · revision {draft.reference.revision}</p>
-            </div>
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              aria-label="Remove reference"
-              isDisabled={pending || draft.state === 'uncertain'}
-              onPress={() => edit({reference: null})}
-            >
-              <X aria-hidden="true" />
-            </Button>
-          </div>
-        )}
         {draft.attachments.map((file) => {
           const progress = uploads.find((item) => item.key === file.key);
           return (

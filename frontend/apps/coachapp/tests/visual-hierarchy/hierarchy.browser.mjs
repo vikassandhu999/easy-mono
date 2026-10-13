@@ -20,7 +20,7 @@ function verifyHierarchy(name, metrics) {
   const order = {
     training: ['Build a stronger foundation', 'Full body A', 'Goblet squat'],
     food: ['Rolled oats', 'Nutrients per 100 g', '380'],
-    client: ['Alex Morgan', 'Training plans'],
+    client: ['Alex Morgan', 'Trackers'],
     'client-details': ['Alex Morgan', 'Contact details'],
   }[name];
   if (!order) {
@@ -56,48 +56,33 @@ try {
   for (const name of ['Goblet squat', 'Dumbbell Romanian deadlift', 'Seated cable row']) {
     exercises.push(
       (
-        await send('post', '/v1/coach/training-exercises', {
+        await send('post', '/v1/coach/exercises', {
           name,
-          measures: ['reps', 'load'],
-          bodyweight: false,
-          instructions: 'Move with control. Keep two repetitions in reserve.',
+          kind: 'movement',
+          goals: ['strength'],
+          places: ['gym'],
+          metrics: ['reps', 'weight'],
         })
       ).data,
     );
   }
-  const workouts = ['Full body A', 'Full body B'].map((name) => ({
-    id: crypto.randomUUID(),
-    name,
-    blocks: [
-      {
-        id: crypto.randomUUID(),
-        format: 'superset',
-        items: exercises.map((exercise) => ({
-          id: crypto.randomUUID(),
-          exercise_id: exercise.id,
-          exercise_name: exercise.name,
-          sets: Array.from({length: 3}, () => ({
-            id: crypto.randomUUID(),
-            kind: 'working',
-            reps: {type: 'range', min: 8, max: 10},
-            load: {kg: 12, entered_unit: 'kg'},
-            rest_s: 90,
-          })),
-        })),
-      },
-    ],
-  }));
   const training = (
-    await send('post', '/v1/coach/training-plans', {
+    await send('post', '/v1/coach/workouts', {
       name: 'Build a stronger foundation',
-      description: 'Three focused sessions each week.',
-      content: {
-        workouts,
-        schedule: {
-          cycle_weeks: 1,
-          entries: [0, 2, 4].map((day) => ({id: crypto.randomUUID(), day, ref: workouts[day === 2 ? 1 : 0].id})),
+      type: 'prescribed',
+      description: 'Move with control.',
+      groups: [
+        {
+          name: 'Full body A',
+          rounds: 3,
+          exercises: exercises.map((exercise) => ({
+            exercise_id: exercise.id,
+            targets_mode: 'same_for_all',
+            targets: [{reps: {mode: 'range', min: 8, max: 10}, weight: {mode: 'exact', value: 12}}],
+            rest: [{mode: 'exact', value: 90}],
+          })),
         },
-      },
+      ],
     })
   ).data;
   const food = (
@@ -132,9 +117,9 @@ try {
       saveSession(value);
     }, tokens);
     const screens = [
-      ['training', `/training-plans/${training.id}`, 'Plan name · edit anytime'],
+      ['training', `/workouts/${training.id}`, 'Workout name'],
       ['food', `/foods/${food.id}`, 'Food name'],
-      ['exercise', `/training-exercises/${exercises[0].id}`, 'Exercise name'],
+      ['exercise', `/exercises/${exercises[0].id}`, 'Exercise name'],
       ['clients', '/', 'Search clients'],
       ['client', `/clients/${person.id}`, null],
       ['client-details', `/clients/${person.id}/profile`, 'Contact email'],
@@ -155,7 +140,7 @@ try {
         `${name} overflow ${width}`,
       ).toBe(true);
       const metrics = await page.locator('main').evaluate((node) =>
-        [...node.querySelectorAll('h1,h2,h3,input')]
+        [...node.querySelectorAll('h1,h2,h3,input,p')]
           .filter((el) => el.getClientRects().length)
           .map((el) => ({
             tag: el.tagName,
@@ -167,15 +152,6 @@ try {
       if (phase !== 'before') {
         verifyHierarchy(name, metrics);
       }
-      if (name === 'training') {
-        const exercise = page.getByRole('heading', {name: 'Goblet squat', exact: true});
-        expect(
-          await exercise.locator('..').evaluate((node) => {
-            const style = getComputedStyle(node);
-            return [style.borderTopWidth, style.borderRightWidth, style.borderBottomWidth, style.borderLeftWidth];
-          }),
-        ).toEqual(['0px', '0px', '0px', '0px']);
-      }
       await page.screenshot({path: `${output}/${name}-${width}.png`, fullPage: true, animations: 'disabled'});
       await page.screenshot({path: `${output}/${name}-viewport-${width}.png`, animations: 'disabled'});
       results.push({name, path, width, metrics});
@@ -185,18 +161,13 @@ try {
   }
   await writeFile(`${output}/results.json`, JSON.stringify(results, null, 2));
   const fixtures = [
-    `/v1/coach/training-plans/${training.id}?expected_revision=${training.revision}`,
-    ...exercises.map((exercise) => `/v1/coach/training-exercises/${exercise.id}`),
+    `/v1/coach/workouts/${training.id}`,
+    ...exercises.map((exercise) => `/v1/coach/exercises/${exercise.id}`),
   ];
   for (const path of fixtures) {
     await send('delete', path);
     const response = await api.get(path.split('?')[0], {headers: {authorization: `Bearer ${token}`}});
-    if (path.startsWith('/v1/coach/training-exercises/')) {
-      expect(response.status()).toBe(200);
-      expect((await response.json()).data.archived_at).not.toBeNull();
-    } else {
-      expect(response.status(), `Removed fixture ${path}`).toBe(404);
-    }
+    expect(response.status(), `Removed fixture ${path}`).toBe(404);
   }
   console.log(`Verified ${results.length} screen/viewport combinations. Evidence: ${output}`);
 } finally {

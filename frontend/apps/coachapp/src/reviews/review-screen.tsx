@@ -168,26 +168,6 @@ function LoadedScreen({
         </p>
         <Summary screen={screen} />
       </section>
-      <Surface className="space-y-4">
-        <h2 className="section-title">Plans</h2>
-        <div className="flex flex-wrap gap-4">
-          <Link
-            className="text-link"
-            to={generatePath(routes.clientTrainingPlans, {clientId})}
-          >
-            Training plans
-          </Link>
-          {screen.plans.map((plan) => (
-            <Link
-              key={plan.id}
-              className="text-link"
-              to={generatePath(routes.editClientTrainingPlan, {clientId, id: plan.id})}
-            >
-              {plan.name}
-            </Link>
-          ))}
-        </div>
-      </Surface>
       <ReviewActions person={screen.client} />
       <Surface className="space-y-5">
         <h2 className="section-title">Save a Review</h2>
@@ -262,10 +242,7 @@ function ChangeGroup({group, clientId}: {group: Screen['changes'][number]; clien
   const action = groupAction(group);
   const date = group.local_date ?? '';
   const trackerId = group.tracker_id ?? '';
-  const href =
-    group.record_type === 'workout'
-      ? generatePath(routes.trainingSession, {clientId, id: group.record_id})
-      : `${generatePath(routes.trackerHistory, {clientId})}?${new URLSearchParams({...(trackerId ? {tracker_id: trackerId} : {}), ...(date ? {from: date, to: date} : {})})}`;
+  const href = `${generatePath(routes.trackerHistory, {clientId})}?${new URLSearchParams({...(trackerId ? {tracker_id: trackerId} : {}), ...(date ? {from: date, to: date} : {})})}`;
   return (
     <Surface className="space-y-4">
       <h3 className="editor-item-title">
@@ -309,45 +286,8 @@ function ChangeGroup({group, clientId}: {group: Screen['changes'][number]; clien
 function Summary({screen}: {screen: Screen}) {
   const clientId = screen.client.id;
   const range = new URLSearchParams({from: screen.from, to: screen.to});
-  const training = `${generatePath(routes.trainingSessions, {clientId})}?${range}`;
   return (
     <div className="space-y-5">
-      <Surface className="space-y-4">
-        <h3 className="editor-item-title">Training</h3>
-        <Link
-          className="text-link"
-          to={training}
-        >
-          {screen.training_counts.completed} completed of {screen.training_counts.expected} expected ·{' '}
-          {screen.training_counts.extra} extra sessions
-        </Link>
-        <ul className="space-y-2">
-          {screen.training.data.map((item) => (
-            <li key={`${item.plan_id}:${item.schedule_entry_id}:${item.occurrence_date}`}>
-              <Link
-                className="text-link"
-                to={
-                  item.session_id
-                    ? generatePath(routes.trainingSession, {clientId, id: item.session_id})
-                    : generatePath(routes.manageClientTrainingPlan, {clientId, id: item.plan_id})
-                }
-              >
-                {item.occurrence_date} · {item.workout_name} · {item.session_id ? 'Done' : 'Not recorded'}
-              </Link>
-            </li>
-          ))}
-          {screen.training.extra_sessions.map((item) => (
-            <li key={item.id}>
-              <Link
-                className="text-link"
-                to={generatePath(routes.trainingSession, {clientId, id: item.id})}
-              >
-                {item.local_date} · Extra session
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </Surface>
       <section className="space-y-4">
         <h3 className="editor-item-title">Trackers</h3>
         {screen.trackers.length === 0 && <p>No Tracker entries in this range.</p>}

@@ -1,7 +1,7 @@
 defmodule Easy.PaginationContractTest do
   use Easy.DataCase, async: true
 
-  alias Easy.Plans.Reader
+  alias Easy.Trackers.Templates
 
   alias Easy.Chat
 
@@ -11,7 +11,7 @@ defmodule Easy.PaginationContractTest do
     %{coach: coach, client: client, ctx: trainer_ctx(coach)}
   end
 
-  for {domain, factory} <- [{:training, :training_plan}] do
+  for {domain, factory} <- [{:trackers, :tracker_template}] do
     test "#{domain} template pages retain bounds and stable timestamp ties", %{coach: coach, ctx: ctx} do
       plans =
         insert_list(101, unquote(factory),
@@ -24,65 +24,18 @@ defmodule Easy.PaginationContractTest do
       other = insert(:coach)
       insert(unquote(factory), business: other.business, creator: other)
 
-      assert {:ok, %{count: 101, data: default_page}} = Reader.list_template_page(ctx, unquote(domain))
+      assert {:ok, %{count: 101, data: default_page}} = Templates.list_template_page(ctx)
       assert Enum.map(default_page, & &1.id) == Enum.take(expected_ids, 20)
 
-      assert {:ok, %{count: 101, data: [first]}} = Reader.list_template_page(ctx, unquote(domain), limit: 0, offset: -1)
+      assert {:ok, %{count: 101, data: [first]}} = Templates.list_template_page(ctx, limit: 0, offset: -1)
       assert first.id == hd(expected_ids)
 
-      assert {:ok, %{count: 101, data: page}} = Reader.list_template_page(ctx, unquote(domain), limit: 500)
+      assert {:ok, %{count: 101, data: page}} = Templates.list_template_page(ctx, limit: 500)
       assert length(page) == 100
 
       assert {:ok, %{count: 101, data: remainder}} =
-               Reader.list_template_page(ctx, unquote(domain), limit: 500, offset: 100)
+               Templates.list_template_page(ctx, limit: 500, offset: 100)
 
-      assert Enum.map(page ++ remainder, & &1.id) == expected_ids
-    end
-  end
-
-  for {domain, factory} <- [{:training, :training_plan}] do
-    test "#{domain} client-plan pages retain bounds and scope", %{
-      coach: coach,
-      client: client,
-      ctx: _coach_ctx
-    } do
-      inserted_at = DateTime.utc_now(:second)
-
-      plans =
-        for offset <- 0..100 do
-          date = Date.add(Date.utc_today(), offset)
-
-          insert(unquote(factory),
-            business: coach.business,
-            creator: coach,
-            client: client,
-            kind: :client_plan,
-            start_date: date,
-            end_date: date,
-            inserted_at: inserted_at
-          )
-        end
-
-      expected_ids = plans |> Enum.map(& &1.id) |> Enum.sort(:desc)
-      other_client = insert(:client, business: coach.business, coach: coach)
-      outsider = insert(:coach)
-      foreign = insert(:client, business: outsider.business, coach: outsider)
-
-      for {owner, target} <- [{coach, other_client}, {outsider, foreign}] do
-        insert(unquote(factory), business: owner.business, creator: owner, client: target, kind: :client_plan)
-      end
-
-      client_ctx = %Easy.Ctx{business_id: client.business_id, user_id: client.user_id, client_id: client.id}
-
-      list = &Reader.list_client_plan_page(client_ctx, unquote(domain), &1)
-
-      assert {:ok, %{count: 101, data: default_page}} = list.([])
-      assert Enum.map(default_page, & &1.id) == Enum.take(expected_ids, 20)
-      assert {:ok, %{count: 101, data: [first]}} = list.(limit: 0, offset: -1)
-      assert first.id == hd(expected_ids)
-      assert {:ok, %{count: 101, data: page}} = list.(limit: 500)
-      assert length(page) == 100
-      assert {:ok, %{count: 101, data: remainder}} = list.(limit: 500, offset: 100)
       assert Enum.map(page ++ remainder, & &1.id) == expected_ids
     end
   end

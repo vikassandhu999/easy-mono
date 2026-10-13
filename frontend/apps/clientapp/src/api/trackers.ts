@@ -10,9 +10,6 @@ export type {Tracker, TrackerAssignment, TrackerEntry, TrackerMetrics} from './s
 export type TrackerInput = paths['/v1/client/tracker-entries']['post']['requestBody']['content']['application/json'];
 export type TrackerCorrection =
   paths['/v1/client/tracker-entries/{id}']['patch']['requestBody']['content']['application/json'];
-export type TrackerEvent = Required<
-  Pick<NonNullable<paths['/v1/client/tracker-prompts']['get']['parameters']['query']>, 'about_session_id'>
->;
 export function useTrackers(search: string, archived = false) {
   return useInfiniteQuery({
     queryKey: trackerKeys.library(search, archived),
@@ -34,12 +31,6 @@ export function useTrackerToday() {
     queryKey: trackerKeys.today(),
     queryFn: ({signal}) => call(client.GET('/v1/client/tracker-today', {signal})),
   });
-}
-export function readTrackerPrompts(event: TrackerEvent) {
-  return call(client.GET('/v1/client/tracker-prompts', {params: {query: event}}));
-}
-export function useTrackerPrompts(event: TrackerEvent, enabled: boolean) {
-  return useQuery({queryKey: trackerKeys.prompts(event), queryFn: () => readTrackerPrompts(event), enabled});
 }
 export function useTrackerEntries(id: string, from: string, to: string) {
   return useInfiniteQuery({

@@ -28,7 +28,6 @@ defmodule Easy.Clients.Client do
     field(:invited_at, :utc_datetime)
     field(:state, Ecto.Enum, values: [:invited, :active, :ending_soon, :joined, :ended], virtual: true)
     field(:current_term, :map, virtual: true)
-    field(:training_plan_name, :string, virtual: true)
     belongs_to(:user, Easy.Identity.User)
     belongs_to(:business, Orgs.Business)
     belongs_to(:coach, Orgs.Coach)

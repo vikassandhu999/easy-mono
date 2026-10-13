@@ -9,8 +9,4 @@ export const routes = {
   account: '/account',
   accountDetails: '/account/details',
   messages: '/messages',
-  training: '/training',
-  trainingPlan: '/training/plans/:id',
-  workout: '/training/plans/:id/workouts/:workoutId',
-  trainingSession: '/training/sessions/:id',
 } as const;

@@ -3,10 +3,10 @@ defmodule Easy.Trackers.Defaults do
   alias Easy.CoachingTerms.CoachingTerm
   alias Easy.Ctx
   alias Easy.Orgs.Business
-  alias Easy.Plans.Template
   alias Easy.Repo
   alias Easy.Result
   alias Easy.Trackers.Assignments
+  alias Easy.Trackers.Template
   alias Easy.Trackers.Tracker
   import Ecto.Query
 
@@ -42,7 +42,7 @@ defmodule Easy.Trackers.Defaults do
   def create_default(ctx) do
     with {:ok, _} <- seed_builtins(),
          {:ok, template} <-
-           Template.insert_changeset(ctx.business_id, ctx.coach_id, :trackers, %{
+           Template.insert_changeset(ctx.business_id, ctx.coach_id, %{
              name: "Weekly Reflection",
              content: %{"items" => [%{"tracker_id" => "a0000000-0000-4000-8000-000000000010", "timing" => "weekly", "weekday" => 6}]}
            })

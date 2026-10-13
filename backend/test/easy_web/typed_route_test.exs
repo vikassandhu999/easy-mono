@@ -2,7 +2,7 @@ defmodule EasyWeb.TypedRouteTest do
   use Easy.ConnCase, async: true
 
   alias EasyWeb.TypedRoute
-  alias EasyWeb.TypedRoute.{Cast, Check, Dump, Emit, Generator, SchemaMerge, Type}
+  alias EasyWeb.TypedRoute.{Cast, Check, Dump, Generator, SchemaMerge, Type}
   alias EasyWeb.TypedRouteAdapter, as: RouteAdapter
   alias EasyWeb.TypedRouteTestController, as: Controller
   alias EasyWeb.Types.{TypedComputed, TypedDictionary, TypedItem, TypedStructComputed}
@@ -210,39 +210,6 @@ defmodule EasyWeb.TypedRouteTest do
     assert_raise ArgumentError, ~r/name/, fn ->
       Check.assert!(%{id: "1"}, ir)
     end
-  end
-
-  test "emit prints named types and openapi-fetch path params" do
-    named = Emit.named_aliases({:remote, TypedItem, :t})
-    assert named[{TypedItem, :t}] == "TypedItem"
-    assert Emit.export_named_types(named) =~ "export type TypedItem"
-    assert Emit.path_template("/v1/coach/training-exercises/:id") == "/v1/coach/training-exercises/{id}"
-    assert Emit.ir_to_ts({:record, [{:name, :optional, :string}]}) == "{ name?: string }"
-  end
-
-  test "schema merge injects typed types and paths and is idempotent after strip" do
-    leftover = """
-    /**
-     * leftover
-     */
-
-    export interface paths {
-      '/v1/coach/training-plans': {
-        get: operations['listTrainingPlans'];
-      };
-    }
-    """
-
-    types = "export type Muscle = { id: string };"
-    paths = "'/v1/coach/training-muscles': {\n  get: { parameters: { query?: never } }\n}"
-
-    merged = SchemaMerge.inject(leftover, types, paths)
-    assert merged =~ "export type Muscle"
-    assert merged =~ "'/v1/coach/training-muscles'"
-    assert merged =~ "listTrainingPlans"
-
-    again = SchemaMerge.inject(merged, types, paths)
-    assert again == merged
   end
 
   test "schema merge drift check survives formatting but detects edits inside generated blocks" do

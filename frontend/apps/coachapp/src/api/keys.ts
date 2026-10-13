@@ -1,10 +1,7 @@
-import type {ClientPlanFilters} from './client-plans';
 import type {ClientFilters} from './clients';
 import type {ConversationFilters} from './conversations';
 import type {FoodFilters} from './foods';
 import type {TeamFilters} from './team';
-import type {TrainingPlanFilters} from './training-plans';
-import type {SessionFilters} from './training-sessions';
 
 export const authKeys = {
   all: ['auth'] as const,
@@ -26,21 +23,24 @@ export const attachmentKeys = {
   downloads: (ids: string[]) => [...attachmentKeys.all, 'downloads', ids] as const,
 };
 
-export const trainingPlanKeys = {
-  all: ['training-plans'] as const,
-  lists: () => [...trainingPlanKeys.all, 'list'] as const,
-  infinite: (filters: TrainingPlanFilters) => [...trainingPlanKeys.lists(), 'templates', 'infinite', filters] as const,
-  forClient: (clientId: string) => [...trainingPlanKeys.lists(), 'client', clientId, 'infinite'] as const,
-  clientPlans: (clientId: string, filters: ClientPlanFilters) =>
-    [...trainingPlanKeys.lists(), 'client-plans', clientId, filters] as const,
-  details: () => [...trainingPlanKeys.all, 'detail'] as const,
-  detail: (id: string) => [...trainingPlanKeys.details(), id] as const,
+export const workoutKeys = {
+  all: ['workouts'] as const,
+  lists: () => [...workoutKeys.all, 'list'] as const,
+  infinite: (filters: object) => [...workoutKeys.lists(), 'infinite', filters] as const,
+  details: () => [...workoutKeys.all, 'detail'] as const,
+  detail: (id: string) => [...workoutKeys.details(), id] as const,
+};
+export const workoutWeekKeys = {
+  all: ['workout-week'] as const,
+  lists: () => [...workoutWeekKeys.all, 'list'] as const,
+  details: () => [...workoutWeekKeys.all, 'detail'] as const,
+  detail: (clientId: string) => [...workoutWeekKeys.details(), clientId] as const,
 };
 
 export const exerciseKeys = {
   all: ['exercises'] as const,
   lists: () => [...exerciseKeys.all, 'list'] as const,
-  infinite: (search: string) => [...exerciseKeys.lists(), 'infinite', {search}] as const,
+  infinite: (filters: object) => [...exerciseKeys.lists(), 'infinite', filters] as const,
   details: () => [...exerciseKeys.all, 'detail'] as const,
   detail: (id: string) => [...exerciseKeys.details(), id] as const,
   relations: (kind: 'muscles' | 'equipment', search: string) =>
@@ -53,19 +53,6 @@ export const foodKeys = {
   infinite: (filters: FoodFilters) => [...foodKeys.lists(), 'infinite', filters] as const,
   details: () => [...foodKeys.all, 'detail'] as const,
   detail: (id: string) => [...foodKeys.details(), id] as const,
-};
-
-export const trainingSessionKeys = {
-  all: ['training-sessions'] as const,
-  occurrences: (clientId: string, from: string, to: string) =>
-    [...trainingSessionKeys.lists(), clientId, 'occurrences', from, to] as const,
-  exercise: (clientId: string, exerciseId: string) =>
-    [...trainingSessionKeys.lists(), clientId, 'exercise', exerciseId] as const,
-  lists: () => [...trainingSessionKeys.all, 'list'] as const,
-  infinite: (clientId: string, filters: SessionFilters) =>
-    [...trainingSessionKeys.lists(), clientId, 'infinite', filters] as const,
-  details: () => [...trainingSessionKeys.all, 'detail'] as const,
-  detail: (clientId: string, id: string) => [...trainingSessionKeys.details(), clientId, id] as const,
 };
 
 export const conversationKeys = {

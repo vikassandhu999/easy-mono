@@ -7,7 +7,6 @@ defmodule Easy.ConnCase do
   alias Easy.Orgs.Business
   alias Easy.Orgs.Coach
   alias Easy.Repo
-  alias Ecto.Adapters.SQL
   alias Phoenix.ConnTest
   alias Plug.Conn
 
@@ -89,23 +88,5 @@ defmodule Easy.ConnCase do
       )
 
     Conn.put_req_header(conn, "authorization", "Bearer #{token}")
-  end
-
-  @spec training_tables_ready?() :: boolean()
-  def training_tables_ready? do
-    required_tables = ~w(templates plans plan_revisions exercises training_sessions performed_sets record_changes)
-
-    case SQL.query(
-           Repo,
-           "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'",
-           []
-         ) do
-      {:ok, %{rows: rows}} ->
-        existing = rows |> List.flatten() |> MapSet.new()
-        Enum.all?(required_tables, &MapSet.member?(existing, &1))
-
-      _ ->
-        false
-    end
   end
 end

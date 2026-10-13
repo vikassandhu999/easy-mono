@@ -1,8 +1,6 @@
 defmodule EasyWeb.Clients.CoachingGateTest do
   use Easy.ConnCase, async: true
 
-  alias Easy.Clients.Client
-
   test "every mutating client route rejects ended coaching before validation" do
     client =
       insert(:client,
@@ -27,15 +25,5 @@ defmodule EasyWeb.Clients.CoachingGateTest do
     profile = build_conn() |> authenticate_client(client) |> get("/v1/client/me") |> json_response(200)
     assert profile["data"]["state"] == "ended"
     assert profile["data"]["full_name"] == client.full_name
-  end
-
-  test "coaching on its last local day permits writes" do
-    client = insert(:client, timezone: "Pacific/Kiritimati", terms: [])
-    today = Client.local_date(client, DateTime.utc_now())
-    insert(:coaching_term, client: client, starts_on: today, ends_on: today)
-
-    response = build_conn() |> authenticate_client(client) |> post("/v1/client/training-sessions", %{})
-    assert %{"data" => %{"local_date" => date, "state" => "active"}} = json_response(response, 201)
-    assert date == Date.to_iso8601(today)
   end
 end

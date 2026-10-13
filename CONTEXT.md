@@ -1,19 +1,16 @@
 # Easy coaching
 
-Easy supports coaches who manage clients, training and nutrition plans, workout and meal history, conversations, and coaching terms.
+Easy supports coaches who manage clients, workouts, nutrition, trackers, conversations, Reviews, and coaching terms.
 
 ## Language
 
 **Client**:
-A person invited to a coaching business. Direct invitation and acceptance establish access. A coach manages the client's profile, plans, history, and conversation.
+A person invited to a coaching business. Direct invitation and acceptance establish access. A coach manages the client's profile, workouts, nutrition, trackers, history, and conversation.
 
 **Coaching term**:
 An inclusive span of local dates during which a business coaches a client. A client may have many terms; terms never overlap. A missing end date means open-ended coaching. The client's timezone applies, falling back to the business timezone.
 
 Lifecycle states are derived: no linked account means invited; a term covering today means active (ending soon within 14 days); a linked account with no current or earlier term means joined, not started; an earlier term with no current term means ended. Only active clients use seats. Ending coaching today keeps access through today, then preserves read-only history. Coaches are active when their account is linked and they have no removal date.
-
-**Coverage**:
-The inclusive local-date range for which a client-owned plan supplies training or nutrition. A plan is in force only when its own dates and a Coaching term cover the date, and no term ended between its creation date and that date. A plan prepared before acceptance can begin with coaching; a returning client needs a new plan.
 
 **Note to coach**:
 Client commentary sent as a chat message with an optional reference to a workout or meal record. Draft saving is separate from completing a workout or sharing a meal.
@@ -24,56 +21,44 @@ One optional source link per message, carrying a frozen summary and revision. Op
 **Not recorded**:
 No structured record is available. This is not evidence of non-adherence or a skipped meal.
 
-**Training Template**:
-A reusable training prescription that can be copied for a client. It is never itself assigned to a client.
-_Avoid_: Reusable training plan, template plan
+### Workouts
 
-**Client Plan**:
-An independent training prescription owned by one client. It may originate from a Training Template, but later changes never affect its source or another Client Plan.
-_Avoid_: Assigned copy, assigned training plan
+**Exercise**:
+A named movement, activity, sport, or practice. Its goals and places describe its use; equipment and muscles are tags. Its ordered metrics describe the values a coach can prescribe. Built-in exercises are available to every business; a coach's own exercises belong to that business.
 
-**Plan assignment**:
-The act of creating a client-owned plan from a reusable template. It is not a persistent object separate from the resulting plan.
-_Avoid_: Assigned plan
+**Workout**:
+Instructions for one training occasion. A prescribed workout contains exercise groups and targets; a video workout supplies a video; an open session leaves the activity to the coach who leads. Timing, place, meeting link, and the coach who leads belong to the schedule.
 
-**Plan Revision**:
-A published training or nutrition prescription that never changes. A future revision can be withdrawn before it takes effect.
+**Library workout**:
+A reusable workout owned by a coaching business. Adding it to a client copies it. Later edits to either workout do not affect the other.
+_Avoid_: Training Template, reusable training plan
+
+**Client workout**:
+An independent workout owned by one client. It can be used on several days and can have different session details on different schedules.
+_Avoid_: Client Plan, assigned plan
+
+**Exercise group**:
+Exercises performed for a number of rounds. One exercise means straight sets; two mean a superset; more mean a circuit. The UI uses its name or letter and never says group.
+
+**Workout exercise**:
+An exercise within a prescribed workout, with targets and rest shared by every round or specified per round. A unilateral exercise's target applies to each side.
+_Avoid_: Prescribed Set, content item
+
+**Target**:
+An exact value, a range, as much as possible, or no prescribed value. No target means the client chooses. Targets use only the exercise's metrics.
+
+**Rest**:
+The rest after an exercise. Rest after the last exercise in a card is rest between rounds.
+
+**Workout schedule**:
+The repeating weekdays and optional live-session details for a client workout. Several weekdays with the same details share one schedule. Changes apply from today and keep earlier prescriptions.
+_Avoid_: Workout calendar, plan revision
 
 **Expected workout occurrence**:
-One scheduled workout for an original local date. The client explicitly selects the occurrence that a completed Training Session fulfils; an occurrence counts once.
+One workout expected on one date under a schedule. It is calculated from the schedule.
 
-**Training block**:
-A group of exercises in a workout, performed as straight sets, a superset, or a circuit.
-
-**Training Session**:
-One client's record of performing a planned or freestyle workout. Completion records that the activity happened and first shares it. Clients may correct recorded facts afterward using the current revision; the captured prescription remains unchanged. Discarded sessions remain closed.
-_Avoid_: Workout log
-
-**Planned Training Session**:
-A Training Session that uses a published Plan Revision and one of its workouts. The client can select an Expected workout occurrence, including one from an earlier date, or record a workout from the plan covering today without an occurrence.
-
-**Freestyle Training Session**:
-A Training Session begun without a Client Plan workout.
-
-**Workout Schedule**:
-The repeating weekly guidance in a Training Template or Plan Revision. Each weekday has zero or more schedule entries; each entry identifies one workout.
-_Avoid_: Calendar, workout calendar
-
-**Prescription**:
-The ordered workouts, blocks, Prescribed Exercises, Prescribed Sets, and Workout Schedule in a Training Template or published Plan Revision.
-_Avoid_: Plan structure
-
-**Prescribed Exercise**:
-An exercise selected inside a workout with its ordered Prescribed Sets.
-_Avoid_: Workout element
-
-**Prescribed Set**:
-A target set within a Prescribed Exercise. It describes intended work and has no lifecycle outside that prescription.
-_Avoid_: Planned set
-
-**Performed Set**:
-A record of a done, failed, or skipped set in a Training Session. It can identify its Prescribed Set or describe extra work, with measurements in base units and the units entered by the client.
-_Avoid_: Logged set
+**Prescription history**:
+The workout instructions and schedule that applied on a past date. Later edits preserve those instructions and change future uses. A date before today is a fact even when no workout has been recorded.
 
 ### Nutrition
 

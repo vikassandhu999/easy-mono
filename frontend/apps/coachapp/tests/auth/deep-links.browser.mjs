@@ -38,9 +38,13 @@ try {
     const exercise = (
       await send(
         'post',
-        '/v1/coach/training-exercises',
+        '/v1/coach/exercises',
         {
           name: 'Test deep-link exercise',
+          kind: 'movement',
+          goals: ['strength'],
+          places: ['gym'],
+          metrics: ['reps', 'weight'],
         },
         coach.access_token,
       )
@@ -51,11 +55,11 @@ try {
     const errors = [];
     page.on('pageerror', (error) => errors.push(error.message));
     try {
-      const destination = `/training-exercises/${exercise.id}?source=library#details`;
+      const destination = `/exercises/${exercise.id}?source=library#details`;
       await page.goto(destination);
       await expect(page.getByRole('heading', {name: 'Welcome back', exact: true})).toBeVisible();
       const peer = await context.newPage();
-      await peer.goto('/training-exercises?search=Test');
+      await peer.goto('/exercises?search=Test');
       await expect(peer.getByRole('heading', {name: 'Welcome back', exact: true})).toBeVisible();
       await page.reload();
       await page.getByLabel('Email', {exact: true}).fill(email);
@@ -66,7 +70,7 @@ try {
       await login(page, email);
       await expect(page).toHaveURL(destination);
       await expect(page.getByLabel('Exercise name', {exact: true})).toHaveValue(exercise.name);
-      await expect(peer).toHaveURL('/training-exercises?search=Test');
+      await expect(peer).toHaveURL('/exercises?search=Test');
       await peer.close();
 
       // Explicit logout starts a fresh login, without retaining the previous client's screen.
@@ -77,7 +81,7 @@ try {
       await expect(page).toHaveURL('/clients');
 
       // A revoked session returns through the same route, including list filters.
-      const filtered = '/training-exercises?status=active&search=Test';
+      const filtered = '/exercises?status=active&search=Test';
       await page.goto(filtered);
       await page.evaluate(() => {
         const session = JSON.parse(localStorage.getItem('coachapp.auth.v1'));
@@ -102,7 +106,7 @@ try {
         '//example.test/',
         '/\\example.test/',
         '/login',
-        '/training-exercises/../verify',
+        '/exercises/../verify',
         '/register-business',
       ]) {
         await page.goto(`/login?returnTo=${encodeURIComponent(target)}`);
@@ -112,7 +116,7 @@ try {
       // A new coach keeps the destination through signup and reloaded business setup.
       await expect(page.getByRole('button', {name: 'Your account', exact: true})).toBeVisible();
       await signOut(page);
-      await page.goto('/training-exercises/new');
+      await page.goto('/exercises/new');
       await page.getByRole('link', {name: 'Create an account', exact: true}).click();
       await expect(page.getByRole('heading', {name: 'Create your account', exact: true})).toBeVisible();
       await page.getByLabel('Email', {exact: true}).fill(`test-new-links-${unique}@example.test`);
@@ -125,7 +129,7 @@ try {
       await page.getByRole('button', {name: 'Create business', exact: true}).click();
       await expect(page.getByRole('heading', {name: 'Build once. Coach each person.', exact: true})).toBeVisible();
       await page.getByRole('button', {name: 'Skip tour', exact: true}).click();
-      await expect(page).toHaveURL('/training-exercises/new');
+      await expect(page).toHaveURL('/exercises/new');
       await expect(page.getByRole('heading', {name: 'Create exercise', exact: true})).toBeVisible();
       expect(errors).toEqual([]);
       console.log(`Auth deep links, reload, email change, session expiry, logout and setup passed at ${width}px.`);
@@ -134,7 +138,7 @@ try {
       throw error;
     } finally {
       await context.close();
-      await send('delete', `/v1/coach/training-exercises/${exercise.id}`, undefined, coach.access_token);
+      await send('delete', `/v1/coach/exercises/${exercise.id}`, undefined, coach.access_token);
     }
   }
 } finally {

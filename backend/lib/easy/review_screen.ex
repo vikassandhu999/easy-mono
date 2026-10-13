@@ -9,8 +9,6 @@ defmodule Easy.Reviews.Screen do
   alias Easy.Trackers.Assignment
   alias Easy.Trackers.Entry
   alias Easy.Trackers.Reader
-  alias Easy.Training.Execution
-  alias Easy.Training.History
   import Ecto.Query
 
   @spec read(Ctx.t(), String.t(), keyword()) :: {:ok, map()} | {:error, term()}
@@ -22,7 +20,6 @@ defmodule Easy.Reviews.Screen do
       current = Review.current_review(client, latest)
 
       with {:ok, dates} <- dates(client, current, opts),
-           {:ok, training} <- History.occurrences_for_client(ctx, client_id, dates.from, dates.to),
            {:ok, requests} <- Reader.requests_for_client(ctx, client_id),
            {:ok, trackers} <- metrics(ctx, client, dates, requests) do
         {:ok,
@@ -33,15 +30,8 @@ defmodule Easy.Reviews.Screen do
            reviewed_through_seq: client.last_change_seq,
            last_review: if(latest, do: Reviews.present(ctx, latest)),
            changes: changes(ctx, client, current),
-           training: training,
-           training_counts: %{
-             expected: length(training.data),
-             completed: Enum.count(training.data, & &1.session_id),
-             extra: length(training.extra_sessions)
-           },
            trackers: trackers,
-           requests: requests,
-           plans: plans(ctx, client_id)
+           requests: requests
          })}
       end
     end
@@ -77,7 +67,7 @@ defmodule Easy.Reviews.Screen do
   defp changes(ctx, client, current) do
     query =
       from(c in "record_changes",
-        where: c.business_id == type(^ctx.business_id, :binary_id) and c.client_id == type(^client.id, :binary_id) and c.record_type in ["workout", "tracker_entry"],
+        where: c.business_id == type(^ctx.business_id, :binary_id) and c.client_id == type(^client.id, :binary_id) and c.record_type in ["tracker_entry"],
         order_by: [asc: c.seq, asc: c.changed_at, asc: c.id],
         select: %{
           seq: c.seq,
@@ -109,7 +99,6 @@ defmodule Easy.Reviews.Screen do
   defp record_link(ctx, client_id, type, id) do
     schema =
       case type do
-        "workout" -> Easy.Training.TrainingSession
         "tracker_entry" -> Entry
       end
 
@@ -121,11 +110,6 @@ defmodule Easy.Reviews.Screen do
 
   defp record_title(nil, _), do: "Removed record"
   defp record_title(row, "tracker_entry"), do: Repo.preload(row, :tracker).tracker.name
-
-  defp record_title(row, "workout") do
-    session = Execution.load(row)
-    if session.prescription, do: session.prescription["name"] || "Workout", else: "Freestyle workout"
-  end
 
   defp public_change(row) do
     row
@@ -179,16 +163,4 @@ defmodule Easy.Reviews.Screen do
     ids = Enum.uniq(entry_ids ++ assigned_ids ++ Enum.map(requests, & &1.tracker.id))
     Easy.Result.traverse(ids, &Reader.metrics_for_client(ctx, client.id, &1, from: dates.from, to: dates.to))
   end
-
-  defp plans(ctx, client_id),
-    do:
-      Repo.all(
-        from(p in Easy.Plans.Plan,
-          where:
-            p.business_id == ^ctx.business_id and p.client_id == ^client_id and p.domain == :training and
-              is_nil(p.archived_at),
-          order_by: [asc: p.domain, asc: p.name, asc: p.id],
-          select: %{id: p.id, name: p.name, domain: p.domain}
-        )
-      )
 end

@@ -3,13 +3,10 @@ defmodule Easy.Trackers.Content do
   alias Easy.Result
   alias Easy.Trackers
   alias Easy.Trackers.Assignment
-  @behaviour Easy.Plans.Domain
 
-  @impl true
   @spec empty() :: map()
   def empty, do: %{"items" => []}
 
-  @impl true
   @spec validate(Ctx.t(), map()) :: {:ok, map()} | {:error, term()}
   def validate(ctx, content) when is_map(content) do
     items = Map.get(content, "items", Map.get(content, :items))
@@ -41,11 +38,4 @@ defmodule Easy.Trackers.Content do
   end
 
   defp validate_item(_, _), do: {:error, :invalid_tracker}
-
-  @impl true
-  @spec summary(map()) :: map()
-  def summary(content), do: %{item_count: length(content["items"] || [])}
-  @impl true
-  @spec coverage(map()) :: map()
-  def coverage(_), do: %{}
 end

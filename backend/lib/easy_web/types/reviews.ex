@@ -63,15 +63,10 @@ defmodule EasyWeb.Types.ReviewChangeGroup do
           required(:title) => String.t(),
           required(:local_date) => Date.t() | nil,
           required(:tracker_id) => String.t() | nil,
-          required(:record_type) => :workout | :tracker_entry,
+          required(:record_type) => :tracker_entry,
           required(:record_id) => String.t(),
           required(:changes) => [EasyWeb.Types.ReviewChange.t()]
         }
-end
-
-defmodule EasyWeb.Types.ReviewPlanLink do
-  use EasyWeb.Type
-  @type t :: %{required(:id) => String.t(), required(:name) => String.t(), required(:domain) => :training}
 end
 
 defmodule EasyWeb.Types.ReviewScreen do
@@ -86,15 +81,8 @@ defmodule EasyWeb.Types.ReviewScreen do
           required(:to) => Date.t(),
           required(:last_review) => EasyWeb.Types.Review.t() | nil,
           required(:changes) => [EasyWeb.Types.ReviewChangeGroup.t()],
-          required(:training) => EasyWeb.Types.TrainingOccurrences.t(),
-          required(:training_counts) => %{
-            required(:expected) => non_neg_integer(),
-            required(:completed) => non_neg_integer(),
-            required(:extra) => non_neg_integer()
-          },
           required(:trackers) => [EasyWeb.Types.TrackerMetrics.t()],
-          required(:requests) => [EasyWeb.Types.TrackerRequest.t()],
-          required(:plans) => [EasyWeb.Types.ReviewPlanLink.t()]
+          required(:requests) => [EasyWeb.Types.TrackerRequest.t()]
         }
   @type query :: %{optional(:from) => Date.t(), optional(:to) => Date.t()}
 end

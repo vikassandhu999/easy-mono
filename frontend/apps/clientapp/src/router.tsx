@@ -9,8 +9,6 @@ import {CheckIns} from './check-ins/check-ins';
 import {Messages} from './messages/messages';
 import {routes} from './routes';
 import {TrackerHistory, Trackers} from './trackers/trackers';
-import {TrainingSession} from './training/session';
-import {Training, TrainingPlan} from './training/training';
 
 export const router = createBrowserRouter([
   {path: routes.login, element: <Login />},
@@ -26,10 +24,6 @@ export const router = createBrowserRouter([
       {path: routes.account, element: <Account />},
       {path: routes.accountDetails, element: <AccountDetails />},
       {path: routes.messages, element: <Messages />},
-      {path: routes.training, element: <Training />},
-      {path: routes.trainingPlan, element: <TrainingPlan />},
-      {path: routes.workout, element: <TrainingPlan />},
-      {path: routes.trainingSession, element: <TrainingSession />},
     ],
   },
   {

@@ -4,7 +4,6 @@ defmodule Easy.Clients do
   alias Easy.Clients.Client
   alias Easy.Ctx
   alias Easy.Orgs.Coach
-  alias Easy.Plans.Reader, as: TrainingPlanReader
   alias Easy.Repo
 
   @spec reassign_clients_to_owner(Ctx.t(), String.t()) :: {:ok, non_neg_integer()} | {:error, :not_owner}
@@ -43,7 +42,6 @@ defmodule Easy.Clients do
     search = Keyword.get(opts, :q, "")
     state = Keyword.get(opts, :state)
     sort = Keyword.get(opts, :sort, :newest)
-    include_plans? = Keyword.get(opts, :include_plans, false)
 
     visible = Client |> Client.for_business(ctx.business_id) |> Client.visible_to(ctx) |> Client.for_assigned_coach(Keyword.get(opts, :coach_id))
 
@@ -63,7 +61,6 @@ defmodule Easy.Clients do
          |> Client.include_preloads(ctx.business_id)
          |> Repo.all()
          |> Enum.map(&Client.derive(&1, DateTime.utc_now()))
-         |> put_plan_names_for_clients(ctx, include_plans?)
      }}
   end
 
@@ -104,7 +101,6 @@ defmodule Easy.Clients do
         |> Client.include_preloads(ctx.business_id)
         |> Repo.all()
         |> Enum.map(&Client.derive(&1, DateTime.utc_now()))
-        |> put_plan_names_for_clients(ctx, Keyword.get(opts, :include_plans, false))
 
       page = Easy.CursorPage.finish(rows, limit, count)
       {:ok, Map.put(page, :summary, state_counts(visible))}
@@ -147,27 +143,6 @@ defmodule Easy.Clients do
   end
 
   defp state_counts(query), do: query |> Client.select_state_counts() |> Repo.one()
-
-  # Opt-in (`include_plans: true`): the clients list wants each row's in-force plan
-  # names for its chips. Two extra queries per PAGE, not per row, and skipped
-  # entirely for every caller that doesn't ask.
-  defp put_plan_names_for_clients(clients, _ctx, false), do: clients
-  defp put_plan_names_for_clients([], _ctx, true), do: []
-
-  defp put_plan_names_for_clients(clients, %Ctx{} = ctx, true) do
-    now = DateTime.utc_now()
-
-    local_dates = Map.new(clients, &{&1.id, Client.local_date(&1, now)})
-
-    {:ok, training} = TrainingPlanReader.current_plan_names_for_clients(ctx, :training, local_dates)
-
-    Enum.map(clients, fn client ->
-      %{
-        client
-        | training_plan_name: Map.get(training, client.id)
-      }
-    end)
-  end
 
   defp preload_client(%Client{} = client) do
     client =

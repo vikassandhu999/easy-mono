@@ -38,7 +38,7 @@ try {
       await page.getByRole('button', {name: 'Verify and continue'}).click();
       if (state === 'joined') {
         await expect(page.getByRole('heading', {name: 'Coaching starts soon'})).toBeVisible();
-        for (const path of ['/training', '/messages', '/account/details']) {
+        for (const path of ['/trackers', '/messages', '/account/details']) {
           await page.goto(path);
           await expect(page.getByRole('heading', {name: 'Coaching starts soon'})).toBeVisible();
           await expect(page.getByRole('navigation', {name: 'Main navigation'})).toHaveCount(0);
@@ -48,13 +48,6 @@ try {
         await expect(page.getByLabel('Email', {exact: true})).toBeVisible();
       } else if (state === 'ended') {
         await expect(page.getByText(/^Coaching ended /)).toBeVisible();
-        await page.goto('/training');
-        await expect(page.getByRole('link', {name: /Freestyle workout/})).toBeVisible();
-        await page.getByRole('link', {name: /Freestyle workout/}).click();
-        await expect(page.getByRole('heading', {name: 'Freestyle workout'})).toBeVisible();
-        await expect(page.getByText(/^Coaching ended /)).toBeVisible();
-        await expect(page.getByRole('button', {name: /Correct|Save|Finish|Discard|Edit|Remove/})).toHaveCount(0);
-        await page.screenshot({path: 'tests/coaching/artifacts/connected-ended-workout-375.png', fullPage: true});
         const conversation = page.waitForResponse(
           (response) => new URL(response.url()).pathname === '/v1/client/conversation/history',
         );
@@ -73,8 +66,6 @@ try {
       } else {
         await expect(page.getByRole('heading', {name: 'Today', exact: true})).toBeVisible();
         await expect(page.getByText(/^Coaching ended /)).toHaveCount(0);
-        await page.goto('/training');
-        await expect(page.getByRole('button', {name: 'Start freestyle workout'})).toBeVisible();
         await page.goto('/account/details');
         await expect(page.getByLabel('Full name', {exact: true})).toHaveValue('Active Client');
         await page.getByLabel('What should we call you?', {exact: true}).fill('Active client');

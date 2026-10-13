@@ -114,7 +114,7 @@ try {
       const token = createHash('sha256')
         .update(email + '123456')
         .digest('hex');
-      await page.goto(`/verify?token=${token}&returnTo=%2Ftraining-exercises%2Fnew`);
+      await page.goto(`/verify?token=${token}&returnTo=%2Fexercises%2Fnew`);
       await expect(page.getByRole('heading', {name: 'Confirm your email', exact: true})).toBeVisible();
       await page.route('**/v1/auth/verify', (route) =>
         route.fulfill({status: 503, json: {error: {message: 'Verification temporarily unavailable. Try again.'}}}),
@@ -167,7 +167,7 @@ try {
       await expect(page.getByRole('menuitem', {name: 'Sign out', exact: true})).toBeFocused();
       await page.keyboard.press('Enter');
       await expect(page.getByRole('heading', {name: 'Welcome back', exact: true})).toBeVisible();
-      await page.goto(`/verify?token=${token}&returnTo=%2Ftraining-exercises%2Fnew`);
+      await page.goto(`/verify?token=${token}&returnTo=%2Fexercises%2Fnew`);
       await expect(page.getByRole('heading', {name: 'Confirm your email', exact: true})).toBeVisible();
       await tabTo(page, page.getByRole('button', {name: 'Confirm email', exact: true}));
       await page.keyboard.press('Enter');
@@ -175,7 +175,7 @@ try {
       await expect(page.getByRole('button', {name: 'Confirm email', exact: true})).toHaveCount(0);
       await tabTo(page, page.getByRole('link', {name: 'Sign in with a code', exact: true}));
       await page.keyboard.press('Enter');
-      await expect(page).toHaveURL('/login?returnTo=%2Ftraining-exercises%2Fnew');
+      await expect(page).toHaveURL('/login?returnTo=%2Fexercises%2Fnew');
       expect(errors).toEqual([]);
       console.log(`Auth keyboard, pending, long content, confirmation link and route recovery checked at ${width}px.`);
     } finally {

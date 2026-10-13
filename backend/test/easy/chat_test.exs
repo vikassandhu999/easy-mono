@@ -59,38 +59,6 @@ defmodule Easy.ChatTest do
   end
 
   describe "Message.put_content/3" do
-    test "allows attachment-only and embed-only message bodies" do
-      base = Message.insert_changeset("biz", :coach, "coach", "conv", %{})
-      assert Message.put_content(base, [%Easy.Attachments.Attachment{}], nil).valid?
-
-      assert Message.put_content(base, [], %{
-               type: :training_session,
-               id: Ecto.UUID.generate(),
-               snapshot: %{"title" => "Workout"}
-             }).valid?
-    end
-
-    test "rejects invalid and incomplete trusted embeds as changeset errors" do
-      id = Ecto.UUID.generate()
-      base = Message.insert_changeset("biz", :coach, "coach", "conv", %{})
-
-      invalid_type =
-        Message.put_content(base, [], %{type: :bogus, id: id, snapshot: %{}})
-
-      missing_id =
-        Message.put_content(base, [], %{type: :training_session, snapshot: %{}})
-
-      missing_snapshot =
-        Message.put_content(base, [], %{type: :training_session, id: id})
-
-      refute invalid_type.valid?
-      assert "is invalid" in errors_on(invalid_type).embed_type
-      refute missing_id.valid?
-      assert "can't be blank" in errors_on(missing_id).embed_id
-      refute missing_snapshot.valid?
-      assert "can't be blank" in errors_on(missing_snapshot).embed_snapshot
-    end
-
     test "registers embed database constraints on the changeset" do
       changeset = Message.insert_changeset("biz", :coach, "coach", "conv", %{})
       constraints = Enum.map(changeset.constraints, & &1.constraint)
@@ -341,43 +309,6 @@ defmodule Easy.ChatTest do
       assert Enum.map(page2, & &1.body) == ["m1", "m2"]
     end
 
-    test "composes text, ordered attachments, and an immutable workout record embed", %{
-      coach: coach,
-      client: client
-    } do
-      {:ok, conversation} = Chat.get_or_create_conversation_for_client(coach_ctx(coach), client.id)
-      first = insert(:attachment, business: coach.business, client: client, content_type: "image/png")
-      second = insert(:attachment, business: coach.business, client: client, content_type: "audio/webm")
-      entry = insert(:workout_session, state: :completed, business: coach.business, client: client)
-
-      assert {:ok, message} =
-               Chat.send_message(coach_ctx(coach), conversation.id, %{
-                 body: "  Energy improved.  ",
-                 attachment_ids: [String.upcase(second.id), first.id],
-                 embed: %{type: "training_session", id: entry.id}
-               })
-
-      assert message.body == "Energy improved."
-      assert Enum.map(message.attachments, & &1.id) == [second.id, first.id]
-      assert message.embed_type == :training_session
-      assert message.embed_id == entry.id
-
-      assert message.embed_snapshot == %{
-               "title" => "Workout",
-               "recorded_at" => DateTime.to_iso8601(entry.ended_at),
-               "occurred_on" => Date.to_iso8601(entry.local_date),
-               "revision" => 1
-             }
-
-      entry
-      |> Ecto.Changeset.change(local_date: Date.add(entry.local_date, 1), revision: 2)
-      |> Easy.Repo.update!()
-
-      reloaded = Easy.Repo.get!(Message, message.id)
-      assert reloaded.embed_snapshot["occurred_on"] == Date.to_iso8601(entry.local_date)
-      assert reloaded.embed_snapshot["revision"] == 1
-    end
-
     test "string-keyed messages preserve ordered attachments and trim their body", %{coach: coach, client: client} do
       first = insert(:attachment, business: coach.business, client: client)
       second = insert(:attachment, business: coach.business, client: client)
@@ -390,80 +321,6 @@ defmodule Easy.ChatTest do
 
       assert message.body == "Photos"
       assert Enum.map(message.attachments, & &1.id) == [second.id, first.id]
-    end
-
-    test "string-keyed attachment errors and unavailable client references are rejected", %{client: client} do
-      for ids <- ["invalid", ["invalid"], List.duplicate(Ecto.UUID.generate(), 5)] do
-        assert {:error, %Ecto.Changeset{} = changeset} =
-                 Chat.send_client_message(client_ctx(client), %{"body" => "Photos", "attachment_ids" => ids})
-
-        assert errors_on(changeset).attachment_ids != []
-      end
-
-      assert {:error, :not_found} =
-               Chat.send_client_message(client_ctx(client), %{
-                 "body" => "Snapshot",
-                 "embed" => %{"type" => "training_session", "id" => Ecto.UUID.generate()}
-               })
-    end
-
-    test "string-keyed coach embeds resolve the server-owned snapshot", %{coach: coach, client: client} do
-      {:ok, conversation} = Chat.get_or_create_conversation_for_client(coach_ctx(coach), client.id)
-      entry = insert(:workout_session, state: :completed, business: coach.business, client: client)
-
-      assert {:ok, message} =
-               Chat.send_message(coach_ctx(coach), conversation.id, %{
-                 "embed" => %{"type" => "training_session", "id" => entry.id, "snapshot" => %{"title" => "Fake"}}
-               })
-
-      assert message.embed_id == entry.id
-      assert message.embed_snapshot["title"] == "Workout"
-    end
-
-    test "accepts the typed workout record embed atom", %{coach: coach, client: client} do
-      {:ok, conversation} = Chat.get_or_create_conversation_for_client(coach_ctx(coach), client.id)
-      entry = insert(:workout_session, state: :completed, business: coach.business, client: client)
-
-      assert {:ok, message} =
-               Chat.send_message(coach_ctx(coach), conversation.id, %{
-                 embed: %{type: :training_session, id: entry.id}
-               })
-
-      assert message.embed_type == :training_session
-      assert message.embed_id == entry.id
-    end
-
-    test "supports attachment-only and embed-only previews", %{coach: coach, client: client} do
-      {:ok, conversation} = Chat.get_or_create_conversation_for_client(coach_ctx(coach), client.id)
-      attachment = insert(:attachment, business: coach.business, client: client, content_type: "video/mp4")
-
-      assert {:ok, attachment_message} =
-               Chat.send_message(coach_ctx(coach), conversation.id, %{attachment_ids: [attachment.id]})
-
-      assert attachment_message.body == nil
-      assert Easy.Repo.get!(Conversation, conversation.id).last_message_preview == "Video"
-
-      first_photo = insert(:attachment, business: coach.business, client: client, content_type: "image/jpeg")
-      second_photo = insert(:attachment, business: coach.business, client: client, content_type: "image/png")
-
-      assert {:ok, _message} =
-               Chat.send_message(coach_ctx(coach), conversation.id, %{
-                 attachment_ids: [first_photo.id, second_photo.id]
-               })
-
-      assert Easy.Repo.get!(Conversation, conversation.id).last_message_preview == "2 attachments"
-
-      entry = insert(:workout_session, state: :completed, business: coach.business, client: client)
-
-      assert {:ok, embed_message} =
-               Chat.send_message(coach_ctx(coach), conversation.id, %{
-                 embed: %{type: "training_session", id: entry.id}
-               })
-
-      assert embed_message.body == nil
-
-      assert Easy.Repo.get!(Conversation, conversation.id).last_message_preview ==
-               "Shared Workout"
     end
 
     test "rejects empty and invalid attachment compositions", %{coach: coach, client: client} do
@@ -511,29 +368,6 @@ defmodule Easy.ChatTest do
       end
 
       assert Easy.Repo.aggregate(Message, :count) == 0
-    end
-
-    test "coach and client references must belong to the conversation client", %{
-      coach: coach,
-      client: client
-    } do
-      {:ok, conversation} = Chat.get_or_create_conversation_for_client(coach_ctx(coach), client.id)
-      other_client = insert(:client, business: coach.business, coach: coach)
-      entry = insert(:workout_session, state: :completed, business: coach.business, client: other_client)
-      embed = %{type: "training_session", id: entry.id}
-
-      other_coach = insert(:coach)
-      foreign_client = insert(:client, business: other_coach.business, coach: other_coach)
-      cross_tenant = insert(:workout_session, state: :completed, business: other_coach.business, client: foreign_client)
-
-      for id <- [entry.id, cross_tenant.id, Ecto.UUID.generate()] do
-        assert {:error, :not_found} =
-                 Chat.send_message(coach_ctx(coach), conversation.id, %{
-                   embed: %{type: "training_session", id: id}
-                 })
-      end
-
-      assert {:error, :not_found} = Chat.send_client_message(client_ctx(client), %{embed: embed})
     end
 
     test "paginated messages preload attachments without changing message order", %{

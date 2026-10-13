@@ -34,19 +34,9 @@ defmodule EasyWeb.Types.ChatMessageEmbed do
   use EasyWeb.Type
 
   @type t :: %{
-          required(:type) => :training_session | :review,
+          required(:type) => :review,
           required(:id) => String.t(),
           required(:snapshot) => EasyWeb.Types.ChatRecordSnapshot.t()
-        }
-end
-
-defmodule EasyWeb.Types.ChatMessageEmbedRequest do
-  use EasyWeb.Type
-
-  @type t :: %{
-          required(:type) => :training_session,
-          required(:id) => String.t(),
-          optional(:revision) => pos_integer()
         }
 end
 
@@ -78,8 +68,7 @@ defmodule EasyWeb.Types.ChatMessage do
   @type coach_create :: %{
           optional(:body) => String.t() | nil,
           optional(:request_id) => Ecto.UUID.t(),
-          optional(:attachment_ids) => [String.t()],
-          optional(:embed) => EasyWeb.Types.ChatMessageEmbedRequest.t() | nil
+          optional(:attachment_ids) => [String.t()]
         }
 
   @type history_query :: %{optional(:cursor) => String.t(), optional(:limit) => pos_integer()}
@@ -87,8 +76,7 @@ defmodule EasyWeb.Types.ChatMessage do
   @type client_create :: %{
           optional(:body) => String.t() | nil,
           optional(:request_id) => Ecto.UUID.t(),
-          optional(:attachment_ids) => [String.t()],
-          optional(:embed) => EasyWeb.Types.ChatMessageEmbedRequest.t() | nil
+          optional(:attachment_ids) => [String.t()]
         }
 
   @spec format(Message.t()) :: t()

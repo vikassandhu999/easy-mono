@@ -55,16 +55,12 @@ export function groupAction(group: {
   record_type: ChangeGroup['record_type'];
   changes: Pick<ChangeGroup['changes'][number], 'row_type' | 'action' | 'new_value'>[];
 }) {
-  const parentType = group.record_type === 'workout' ? 'session' : group.record_type;
+  const parentType = group.record_type;
   const parent = group.changes.findLast((change) => change.row_type === parentType);
   if (!parent) {
     return 'changed';
   }
-  const value = parent.new_value;
-  if (
-    parent.action === 'removed' ||
-    (value && typeof value === 'object' && 'state' in value && value.state === 'discarded')
-  ) {
+  if (parent.action === 'removed') {
     return 'removed';
   }
   return group.changes.some((change) => change.row_type === parentType && change.action === 'added')

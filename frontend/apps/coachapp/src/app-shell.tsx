@@ -194,12 +194,12 @@ export function AppShell() {
           Messages
         </NavLink>
         <NavLink
-          to={routes.trainingPlans}
+          to={routes.workouts}
           className={({isActive}) =>
             isActive || pathname.startsWith(routes.exercises) ? 'app-navigation-link active' : 'app-navigation-link'
           }
         >
-          Training
+          Workouts
         </NavLink>
         <NavLink
           to={routes.foods}
@@ -222,7 +222,11 @@ export function AppShell() {
         id="main-content"
         ref={main}
         tabIndex={-1}
-        className={matchPath(routes.clientNutrition, pathname) ? 'app-main app-main-wide' : 'app-main'}
+        className={
+          matchPath(routes.clientNutrition, pathname) || matchPath(routes.clientTraining, pathname)
+            ? 'app-main app-main-wide'
+            : 'app-main'
+        }
       >
         {profile.isError && (
           <div className="mb-6 space-y-3">

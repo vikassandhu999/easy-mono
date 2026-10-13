@@ -1,8 +1,7 @@
 defmodule EasyWeb.Coaches.TrackerTemplateController do
-  alias Easy.Plans.Programming
-  alias Easy.Plans.Reader
   alias Easy.Trackers.Assignments
   alias Easy.Trackers.Defaults
+  alias Easy.Trackers.Templates
   alias EasyWeb.Types.Revision
   alias EasyWeb.Types.TrackerAssignment
   alias EasyWeb.Types.TrackerSettings
@@ -19,21 +18,21 @@ defmodule EasyWeb.Coaches.TrackerTemplateController do
   typed(:update_settings, body: TrackerSettings.update(), ok: {200, data(TrackerSettings.t())})
   @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def index(conn, _params) do
-    with {:ok, result} <- Reader.list_template_page(conn.assigns.ctx, :trackers, opts(conn)) do
+    with {:ok, result} <- Templates.list_template_page(conn.assigns.ctx, opts(conn)) do
       ok(conn, result)
     end
   end
 
   @spec show(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def show(conn, _params) do
-    with {:ok, result} <- Reader.get_template(conn.assigns.ctx, :trackers, conn.path_params["id"]) do
+    with {:ok, result} <- Templates.get_template(conn.assigns.ctx, conn.path_params["id"]) do
       ok(conn, %{data: result})
     end
   end
 
   @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def create(conn, _params) do
-    with {:ok, result} <- Programming.create_template(conn.assigns.ctx, :trackers, conn.body_params) do
+    with {:ok, result} <- Templates.create_template(conn.assigns.ctx, conn.body_params) do
       ok(conn, %{data: result})
     end
   end
@@ -41,7 +40,7 @@ defmodule EasyWeb.Coaches.TrackerTemplateController do
   @spec update(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def update(conn, _params) do
     with {:ok, result} <-
-           Programming.update_plan(conn.assigns.ctx, :trackers, conn.path_params["id"], conn.body_params[:expected_revision], Map.delete(conn.body_params, :expected_revision)) do
+           Templates.update_template(conn.assigns.ctx, conn.path_params["id"], conn.body_params[:expected_revision], Map.delete(conn.body_params, :expected_revision)) do
       ok(conn, %{data: result})
     end
   end

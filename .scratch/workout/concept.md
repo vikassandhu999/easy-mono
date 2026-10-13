@@ -42,6 +42,7 @@ Status: in design, 9 October 2026. Replaces the training part of `.scratch/core-
 | W34 | `WorkoutLog` and `ExerciseSet` are records on the shared spine: shared record fields, `Easy.RecordJournal` writes, `record_changes`, `clients.last_change_seq` (M9, M10). "New since the last review" and "pain reported" work for them unchanged. |
 | W35 | Every table carries `business_id` (tenant). A library workout is `business_id` set, `client_id` and `program_id` null. Built-in exercises keep `business_id` null. |
 | W36 | Workout schedule rows use `weekdays_mask` (Mon=1 … Sun=64), the same convention as nutrition (N8) and trackers (R6). One row can cover several weekdays. Replaces the single `day_of_week` in W6 and W11. (10 Oct 2026.) |
+| W37 | (12 Oct 2026) History storage for W8, the same rule as nutrition N36: a workout that applied on a past date never changes. An edit before that is made in place. An edit after it copies the workout with its groups, exercises and targets; each schedule row that uses it ends on its last fact date and a new row starts on the copy (W14); the old workout is archived (W32). No version tables. WorkoutHistory copies for logs (W7, W19) stay as decided and are built with logging. |
 
 ## Model
 
@@ -141,7 +142,7 @@ Settled with a clickable prototype: route `/prototype/client-week` in the coach 
 | V3 | The same workout on several days is one item: one schedule row with a weekday mask (W36). Its dialog edits all its days ("Every week on"), the live-session details (time, place, coach who leads, W16), "Remove from <day>", "Edit workout" and Save. A live session with its own details is a separate item. |
 | V4 | A chip shows the workout name, the session line, and the other days it repeats ("Also Mon · Thu"). |
 | V5 | Every change applies from today: the old row ends yesterday and a new row starts today; a row that started today is edited in place (W14). The UI says "Changes apply from today. Earlier weeks stay as they were." |
-| V6 | Adding, removing and saving show a message with Undo for 8 seconds. A sticky bar shows the save state. An empty week says "Nothing planned yet. Add a workout to a day; it repeats every week." |
+| V6 | Adding, removing and saving show a message with Undo for 8 seconds. A bar shows only while saving or after a failed save ("Not saved. Your changes stay on this device."); a saved week shows nothing, as in the nutrition week (12 Oct 2026). An empty week says "Nothing planned yet. Add a workout to a day; it repeats every week." |
 | V7 | Desktop shows seven day columns; a phone shows a list of days. On a phone the dialog orders Save, Edit workout, then Remove from <day>. |
 
 ## Relation to the core-domains decisions

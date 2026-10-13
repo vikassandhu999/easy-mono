@@ -1,13 +1,13 @@
 defmodule Easy.Trackers.Assignments do
   alias Easy.Clients.Client
   alias Easy.Ctx
-  alias Easy.Plans.Template
   alias Easy.Repo
   alias Easy.Result
   alias Easy.Revision
   alias Easy.Trackers
   alias Easy.Trackers.Assignment
   alias Easy.Trackers.Content
+  alias Easy.Trackers.Template
   import Ecto.Query
 
   @spec list_for_client(Ctx.t(), String.t()) :: {:ok, [map()]} | {:error, term()}
@@ -58,7 +58,7 @@ defmodule Easy.Trackers.Assignments do
 
   @spec template_content(Ctx.t(), String.t(), term()) :: {:ok, map()} | {:error, term()}
   def template_content(ctx, id, expected \\ :any) do
-    case Repo.get(Template.for_business(ctx.business_id, :trackers), id) do
+    case Repo.get(Template.for_business(ctx.business_id), id) do
       nil ->
         {:error, :not_found}
 

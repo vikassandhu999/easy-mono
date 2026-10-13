@@ -42,17 +42,7 @@ test('roster labels use server due facts and retain overdue days', () => {
   assert.equal(dueLabel({current_term: null, due: false, overdue_days: 0, due_on: null}), 'No current term');
 });
 
-test('removing a workout set or Tracker attachment does not mark the parent record removed', () => {
-  assert.equal(
-    groupAction({
-      record_type: 'workout',
-      changes: [
-        {row_type: 'session', action: 'changed', new_value: {state: 'completed'}},
-        {row_type: 'set', action: 'removed', new_value: null},
-      ],
-    }),
-    'changed',
-  );
+test('removing a Tracker attachment does not mark the parent record removed', () => {
   assert.equal(
     groupAction({
       record_type: 'tracker_entry',
@@ -64,7 +54,7 @@ test('removing a workout set or Tracker attachment does not mark the parent reco
     'changed',
   );
 });
-test('removing a Tracker parent or discarding a workout marks the whole record removed', () => {
+test('removing a Tracker parent marks the whole record removed', () => {
   assert.equal(
     groupAction({
       record_type: 'tracker_entry',
@@ -72,22 +62,14 @@ test('removing a Tracker parent or discarding a workout marks the whole record r
     }),
     'removed',
   );
-  assert.equal(
-    groupAction({
-      record_type: 'workout',
-      changes: [{row_type: 'session', action: 'changed', new_value: {state: 'discarded'}}],
-    }),
-    'removed',
-  );
 });
-
-test('a record added and then corrected is still Added until the parent is removed', () => {
+test('a Tracker added and corrected stays added until its parent is removed', () => {
   assert.equal(
     groupAction({
-      record_type: 'workout',
+      record_type: 'tracker_entry',
       changes: [
-        {row_type: 'session', action: 'added', new_value: {state: 'active'}},
-        {row_type: 'session', action: 'changed', new_value: {state: 'completed'}},
+        {row_type: 'tracker_entry', action: 'added', new_value: {number_value: 80}},
+        {row_type: 'tracker_entry', action: 'changed', new_value: {number_value: 81}},
       ],
     }),
     'added',

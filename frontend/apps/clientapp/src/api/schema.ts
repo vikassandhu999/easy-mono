@@ -4,7 +4,7 @@
  */
 
 /* typed-routes:types */
-/* typed-routes:hash d5888bb0a5983c174c3f3446f78f213dd3aa3768b53b657e28f538b7753937ad */
+/* typed-routes:hash 171b14f7c02b53d0d77c0b1b5ce2d39eb008fba6822eb788bc43b54db25ba200 */
 export type Attachment = {
   id: string;
   content_type:
@@ -34,14 +34,8 @@ export type ChatMessage = {
   embed: ChatMessageEmbed | null;
   inserted_at: string;
 };
-export type ChatMessageClientCreate = {
-  body?: string | null;
-  request_id?: string;
-  attachment_ids?: Array<string>;
-  embed?: ChatMessageEmbedRequest | null;
-};
-export type ChatMessageEmbed = {type: 'training_session' | 'review'; id: string; snapshot: ChatRecordSnapshot};
-export type ChatMessageEmbedRequest = {type: 'training_session'; id: string; revision?: number};
+export type ChatMessageClientCreate = {body?: string | null; request_id?: string; attachment_ids?: Array<string>};
+export type ChatMessageEmbed = {type: 'review'; id: string; snapshot: ChatRecordSnapshot};
 export type ChatMessageHistory = {
   data: Array<ChatMessage>;
   count: number;
@@ -86,144 +80,9 @@ export type Conversation = {
   updated_at: string;
 };
 export type ConversationMarkReadQuery = {through?: string};
-export type Exercise = {
-  id: string;
-  built_in: boolean;
-  measures: Array<'reps' | 'load' | 'duration' | 'distance'>;
-  bodyweight: boolean;
-  media_id: string | null;
-  archived_at: string | null;
-  name: string;
-  instructions: string | null;
-  mechanics: 'compound' | 'isolation' | 'isometric' | null;
-  force: 'push' | 'pull' | 'static' | null;
-  media: ExerciseMedia | null;
-  muscles: Array<ExerciseRelation>;
-  equipment: Array<ExerciseRelation>;
-  inserted_at: string;
-  updated_at: string;
-};
-export type ExerciseBest = {reps: number; best_kg: string};
-export type ExerciseHistory = {bests: Array<ExerciseBest>; sets: Array<PerformedSet>};
-export type ExerciseListQuery = {
-  offset?: number;
-  limit?: number;
-  search?: string;
-  muscle_ids?: Array<string>;
-  equipment_ids?: Array<string>;
-};
-export type ExerciseMedia = {
-  id: string;
-  kind: 'image' | 'video';
-  content_type: string | null;
-  byte_size: number | null;
-  url: string | null;
-};
-export type ExerciseRelation = {id: string; name: string; description: string | null};
 export type Health = {status: string; service: string; timestamp: string; version: string};
-export type PerformedSet = {
-  id: string;
-  session_id: string;
-  position: number;
-  request_id: string | null;
-  item_id: string | null;
-  set_id: string | null;
-  exercise_id: string | null;
-  exercise_name: string | null;
-  kind: 'warmup' | 'working' | 'drop';
-  outcome: 'done' | 'failed' | 'skipped';
-  reps: number | null;
-  load_kg: string | null;
-  entered_load_unit: 'kg' | 'lb' | null;
-  duration_s: number | null;
-  distance_m: string | null;
-  entered_distance_unit: 'm' | 'km' | 'mi' | null;
-  rpe: string | null;
-  rir: number | null;
-  notes: string | null;
-  deleted_at: string | null;
-  local_date?: string | null;
-  inserted_at: string;
-  updated_at: string;
-};
-export type PerformedSetCreate = {
-  item_id?: string | null;
-  set_id?: string | null;
-  exercise_id?: string | null;
-  exercise_name?: string | null;
-  kind?: 'warmup' | 'working' | 'drop';
-  outcome?: 'done' | 'failed' | 'skipped';
-  reps?: number | null;
-  duration_s?: number | null;
-  rir?: number | null;
-  notes?: string | null;
-  load_value?: number | null;
-  load_unit?: 'kg' | 'lb' | null;
-  distance_value?: number | null;
-  distance_unit?: 'm' | 'km' | 'mi' | null;
-  rpe?: number | null;
-  expected_revision?: number;
-  request_id: string;
-};
-export type PerformedSetDeleteQuery = {expected_revision?: number};
-export type PerformedSetUpdate = {
-  item_id?: string | null;
-  set_id?: string | null;
-  exercise_id?: string | null;
-  exercise_name?: string | null;
-  kind?: 'warmup' | 'working' | 'drop';
-  outcome?: 'done' | 'failed' | 'skipped';
-  reps?: number | null;
-  duration_s?: number | null;
-  rir?: number | null;
-  notes?: string | null;
-  load_value?: number | null;
-  load_unit?: 'kg' | 'lb' | null;
-  distance_value?: number | null;
-  distance_unit?: 'm' | 'km' | 'mi' | null;
-  rpe?: number | null;
-  expected_revision?: number;
-};
 export type ReviewReplyQuery = {cursor?: string; limit?: number; review_id?: string};
 export type Revision = {expected_revision: number};
-export type Session = {
-  id: string;
-  revision: number;
-  local_date: string;
-  timezone: string;
-  started_at: string;
-  ended_at: string | null;
-  state: 'active' | 'completed' | 'discarded';
-  notes: string | null;
-  request_id: string | null;
-  plan_revision_id: string | null;
-  workout_id: string | null;
-  schedule_entry_id: string | null;
-  occurrence_date: string | null;
-  prescription: TrainingWorkout | null;
-  performed_sets: Array<PerformedSet>;
-  inserted_at: string;
-  updated_at: string;
-};
-export type SessionCreate = {
-  notes?: string | null;
-  request_id?: string | null;
-  plan_revision_id?: string | null;
-  workout_id?: string | null;
-  schedule_entry_id?: string | null;
-  occurrence_date?: string | null;
-};
-export type SessionIndex = {data: Array<Session>; count: number; next_cursor: string | null};
-export type SessionListQuery = {
-  from?: string;
-  to?: string;
-  offset?: number;
-  limit?: number;
-  cursor?: string;
-  search?: string;
-  state?: 'active' | 'completed' | 'discarded';
-};
-export type SessionUpdate = {expected_revision?: number; local_date?: string; notes?: string | null};
 export type Tracker = {
   id: string;
   name: string;
@@ -265,7 +124,6 @@ export type TrackerEntry = {
   rating_value: number | null;
   yes_no_value: boolean | null;
   text_value: string | null;
-  about_session_id: string | null;
   attachments: Array<TrackerAttachment>;
   inserted_at: string;
   updated_at: string;
@@ -279,7 +137,6 @@ export type TrackerEntryCreate = {
   rating_value?: number | null;
   yes_no_value?: boolean | null;
   text_value?: string | null;
-  about_session_id?: string | null;
   attachment_ids?: Array<string>;
 };
 export type TrackerEntryIndex = {data: Array<TrackerEntry>; count: number; next_cursor: string | null};
@@ -300,7 +157,6 @@ export type TrackerEntryUpdate = {
   rating_value?: number | null;
   yes_no_value?: boolean | null;
   text_value?: string | null;
-  about_session_id?: string | null;
   attachment_ids?: Array<string>;
 };
 export type TrackerIndex = {data: Array<Tracker>; count: number; next_cursor: string | null};
@@ -335,94 +191,8 @@ export type TrackerRequest = {
 };
 export type TrackerSeriesPoint = {date: string; value: number; entry_id: string};
 export type TrackerToday = {date: string; due: Array<TrackerAssignment>; requests: Array<TrackerRequest>};
-export type TrackerTodayPromptQuery = {about_session_id?: string};
+export type TrackerTodayPromptQuery = {};
 export type TrackerUnit = {unit: string; to_base_factor: number};
-export type TrainingBlock = {
-  id: string;
-  format: 'straight' | 'superset' | 'circuit';
-  rounds?: number | null;
-  rest_s?: number | null;
-  notes?: string | null;
-  items: Array<TrainingItem>;
-};
-export type TrainingContent = {workouts: Array<TrainingWorkout>; schedule: TrainingSchedule};
-export type TrainingDistance = {m: number; entered_unit: 'm' | 'km' | 'mi'};
-export type TrainingItem = {
-  id: string;
-  exercise_id: string;
-  exercise_name?: string | null;
-  notes?: string | null;
-  sets: Array<TrainingPrescribedSet>;
-};
-export type TrainingLoad = {kg: number; entered_unit: 'kg' | 'lb'};
-export type TrainingOccurrence = {
-  plan_id: string;
-  plan_revision_id: string;
-  schedule_entry_id: string;
-  occurrence_date: string;
-  workout_id: string;
-  workout_name: string;
-  session_id: string | null;
-};
-export type TrainingOccurrences = {data: Array<TrainingOccurrence>; extra_sessions: Array<Session>};
-export type TrainingPlan = {
-  id: string;
-  kind: 'template' | 'client_plan';
-  name: string;
-  description: string | null;
-  revision: number;
-  archived_at: string | null;
-  status: 'active' | 'archived';
-  lifecycle: 'incomplete' | 'waiting' | 'upcoming' | 'current' | 'ended' | 'archived' | null;
-  workout_count: number;
-  client: TrainingPlanClient | null;
-  start_date: string | null;
-  end_date: string | null;
-  created_local_date: string | null;
-  client_id: string | null;
-  source_template_id: string | null;
-  content: TrainingContent;
-  current_revision: TrainingPlanRevision | null;
-  scheduled_revisions: Array<TrainingPlanRevision>;
-  stopped_on: string | null;
-  inserted_at: string;
-  updated_at: string;
-};
-export type TrainingPlanClient = {id: string; full_name: string; preferred_name: string | null};
-export type TrainingPlanClientListQuery = {
-  cursor?: string;
-  offset?: number;
-  limit?: number;
-  search?: string;
-  archived?: boolean;
-};
-export type TrainingPlanCoverage = {date: string; plan: TrainingPlan; workouts: Array<TrainingWorkout>};
-export type TrainingPlanCoverageQuery = {date?: string};
-export type TrainingPlanIndex = {data: Array<TrainingPlan>; count: number; next_cursor: string | null};
-export type TrainingPlanRangeQuery = {from: string; to: string};
-export type TrainingPlanRevision = {id: string; number: number; effective_on: string | null; content: TrainingContent};
-export type TrainingPrescribedSet = {
-  id: string;
-  kind: 'warmup' | 'working' | 'drop';
-  reps?: TrainingReps | null;
-  load?: TrainingLoad | null;
-  rpe?: number | null;
-  rir?: number | null;
-  tempo?: string | null;
-  duration_s?: number | null;
-  distance?: TrainingDistance | null;
-  rest_s?: number | null;
-  notes?: string | null;
-};
-export type TrainingReps = {
-  type: 'exact' | 'range' | 'amrap';
-  value?: number | null;
-  min?: number | null;
-  max?: number | null;
-};
-export type TrainingSchedule = {cycle_weeks: number; entries: Array<TrainingScheduleEntry>};
-export type TrainingScheduleEntry = {id: string; day: number; ref: string};
-export type TrainingWorkout = {id: string; name: string; notes?: string | null; blocks: Array<TrainingBlock>};
 export type Upload = {
   id: string;
   content_type:
@@ -467,7 +237,7 @@ export type UploadDownloadUrls = {attachment_ids: Array<string>};
 
 export interface paths {
   /* typed-routes:paths */
-  /* typed-routes:hash 212adb73260c73a46ff59bd817a5d67755c0eb490a6544ee4d5ce6a6da799005 */
+  /* typed-routes:hash 8ac3b8776a21f9541a0018af4db2d34a4d4d5f90163c569cde9c8083b48efc44 */
   '/api/health': {
     get: {
       parameters: {
@@ -734,226 +504,6 @@ export interface paths {
       };
       responses: {
         200: {content: {'application/json': {data: TrackerMetrics}}};
-      };
-    };
-  };
-  '/v1/client/training-exercises': {
-    get: {
-      parameters: {
-        query?: ExerciseListQuery;
-        header?: {Authorization?: string};
-        path?: never;
-        cookie?: never;
-      };
-      responses: {
-        200: {content: {'application/json': {data: Array<Exercise>; count: number}}};
-      };
-    };
-  };
-  '/v1/client/training-exercises/{exercise_id}/history': {
-    get: {
-      parameters: {
-        query?: never;
-        header?: {Authorization?: string};
-        path: {exercise_id: string};
-        cookie?: never;
-      };
-      responses: {
-        200: {content: {'application/json': {data: ExerciseHistory}}};
-      };
-    };
-  };
-  '/v1/client/training-exercises/{id}': {
-    get: {
-      parameters: {
-        query?: never;
-        header?: {Authorization?: string};
-        path: {id: string};
-        cookie?: never;
-      };
-      responses: {
-        200: {content: {'application/json': {data: Exercise}}};
-      };
-    };
-  };
-  '/v1/client/training-performed-sets/{id}': {
-    delete: {
-      parameters: {
-        query?: PerformedSetDeleteQuery;
-        header?: {Authorization?: string};
-        path: {id: string};
-        cookie?: never;
-      };
-      responses: {
-        204: {content?: never};
-      };
-    };
-    patch: {
-      parameters: {
-        query?: never;
-        header?: {Authorization?: string};
-        path: {id: string};
-        cookie?: never;
-      };
-      requestBody: {content: {'application/json': PerformedSetUpdate}};
-      responses: {
-        200: {content: {'application/json': {data: PerformedSet}}};
-      };
-    };
-  };
-  '/v1/client/training-plans': {
-    get: {
-      parameters: {
-        query?: TrainingPlanClientListQuery;
-        header?: {Authorization?: string};
-        path?: never;
-        cookie?: never;
-      };
-      responses: {
-        200: {content: {'application/json': TrainingPlanIndex}};
-      };
-    };
-  };
-  '/v1/client/training-plans/coverage': {
-    get: {
-      parameters: {
-        query?: TrainingPlanCoverageQuery;
-        header?: {Authorization?: string};
-        path?: never;
-        cookie?: never;
-      };
-      responses: {
-        200: {content: {'application/json': {data: TrainingPlanCoverage | null}}};
-      };
-    };
-  };
-  '/v1/client/training-plans/occurrences': {
-    get: {
-      parameters: {
-        query: TrainingPlanRangeQuery;
-        header?: {Authorization?: string};
-        path?: never;
-        cookie?: never;
-      };
-      responses: {
-        200: {content: {'application/json': TrainingOccurrences}};
-      };
-    };
-  };
-  '/v1/client/training-plans/{id}': {
-    get: {
-      parameters: {
-        query?: never;
-        header?: {Authorization?: string};
-        path: {id: string};
-        cookie?: never;
-      };
-      responses: {
-        200: {content: {'application/json': {data: TrainingPlan}}};
-      };
-    };
-  };
-  '/v1/client/training-sessions': {
-    get: {
-      parameters: {
-        query?: SessionListQuery;
-        header?: {Authorization?: string};
-        path?: never;
-        cookie?: never;
-      };
-      responses: {
-        200: {content: {'application/json': SessionIndex}};
-      };
-    };
-    post: {
-      parameters: {
-        query?: never;
-        header?: {Authorization?: string};
-        path?: never;
-        cookie?: never;
-      };
-      requestBody: {content: {'application/json': SessionCreate}};
-      responses: {
-        201: {content: {'application/json': {data: Session}}};
-      };
-    };
-  };
-  '/v1/client/training-sessions/active': {
-    get: {
-      parameters: {
-        query?: never;
-        header?: {Authorization?: string};
-        path?: never;
-        cookie?: never;
-      };
-      responses: {
-        200: {content: {'application/json': {data: Session | null}}};
-      };
-    };
-  };
-  '/v1/client/training-sessions/{id}': {
-    get: {
-      parameters: {
-        query?: never;
-        header?: {Authorization?: string};
-        path: {id: string};
-        cookie?: never;
-      };
-      responses: {
-        200: {content: {'application/json': {data: Session}}};
-      };
-    };
-    patch: {
-      parameters: {
-        query?: never;
-        header?: {Authorization?: string};
-        path: {id: string};
-        cookie?: never;
-      };
-      requestBody: {content: {'application/json': SessionUpdate}};
-      responses: {
-        200: {content: {'application/json': {data: Session}}};
-      };
-    };
-  };
-  '/v1/client/training-sessions/{id}/complete': {
-    post: {
-      parameters: {
-        query?: never;
-        header?: {Authorization?: string};
-        path: {id: string};
-        cookie?: never;
-      };
-      requestBody: {content: {'application/json': SessionUpdate}};
-      responses: {
-        200: {content: {'application/json': {data: Session}}};
-      };
-    };
-  };
-  '/v1/client/training-sessions/{id}/discard': {
-    post: {
-      parameters: {
-        query?: never;
-        header?: {Authorization?: string};
-        path: {id: string};
-        cookie?: never;
-      };
-      responses: {
-        200: {content: {'application/json': {data: Session}}};
-      };
-    };
-  };
-  '/v1/client/training-sessions/{session_id}/performed-sets': {
-    post: {
-      parameters: {
-        query?: never;
-        header?: {Authorization?: string};
-        path: {session_id: string};
-        cookie?: never;
-      };
-      requestBody: {content: {'application/json': PerformedSetCreate}};
-      responses: {
-        201: {content: {'application/json': {data: PerformedSet}}};
       };
     };
   };

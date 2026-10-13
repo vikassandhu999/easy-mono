@@ -177,7 +177,7 @@ defmodule Easy.ChatMessages do
 
   defp resolve_embed(_ctx, _client_id, nil), do: {:ok, nil}
 
-  defp resolve_embed(ctx, client_id, reference), do: Easy.ChatRecordReferences.reference(ctx, client_id, reference)
+  defp resolve_embed(_ctx, _client_id, _reference), do: {:error, :not_found}
 
   defp insert_attachment_links(message, attachments) do
     attachments

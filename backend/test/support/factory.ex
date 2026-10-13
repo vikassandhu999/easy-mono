@@ -11,15 +11,9 @@ defmodule Easy.Factory do
   alias Easy.Nutrition.Food
   alias Easy.Orgs.Business
   alias Easy.Orgs.Coach
-  alias Easy.Plans.Plan, as: TrainingPlan
-  alias Easy.Plans.Revision, as: PlanRevision
-  alias Easy.Plans.Template
-  alias Easy.Training.Content
-  alias Easy.Training.TrainingEquipment
-  alias Easy.Training.TrainingExercise
-  alias Easy.Training.TrainingMuscle
-  alias Easy.Training.TrainingPerformedSet
-  alias Easy.Training.TrainingSession
+  alias Easy.Trackers.Content
+  alias Easy.Trackers.Template
+  alias Easy.Workouts.Exercise
 
   def user_factory do
     %User{
@@ -143,114 +137,22 @@ defmodule Easy.Factory do
   end
 
   def exercise_factory do
-    %TrainingExercise{
+    %Exercise{
       name: sequence(:exercise_name, &"Exercise #{&1}"),
-      instructions: "Exercise instructions",
-      measures: [:reps, :load],
-      bodyweight: false,
-      mechanics: "compound",
-      force: "push",
+      kind: :movement,
+      goals: ["strength"],
+      places: ["gym"],
+      metrics: ["reps", "weight"],
       business: build(:business)
     }
   end
 
-  def muscle_factory do
-    %TrainingMuscle{
-      name: sequence(:muscle_name, &"Muscle #{&1}"),
-      description: "Primary target"
-    }
-  end
-
-  def equipment_factory do
-    %TrainingEquipment{
-      name: sequence(:equipment_name, &"Equipment #{&1}"),
-      description: "Gym equipment"
-    }
-  end
-
   def exercise_attrs_factory do
-    %{
-      "name" => sequence(:exercise_attr_name, &"Exercise Attr #{&1}"),
-      "instructions" => "Do it with control",
-      "measures" => ["reps", "load"],
-      "mechanics" => "compound",
-      "force" => "push"
-    }
+    %{name: sequence(:exercise_attr_name, &"Exercise #{&1}"), kind: "movement", goals: ["strength"], places: ["gym"], metrics: ["reps", "weight"]}
   end
 
-  def training_plan_factory(attrs) do
-    attrs = Map.new(attrs)
-    {business, attrs} = Map.pop(attrs, :business)
-    {creator, attrs} = Map.pop(attrs, :creator)
-    {client, attrs} = Map.pop(attrs, :client)
-    {kind, attrs} = Map.pop(attrs, :kind)
-    business = business || build(:business)
-    base = %{domain: :training, name: sequence(:training_plan_name, &"Training Plan #{&1}"), business: business}
-
-    if client || attrs[:client_id] || kind == :client_plan do
-      client = client || build(:client, business: business)
-      inserted = attrs[:inserted_at] || DateTime.utc_now(:second)
-      client_for_date = %{client | business: business}
-
-      struct(
-        TrainingPlan,
-        Map.merge(base, %{
-          client: client,
-          revisions: [%PlanRevision{domain: :training, number: 1, content: Content.empty()}],
-          created_local_date: Client.local_date(client_for_date, inserted)
-        })
-      )
-      |> merge_attributes(attrs)
-    else
-      struct(
-        Template,
-        Map.merge(base, %{content: Content.empty(), creator: if(match?(%Coach{}, creator), do: creator, else: nil)})
-      )
-      |> merge_attributes(Map.drop(attrs, [:start_date, :end_date]))
-    end
-  end
-
-  def training_plan_attrs_factory do
-    %{"name" => sequence(:training_plan_attr_name, &"Training Plan Attr #{&1}"), "content" => Content.empty()}
-  end
-
-  def workout_session_factory(attrs) do
-    attrs = Map.new(attrs)
-    business = attrs[:business] || build(:business)
-    creator = attrs[:creator] || build(:coach, business: business)
-    client = attrs[:client] || build(:client, business: business, coach: creator)
-    state = Map.get(attrs, :state, :active)
-    started_at = Map.get(attrs, :started_at, DateTime.utc_now(:second))
-
-    %TrainingSession{
-      local_date: session_date(attrs),
-      timezone: "Etc/UTC",
-      recorded_by_id: client.id || Ecto.UUID.generate(),
-      started_at: started_at,
-      ended_at: session_end(attrs, state, started_at),
-      state: state,
-      notes: "Session note",
-      client: client,
-      business: business
-    }
-    |> merge_attributes(Map.drop(attrs, [:kind, :date, :closed_at, :creator]))
-  end
-
-  defp session_date(attrs), do: attrs[:local_date] || attrs[:date] || Date.utc_today()
-  defp session_end(attrs, state, started), do: attrs[:ended_at] || attrs[:closed_at] || closed_time(state, started)
-  defp closed_time(state, started) when state in [:completed, :discarded], do: started
-  defp closed_time(_state, _started), do: nil
-
-  def performed_set_factory do
-    session = build(:workout_session)
-
-    %TrainingPerformedSet{
-      position: 0,
-      exercise_name: "Freestyle exercise",
-      kind: :working,
-      session: session,
-      business: session.business
-    }
+  def tracker_template_factory do
+    %Template{name: sequence(:template_name, &"Tracker template #{&1}"), domain: :trackers, content: Content.empty(), business: build(:business)}
   end
 
   def conversation_factory do

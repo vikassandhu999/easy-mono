@@ -1,15 +1,13 @@
 import {RefreshCw} from 'lucide-react';
-import {generatePath, Link, NavLink, useLocation, useParams} from 'react-router-dom';
+import {generatePath, Link, NavLink, useParams} from 'react-router-dom';
 import {ApiError, errorMessage} from '../api/client';
 import {useClient} from '../api/clients';
-import {useClientTrainingPlans} from '../api/training-plans';
 import {routes} from '../routes';
 import {Button, buttonVariants} from '../ui/button';
 import {FormError} from '../ui/form-error';
 import {useListLocation} from '../ui/list-location';
 import {Page, PageHeader, Surface} from '../ui/page';
 import {ClientCoaching} from './client-coaching';
-import {ClientTrainingPlans} from './client-training-plans';
 import {coachingSummary} from './coaching';
 
 export function ClientOverview() {
@@ -25,12 +23,8 @@ export function ClientOverview() {
 function Overview({id}: {id: string}) {
   const {to: listLocation, state: listState} = useListLocation(routes.home);
   const client = useClient(id);
-  const trainingPlans = useClientTrainingPlans(id);
-  const location = useLocation();
-  const notice: unknown = location.state;
   const refresh = () => {
     client.refetch();
-    trainingPlans.refetch();
   };
   if (!client.data) {
     return (
@@ -99,7 +93,7 @@ function Overview({id}: {id: string}) {
             </Link>
             <Button
               variant="ghost"
-              isPending={client.isFetching || trainingPlans.isFetching}
+              isPending={client.isFetching}
               onPress={refresh}
             >
               <RefreshCw aria-hidden="true" />
@@ -119,25 +113,6 @@ function Overview({id}: {id: string}) {
           </Button>
         </div>
       )}
-      {notice !== null &&
-        typeof notice === 'object' &&
-        'trainingPlanSaved' in notice &&
-        typeof notice.trainingPlanSaved === 'string' && (
-          <p
-            role="status"
-            className="text-sm"
-          >
-            {notice.trainingPlanSaved} saved for this client.
-          </p>
-        )}
-      {notice !== null && typeof notice === 'object' && 'assigned' in notice && typeof notice.assigned === 'string' && (
-        <p
-          role="status"
-          className="rounded-xl bg-muted px-4 py-3 text-sm"
-        >
-          {notice.assigned} assigned.
-        </p>
-      )}
       <nav
         aria-label="Client sections"
         className="flex gap-2 border-b border-border pb-3"
@@ -147,7 +122,13 @@ function Overview({id}: {id: string}) {
           to={generatePath(routes.client, {id})}
           className={({isActive}) => buttonVariants({variant: isActive ? 'default' : 'ghost'})}
         >
-          Training and coaching
+          Coaching
+        </NavLink>
+        <NavLink
+          to={generatePath(routes.clientTraining, {id})}
+          className={({isActive}) => buttonVariants({variant: isActive ? 'default' : 'ghost'})}
+        >
+          Training
         </NavLink>
         <NavLink
           to={generatePath(routes.clientNutrition, {clientId: id})}
@@ -175,10 +156,6 @@ function Overview({id}: {id: string}) {
           Tracker history
         </Link>
       </Surface>
-      <ClientTrainingPlans
-        person={person}
-        query={trainingPlans}
-      />
     </Page>
   );
 }

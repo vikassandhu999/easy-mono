@@ -39,7 +39,8 @@ defmodule EasyWeb.ReviewContractTest do
     screen = json_response(get(f.coach_conn, prefix <> "/review-screen"), 200)["data"]
     assert screen["reviewed_through_seq"] == 1
     assert hd(screen["changes"])["title"] == "Weight"
-    assert screen["training_counts"] == %{"expected" => 0, "completed" => 0, "extra" => 0}
+    refute Map.has_key?(screen, "training_counts")
+    refute Map.has_key?(screen, "plans")
     assert hd(screen["trackers"])["average"] == 82.5
     refute Jason.encode!(screen) =~ "business_id"
 

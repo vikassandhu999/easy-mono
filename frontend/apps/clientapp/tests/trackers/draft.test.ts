@@ -51,24 +51,18 @@ assert.equal(trackerInput(habitDraft, habit, []).yes_no_value, false, 'No is a r
 const report = {...habit, id: 'report', kind: 'document' as const};
 const reportDraft = trackerDraft('tracker.report.new', report, '2026-10-06', 'metric');
 reportDraft.files = ['file-pdf', 'file-image'];
-const reportInput = trackerInput(reportDraft, report, ['uploaded-pdf', 'uploaded-image'], {
-  about_session_id: 'saved-session',
-});
+const reportInput = trackerInput(reportDraft, report, ['uploaded-pdf', 'uploaded-image']);
 assert.deepEqual(reportInput.attachment_ids, ['uploaded-pdf', 'uploaded-image']);
-assert.equal(reportInput.about_session_id, 'saved-session');
 reportDraft.attempt = reportInput;
 assert.deepEqual(
   parseTrackerDraft(JSON.parse(JSON.stringify(reportDraft)), reportDraft.resource)?.attempt,
   reportInput,
-  'A report retry preserves order and the saved event link',
+  'A report retry preserves file order and request identity',
 );
 const energy = {...habit, kind: 'rating' as const, scale_max: 5};
 const energyDraft = trackerDraft('energy.session', energy, '2026-10-06', 'metric');
 energyDraft.value = '4';
-assert.equal(
-  trackerInput(energyDraft, energy, [], {about_session_id: 'completed-session'}).about_session_id,
-  'completed-session',
-);
+assert.equal(trackerInput(energyDraft, energy, []).rating_value, 4);
 energyDraft.value = '6';
 assert.throws(() => trackerInput(energyDraft, energy, []), /rating from 1 to 5/);
 

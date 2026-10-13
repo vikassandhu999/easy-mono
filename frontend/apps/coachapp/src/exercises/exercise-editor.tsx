@@ -1,242 +1,155 @@
-import {useCallback, useEffect, useRef, useState} from 'react';
-import {flushSync} from 'react-dom';
-import {Controller, useForm} from 'react-hook-form';
-import {generatePath, useBeforeUnload, useBlocker, useNavigate, useParams} from 'react-router-dom';
-import {ApiError, errorMessage} from '../api/client';
-import {type Exercise, useExercise, useExercises, useSaveExercise} from '../api/exercises';
-import {routes} from '../routes';
+import {ArrowDown, ArrowUp, X} from 'lucide-react';
+import {useEffect, useId, useState} from 'react';
+import {type FieldPath, type FieldPathValue, useForm} from 'react-hook-form';
+import {useNavigate, useParams} from 'react-router-dom';
+import {errorMessage} from '../api/client';
+import {
+  type Exercise,
+  type ExerciseCreate,
+  useCopyExercise,
+  useDeleteExercise,
+  useExercise,
+  useSaveExercise,
+} from '../api/exercises';
 import {Button} from '../ui/button';
 import {Dialog, DialogHeader, DialogTitle} from '../ui/dialog';
 import {FormError} from '../ui/form-error';
-import {setFormError} from '../ui/form-errors';
 import {FormField} from '../ui/form-field';
-import {InfiniteList} from '../ui/infinite-list';
+import {Input} from '../ui/input';
 import {useListLocation} from '../ui/list-location';
-import {FormActions, Page, PageHeader, Surface} from '../ui/page';
-import {SelectItem} from '../ui/select';
-import {SelectField} from '../ui/select-field';
-import {body, changes, fields} from './exercise';
-import {ExerciseAction} from './exercise-action';
-import {ExerciseMedia} from './exercise-media';
-import {ExerciseRelations} from './exercise-relations';
+import {FormActions, Page, PageHeader} from '../ui/page';
+import {
+  defaults,
+  exerciseBody,
+  goals,
+  kindLabels,
+  kinds,
+  labelOf,
+  metricKeys,
+  move,
+  placeLabels,
+  places,
+} from './exercise';
 
 export function ExerciseEditor() {
   const {id} = useParams();
-  return id ? (
-    <LoadEditor
-      key={id}
-      id={id}
-    />
-  ) : (
-    <Editor
-      key="new"
-      initial={undefined}
-    />
-  );
-}
-function LoadEditor({id}: {id: string}) {
-  const query = useExercise(id);
-  const [initial, setInitial] = useState<Exercise>();
-  const {to, state} = useListLocation(routes.exercises);
-  useEffect(() => {
-    if (!initial && query.isSuccess && query.isFetchedAfterMount) {
-      setInitial(query.data.data);
-    }
-  }, [initial, query.data, query.isSuccess, query.isFetchedAfterMount]);
-  if (initial) {
-    return <Editor initial={initial} />;
+  const query = useExercise(id === 'new' ? '' : (id ?? ''));
+  if (!id || id === 'new') {
+    return <Editor />;
   }
-  return (
-    <Page className="editor-page">
-      <PageHeader
-        title="Exercise"
-        back={{to, label: 'Back to exercises', state}}
-      />
-      <Surface>
+  if (!query.data) {
+    return (
+      <Page className="editor-page">
+        <PageHeader
+          title="Exercise"
+          back={{to: '/exercises', label: 'Exercise library'}}
+        />
         {query.isError ? (
-          <div className="space-y-3">
+          <>
             <FormError message={errorMessage(query.error, 'Could not load this exercise.')} />
             <Button
-              isPending={query.isFetching}
               onPress={() => {
                 query.refetch();
               }}
             >
               Try again
             </Button>
-          </div>
+          </>
         ) : (
           <p role="status">Loading exercise…</p>
         )}
-      </Surface>
-    </Page>
+      </Page>
+    );
+  }
+  return (
+    <Editor
+      key={id}
+      initial={query.data.data}
+    />
   );
 }
-function Editor({initial}: {initial: Exercise | undefined}) {
-  const [exercise, setExercise] = useState(initial);
-  const form = useForm({defaultValues: fields(initial)});
+function Editor({initial}: {initial?: Exercise}) {
+  const form = useForm<ExerciseCreate>({defaultValues: exerciseBody(initial)});
+  const body = form.watch();
   const save = useSaveExercise();
-  const query = useExercise(exercise?.id ?? '');
-  const [uncertain, setUncertain] = useState(false);
-  const [checking, setChecking] = useState(false);
-  const [reload, setReload] = useState(false);
-  const [reloading, setReloading] = useState(false);
-  const [notice, setNotice] = useState('');
-  const [action, setAction] = useState<'copy' | 'delete' | null>(null);
-  const [managing, setManaging] = useState(false);
-  const [uploading, setUploading] = useState(false);
-  const mounted = useRef(true);
-  const leaving = useRef(false);
-  const errorRef = useRef<HTMLDivElement>(null);
-  const noticeRef = useRef<HTMLParagraphElement>(null);
-  const detailsRef = useRef<HTMLDetailsElement>(null);
+  const copy = useCopyExercise();
+  const remove = useDeleteExercise();
   const navigate = useNavigate();
-  const {to, state} = useListLocation(routes.exercises);
-  const dirty = form.formState.isDirty;
-  const pending = form.formState.isSubmitting || reloading || managing || uploading;
-  const readOnly = Boolean(exercise?.built_in);
+  const {to, state} = useListLocation('/exercises');
+  const [error, setError] = useState<string>();
+  const [notice, setNotice] = useState('');
+  const [deleting, setDeleting] = useState(false);
+  const readOnly = Boolean(initial?.is_builtin);
+  const pending = save.isPending || copy.isPending || remove.isPending;
+  const set = <K extends FieldPath<ExerciseCreate>>(key: K, value: FieldPathValue<ExerciseCreate, K>) =>
+    form.setValue(key, value, {shouldDirty: true});
   useEffect(() => {
-    mounted.current = true;
-    return () => {
-      mounted.current = false;
-    };
-  }, []);
-  useEffect(() => {
-    if (pending) {
-      return;
-    }
-    if (form.formState.errors.root) {
-      errorRef.current?.focus();
-      errorRef.current?.scrollIntoView({block: 'center'});
-      return;
-    }
-    const field = (['name', 'instructions', 'mechanics', 'force'] as const).find((name) => form.formState.errors[name]);
-    if (field) {
-      if (field !== 'name' && field !== 'instructions' && detailsRef.current) {
-        detailsRef.current.open = true;
+    const guard = (event: BeforeUnloadEvent) => {
+      if (form.formState.isDirty) {
+        event.preventDefault();
+        event.returnValue = '';
       }
-      form.setFocus(field);
-    }
-  }, [form.formState.errors, form.setFocus, pending]);
-  const blocker = useBlocker(
-    useCallback(
-      ({currentLocation, nextLocation}) =>
-        !leaving.current && (dirty || pending) && currentLocation.pathname !== nextLocation.pathname,
-      [dirty, pending],
-    ),
-  );
-  useBeforeUnload(
-    useCallback(
-      (event) => {
-        if (dirty || pending) {
-          event.preventDefault();
-          event.returnValue = '';
-        }
-      },
-      [dirty, pending],
-    ),
-  );
-  useEffect(() => {
-    if (notice) {
-      noticeRef.current?.focus();
-    }
-  }, [notice]);
-  function resetExercise(saved: Exercise) {
-    setExercise(saved);
-    form.reset(fields(saved));
-    setUncertain(false);
-    setChecking(false);
-  }
+    };
+    window.addEventListener('beforeunload', guard);
+    return () => window.removeEventListener('beforeunload', guard);
+  }, [form.formState.isDirty]);
   return (
     <Page className="editor-page">
       <PageHeader
         title={initial ? (readOnly ? 'Exercise details' : 'Edit exercise') : 'Create exercise'}
         description={
-          initial
-            ? readOnly
-              ? 'This shared exercise is read-only.'
-              : 'Changes update this library exercise wherever it is used in training plans.'
-            : 'Name the movement and explain how you want clients to perform it.'
+          readOnly
+            ? 'Shared exercises are read-only. Copy this exercise to change it.'
+            : 'Changes apply from now on. Past prescriptions keep their exercise details.'
         }
-        back={{to, label: 'Back to exercises', state}}
+        back={{to, label: 'Exercise library', state}}
         actions={
-          exercise && (
+          initial && (
             <Button
-              variant="ghost"
-              isDisabled={dirty || pending || query.isError}
-              onPress={() => setAction('copy')}
+              variant="outline"
+              isPending={copy.isPending}
+              isDisabled={form.formState.isDirty}
+              onPress={async () => {
+                try {
+                  const result = await copy.mutateAsync({id: initial.id, name: `${initial.name} copy`});
+                  navigate(`/exercises/${result.data.id}`, {state});
+                } catch (cause) {
+                  setError(errorMessage(cause, 'Could not copy this exercise.'));
+                }
+              }}
             >
               Copy exercise
             </Button>
           )
         }
       />
-      {exercise && dirty && (
-        <p className="text-sm text-muted-foreground">Save your changes before copying or archiving this exercise.</p>
-      )}
-      {exercise && query.isError && (
-        <div className="space-y-3">
-          <FormError message="Could not refresh this exercise. Your edits are still here. Retry before copying or archiving it." />
-          <Button
-            variant="outline"
-            isPending={query.isFetching}
-            onPress={() => {
-              query.refetch();
-            }}
-          >
-            Retry exercise
-          </Button>
-        </div>
-      )}
       <form
-        noValidate
-        className="has-mobile-actions min-w-0 space-y-6"
+        className="has-mobile-actions space-y-6"
         onSubmit={form.handleSubmit(async (values) => {
-          if (readOnly || uncertain || pending) {
+          if (readOnly || pending) {
             return;
           }
-          form.clearErrors();
-          setNotice('');
+          if (!values.metrics?.length || !values.goals?.length || !values.places?.length) {
+            setError('Select at least one metric, goal and place.');
+            return;
+          }
           try {
-            const input = body(values);
             const result = await save.mutateAsync(
-              exercise
-                ? {kind: 'update', id: exercise.id, body: changes(values, exercise)}
-                : {kind: 'create', body: input},
+              initial ? {kind: 'update', id: initial.id, body: values} : {kind: 'create', body: values},
             );
-            if (!mounted.current) {
-              return;
-            }
-            resetExercise(result.data);
+            form.reset(exerciseBody(result.data));
             setNotice('Exercise saved.');
+            setError(undefined);
             if (!initial) {
-              leaving.current = true;
-              navigate(generatePath(routes.exercise, {id: result.data.id}), {replace: true, state});
+              navigate(`/exercises/${result.data.id}`, {replace: true, state});
             }
-          } catch (error) {
-            if (!mounted.current) {
-              return;
-            }
-            const unknownCreate = !exercise && (!(error instanceof ApiError) || error.status >= 500);
-            setUncertain(unknownCreate);
-            if (unknownCreate) {
-              form.setError('root', {
-                message:
-                  'Creation could not be confirmed. Check saved exercises before trying again; your draft is still here.',
-              });
-            } else {
-              setFormError(
-                error,
-                'The save could not be confirmed. Your edits are still here. Check the saved version before retrying.',
-                form.setError,
-                ['name', 'instructions', 'mechanics', 'force'],
-              );
-            }
+          } catch (cause) {
+            setError(errorMessage(cause, 'Could not save this exercise. Your changes are still here. Try again.'));
           }
         })}
       >
         <fieldset
-          disabled={pending || readOnly || uncertain}
+          disabled={readOnly || pending}
           className="min-w-0 space-y-6"
         >
           <legend className="sr-only">Exercise information</legend>
@@ -249,451 +162,294 @@ function Editor({initial}: {initial: Exercise | undefined}) {
             maxLength={255}
             rules={{validate: (value) => Boolean(String(value).trim()) || 'Enter an exercise name.'}}
           />
+          <label className="grid gap-1">
+            <span className="text-sm font-medium">Kind</span>
+            <select
+              value={body.kind}
+              className="h-12 rounded-xl border border-input bg-surface px-3"
+              onChange={(event) => {
+                const kind = kinds.find((value) => value === event.target.value);
+                if (kind) {
+                  set('kind', kind);
+                  if (!initial) {
+                    set('metrics', defaults[kind]);
+                  }
+                }
+              }}
+            >
+              {kinds.map((kind) => (
+                <option
+                  key={kind}
+                  value={kind}
+                >
+                  {kindLabels[kind]}
+                </option>
+              ))}
+            </select>
+          </label>
+          <Facet
+            label="Goals"
+            options={goals}
+            value={body.goals ?? []}
+            onChange={(value) => set('goals', value)}
+          />
+          <Facet
+            label="Places"
+            options={places}
+            value={body.places ?? []}
+            onChange={(value) => set('places', value)}
+          />
+          <label className="flex min-h-11 items-center gap-3">
+            <input
+              type="checkbox"
+              checked={body.unilateral ?? false}
+              onChange={(event) => set('unilateral', event.target.checked)}
+            />
+            Each side (unilateral)
+          </label>
+          <section className="space-y-3">
+            <h2 className="editor-section-title">Metrics in display order</h2>
+            <p className="text-sm font-medium text-muted-foreground">
+              The builder and client show only these metrics, in this order.
+            </p>
+            <ol className="space-y-2">
+              {(body.metrics ?? []).map((metric, index) => (
+                <li
+                  key={metric}
+                  className="flex items-center gap-2 rounded-xl bg-muted px-3 py-1"
+                >
+                  <span className="min-w-0 flex-1 font-medium">
+                    {labelOf(metric, {count_label: body.count_label ?? null})}
+                  </span>
+                  <Button
+                    size="icon-sm"
+                    variant="ghost"
+                    aria-label={`Move ${labelOf(metric)} up`}
+                    isDisabled={index === 0}
+                    onPress={() => set('metrics', move(body.metrics ?? [], index, index - 1))}
+                  >
+                    <ArrowUp />
+                  </Button>
+                  <Button
+                    size="icon-sm"
+                    variant="ghost"
+                    aria-label={`Move ${labelOf(metric)} down`}
+                    isDisabled={index === (body.metrics?.length ?? 0) - 1}
+                    onPress={() => set('metrics', move(body.metrics ?? [], index, index + 1))}
+                  >
+                    <ArrowDown />
+                  </Button>
+                  <Button
+                    size="icon-sm"
+                    variant="ghost"
+                    aria-label={`Remove ${labelOf(metric)}`}
+                    onPress={() => set('metrics', body.metrics?.filter((key) => key !== metric) ?? [])}
+                  >
+                    <X />
+                  </Button>
+                </li>
+              ))}
+            </ol>
+            <label className="grid gap-1">
+              <span className="text-sm font-medium">Add metric</span>
+              <select
+                value=""
+                className="h-12 rounded-xl border border-input bg-surface px-3"
+                onChange={(event) => {
+                  if (event.target.value) {
+                    set('metrics', [...(body.metrics ?? []), event.target.value]);
+                  }
+                }}
+              >
+                <option value="">Choose a metric</option>
+                {metricKeys
+                  .filter((key) => !body.metrics?.includes(key))
+                  .map((key) => (
+                    <option
+                      key={key}
+                      value={key}
+                    >
+                      {labelOf(key)}
+                    </option>
+                  ))}
+              </select>
+            </label>
+          </section>
+          {body.metrics?.some((metric) => ['reps', 'successes', 'attempts'].includes(metric)) && (
+            <FormField
+              control={form.control}
+              name="count_label"
+              label="Count label (optional)"
+              description="For example laps, waves or skips. Leave empty to use the metric names."
+              maxLength={80}
+            />
+          )}
+          {body.metrics?.includes('grade') && (
+            <Tags
+              label="Grade scale in order"
+              value={body.grade_scale ?? []}
+              onChange={(value) => set('grade_scale', value)}
+              description="Separate steps with commas, from lowest to highest: V0, V1, V2."
+            />
+          )}
+          <Tags
+            label="Equipment"
+            value={body.equipment ?? []}
+            onChange={(value) => set('equipment', value)}
+            description="Separate tags with commas."
+          />
+          <Tags
+            label="Muscles"
+            value={body.muscles ?? []}
+            onChange={(value) => set('muscles', value)}
+            description="Separate tags with commas."
+          />
           <FormField
             control={form.control}
-            name="instructions"
-            label="Coaching instructions"
-            description="Explain the setup, movement and the cues that matter."
-            multiline
-            maxLength={10000}
+            name="media"
+            label="Photo or video URL (optional)"
+            type="url"
+            description="Use a URL that starts with https:// or http://."
           />
-          <fieldset
-            disabled={Boolean(exercise)}
-            className="space-y-3"
-          >
-            <legend className="text-sm font-medium">Measures (fixed after creation)</legend>
-            <div className="flex flex-wrap gap-4">
-              {(['reps', 'load', 'duration', 'distance'] as const).map((measure) => (
-                <label
-                  key={measure}
-                  className="flex items-center gap-2 text-sm capitalize"
-                >
-                  <input
-                    type="checkbox"
-                    checked={form.watch('measures').includes(measure)}
-                    onChange={(event) =>
-                      form.setValue(
-                        'measures',
-                        event.target.checked
-                          ? [...form.getValues('measures'), measure]
-                          : form.getValues('measures').filter((item) => item !== measure),
-                        {shouldDirty: true},
-                      )
-                    }
-                  />
-                  {measure}
-                </label>
-              ))}
-            </div>
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                {...form.register('bodyweight')}
-              />
-              Bodyweight exercise (load is added weight or assistance)
-            </label>
-          </fieldset>
         </fieldset>
-        <ExerciseMedia
-          media={form.watch('media')}
-          disabled={pending || readOnly || uncertain}
-          readOnly={readOnly}
-          onBusy={setUploading}
-          onChange={(value) => form.setValue('media', value, {shouldDirty: true})}
-        />
-        <fieldset
-          disabled={pending || readOnly || uncertain}
-          className="min-w-0"
-        >
-          <legend className="sr-only">Additional exercise details</legend>
-          <details ref={detailsRef}>
-            <summary className="w-fit cursor-pointer py-2 font-medium">Equipment, muscles and other details</summary>
-            <div className="mt-4 space-y-6">
-              <div className="grid gap-6 sm:grid-cols-2">
-                <ExerciseRelations
-                  kind="equipment"
-                  value={form.watch('equipment')}
-                  disabled={pending || readOnly || uncertain}
-                  onChange={(value) => form.setValue('equipment', value, {shouldDirty: true})}
-                />
-                <ExerciseRelations
-                  kind="muscles"
-                  value={form.watch('muscles')}
-                  disabled={pending || readOnly || uncertain}
-                  onChange={(value) => form.setValue('muscles', value, {shouldDirty: true})}
-                />
-              </div>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <Controller
-                  control={form.control}
-                  name="mechanics"
-                  render={({field, fieldState}) => (
-                    <div className="grid gap-2">
-                      <span
-                        id="mechanics-label"
-                        className="text-sm font-medium"
-                      >
-                        Movement type
-                      </span>
-                      <SelectField
-                        id="mechanics"
-                        isInvalid={Boolean(fieldState.error)}
-                        {...(fieldState.error ? {'aria-describedby': 'mechanics-error'} : {})}
-                        value={field.value ?? 'none'}
-                        isDisabled={pending || readOnly || uncertain}
-                        triggerRef={field.ref}
-                        onBlur={field.onBlur}
-                        onChange={(value) => {
-                          if (value === 'compound' || value === 'isolation' || value === 'isometric') {
-                            field.onChange(value);
-                          } else if (value === 'none') {
-                            field.onChange(null);
-                          }
-                        }}
-                      >
-                        <SelectItem id="none">Not specified</SelectItem>
-                        <SelectItem id="compound">Compound</SelectItem>
-                        <SelectItem id="isolation">Isolation</SelectItem>
-                        <SelectItem id="isometric">Isometric</SelectItem>
-                      </SelectField>
-                      {fieldState.error && (
-                        <div id="mechanics-error">
-                          <FormError message={fieldState.error.message} />
-                        </div>
-                      )}
-                    </div>
-                  )}
-                />
-                <Controller
-                  control={form.control}
-                  name="force"
-                  render={({field, fieldState}) => (
-                    <div className="grid gap-2">
-                      <span
-                        id="force-label"
-                        className="text-sm font-medium"
-                      >
-                        Force
-                      </span>
-                      <SelectField
-                        id="force"
-                        isInvalid={Boolean(fieldState.error)}
-                        {...(fieldState.error ? {'aria-describedby': 'force-error'} : {})}
-                        value={field.value ?? 'none'}
-                        isDisabled={pending || readOnly || uncertain}
-                        triggerRef={field.ref}
-                        onBlur={field.onBlur}
-                        onChange={(value) => {
-                          if (value === 'push' || value === 'pull' || value === 'static') {
-                            field.onChange(value);
-                          } else if (value === 'none') {
-                            field.onChange(null);
-                          }
-                        }}
-                      >
-                        <SelectItem id="none">Not specified</SelectItem>
-                        <SelectItem id="push">Push</SelectItem>
-                        <SelectItem id="pull">Pull</SelectItem>
-                        <SelectItem id="static">Static</SelectItem>
-                      </SelectField>
-                      {fieldState.error && (
-                        <div id="force-error">
-                          <FormError message={fieldState.error.message} />
-                        </div>
-                      )}
-                    </div>
-                  )}
-                />
-              </div>
-            </div>
-          </details>
-        </fieldset>
-        <div
-          ref={errorRef}
-          tabIndex={-1}
-          className="space-y-3"
-        >
-          <FormError message={form.formState.errors.root?.message} />
-          {form.formState.errors.root && exercise && (
-            <Button
-              variant="outline"
-              isDisabled={pending}
-              onPress={() => setReload(true)}
-            >
-              Review saved version
-            </Button>
-          )}
-          {uncertain && (
-            <Button
-              variant="outline"
-              onPress={() => setChecking(true)}
-            >
-              Check saved exercises
-            </Button>
-          )}
-        </div>
-        {notice && !dirty && (
-          <p
-            ref={noticeRef}
-            tabIndex={-1}
-            role="status"
-          >
-            {notice}
-          </p>
-        )}
+        <FormError message={error} />
+        <p role="status">{notice}</p>
         {!readOnly && (
-          <p
-            role="status"
-            className="text-xs text-muted-foreground"
-          >
-            {dirty ? 'Unsaved changes' : exercise ? 'All changes saved' : 'New exercise'}
-          </p>
-        )}
-        {exercise && !readOnly && (
-          <details>
-            <summary className="w-fit cursor-pointer py-2 text-sm text-muted-foreground">Remove from library</summary>
-            <div className="mt-3 space-y-3">
-              <p className="text-sm text-muted-foreground">
-                Archive an exercise to hide it from the library. Published plans and recorded workouts keep their
-                history.
-              </p>
+          <FormActions>
+            {initial && (
               <Button
-                variant="destructive"
-                isDisabled={dirty || pending || query.isError}
-                onPress={() => setAction('delete')}
+                variant="ghost"
+                isDisabled={pending}
+                onPress={() => setDeleting(true)}
               >
-                Archive exercise
+                Delete exercise
               </Button>
-            </div>
-          </details>
-        )}
-        <FormActions>
-          <Button
-            variant="ghost"
-            isDisabled={pending}
-            onPress={() => navigate(to, {state})}
-          >
-            Back to exercises
-          </Button>
-          {!readOnly && (
+            )}
             <Button
               type="submit"
-              isPending={pending}
-              isDisabled={!dirty || uncertain}
+              isPending={save.isPending}
             >
               Save exercise
             </Button>
-          )}
-        </FormActions>
+          </FormActions>
+        )}
       </form>
-      {exercise && action && (
-        <ExerciseAction
-          action={action}
-          exercise={exercise}
-          onClose={() => setAction(null)}
-          onBusy={setManaging}
-          onCopied={(saved) => {
-            setAction(null);
-            setManaging(false);
-            if (saved.id === exercise.id) {
-              resetExercise(saved);
-              return;
-            }
-            leaving.current = true;
-            navigate(generatePath(routes.exercise, {id: saved.id}), {state});
-          }}
-          onDeleted={() => {
-            leaving.current = true;
-            navigate(to, {replace: true, state: {...state, deleted: exercise.name}});
-          }}
-        />
+      {initial?.media && (
+        <a
+          className="inline-flex min-h-11 items-center font-medium underline"
+          href={initial.media}
+          target="_blank"
+          rel="noreferrer"
+        >
+          Open photo or video (new tab)
+        </a>
       )}
-      {checking && (
-        <CreationRecovery
-          name={form.getValues('name')}
-          onClose={() => setChecking(false)}
-          onUse={(saved) => {
-            leaving.current = true;
-            navigate(generatePath(routes.exercise, {id: saved.id}), {replace: true, state});
-          }}
-          onRetry={() => {
-            flushSync(() => {
-              setChecking(false);
-              setUncertain(false);
-              form.clearErrors('root');
-            });
-            form.setFocus('name');
-          }}
-        />
-      )}
-      <Dialog
-        isOpen={reload}
-        isDismissable={!reloading}
-        showCloseButton={!reloading}
-        onOpenChange={(open) => {
-          if (!reloading) {
-            setReload(open);
-          }
-        }}
-      >
-        <DialogHeader>
-          <DialogTitle>Load saved exercise?</DialogTitle>
-        </DialogHeader>
-        <div className="dialog-body space-y-4">
-          <p>This replaces your unsaved edits with the saved exercise.</p>
-          <div className="flex flex-wrap gap-3">
+      {deleting && initial && (
+        <Dialog
+          isOpen
+          onOpenChange={(open) => setDeleting(open)}
+        >
+          <DialogHeader>
+            <DialogTitle>Delete {initial.name}?</DialogTitle>
+          </DialogHeader>
+          <p>Existing workout prescriptions keep their exercise details.</p>
+          <FormError message={error} />
+          <div className="flex gap-2">
             <Button
-              autoFocus
               variant="outline"
-              isDisabled={reloading}
-              onPress={() => setReload(false)}
+              onPress={() => setDeleting(false)}
             >
-              Keep editing
+              Cancel
             </Button>
             <Button
-              isPending={reloading}
+              variant="destructive"
+              isPending={remove.isPending}
               onPress={async () => {
-                setReloading(true);
                 try {
-                  const result = await query.refetch();
-                  if (result.error) {
-                    throw result.error;
-                  }
-                  if (result.data && mounted.current) {
-                    resetExercise(result.data.data);
-                    setReload(false);
-                    setNotice('Saved version loaded.');
-                  }
-                } catch (error) {
-                  if (mounted.current) {
-                    setReload(false);
-                    form.setError('root', {
-                      message: errorMessage(error, 'Could not load the saved exercise. Your edits are still here.'),
-                    });
-                  }
-                } finally {
-                  if (mounted.current) {
-                    setReloading(false);
-                  }
+                  await remove.mutateAsync(initial.id);
+                  navigate(to, {state});
+                } catch (cause) {
+                  setError(errorMessage(cause, 'Could not delete this exercise.'));
                 }
               }}
             >
-              Load saved exercise
+              Delete exercise
             </Button>
           </div>
-        </div>
-      </Dialog>
-      <Dialog
-        isOpen={blocker.state === 'blocked'}
-        onOpenChange={(open) => {
-          if (!open && blocker.state === 'blocked') {
-            blocker.reset();
-          }
-        }}
-      >
-        <DialogHeader>
-          <DialogTitle>Leave without saving?</DialogTitle>
-        </DialogHeader>
-        <div className="dialog-body space-y-4">
-          <p>Your unsaved changes will be lost.</p>
-          <div className="flex flex-wrap gap-3">
-            <Button
-              autoFocus
-              onPress={() => {
-                if (blocker.state === 'blocked') {
-                  blocker.reset();
-                }
-              }}
-            >
-              Keep editing
-            </Button>
-            <Button
-              variant="outline"
-              isDisabled={pending}
-              onPress={() => {
-                if (blocker.state === 'blocked') {
-                  blocker.proceed();
-                }
-              }}
-            >
-              Discard changes
-            </Button>
-          </div>
-        </div>
-      </Dialog>
+        </Dialog>
+      )}
     </Page>
   );
 }
-function CreationRecovery({
-  name,
-  onUse,
-  onClose,
-  onRetry,
+function Facet({
+  label,
+  options,
+  value,
+  onChange,
 }: {
-  name: string;
-  onUse: (exercise: Exercise) => void;
-  onClose: () => void;
-  onRetry: () => void;
+  label: string;
+  options: readonly string[];
+  value: string[];
+  onChange: (value: string[]) => void;
 }) {
-  const query = useExercises(name.trim());
   return (
-    <Dialog
-      isOpen
-      onOpenChange={(open) => {
-        if (!open) {
-          onClose();
-        }
-      }}
-    >
-      <DialogHeader>
-        <DialogTitle>Check saved exercises</DialogTitle>
-      </DialogHeader>
-      <div className="dialog-body space-y-4">
-        <p>
-          Check whether the interrupted save created your exercise. Opening one replaces this draft with its saved
-          details.
-        </p>
-        <InfiniteList
-          query={query}
-          label="matching exercises"
-          singular="matching exercise"
-          empty={<p>No matching exercises found.</p>}
-        >
-          {(exercise) => (
-            <div className="space-y-2 p-4">
-              <p className="break-words font-semibold">{exercise.name}</p>
-              <p className="text-sm text-muted-foreground">
-                {exercise.instructions ?? 'Open to review the saved details.'}
-              </p>
-              <Button
-                variant="outline"
-                onPress={() => onUse(exercise)}
-              >
-                Open saved exercise
-              </Button>
-            </div>
-          )}
-        </InfiniteList>
-        {query.isSuccess && !query.isFetching && !query.hasNextPage && (
-          <div className="space-y-3">
-            <p className="text-sm text-muted-foreground">
-              If none matches this attempt, return to your draft and create a separate exercise.
-            </p>
-            <Button
-              variant="outline"
-              onPress={onRetry}
-            >
-              Create a separate exercise
-            </Button>
-          </div>
-        )}
-        <Button
-          variant="ghost"
-          onPress={onClose}
-        >
-          Return to draft
-        </Button>
+    <fieldset>
+      <legend className="text-sm font-medium">{label} (select at least one)</legend>
+      <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1">
+        {options.map((option) => (
+          <label
+            key={option}
+            className="flex min-h-11 items-center gap-2"
+          >
+            <input
+              type="checkbox"
+              checked={value.includes(option)}
+              onChange={(event) =>
+                onChange(event.target.checked ? [...value, option] : value.filter((item) => item !== option))
+              }
+            />
+            {placeLabels[option] ?? `${option[0]?.toUpperCase()}${option.slice(1)}`}
+          </label>
+        ))}
       </div>
-    </Dialog>
+    </fieldset>
+  );
+}
+function Tags({
+  label,
+  description,
+  value,
+  onChange,
+}: {
+  label: string;
+  description: string;
+  value: string[];
+  onChange: (value: string[]) => void;
+}) {
+  const [draft, setDraft] = useState(value.join(', '));
+  const id = useId();
+  return (
+    <label
+      htmlFor={id}
+      className="grid gap-1"
+    >
+      <span className="text-sm font-medium">{label}</span>
+      <Input
+        id={id}
+        value={draft}
+        onChange={(event) => {
+          setDraft(event.target.value);
+          onChange([
+            ...new Set(
+              event.target.value
+                .split(',')
+                .map((tag) => tag.trim())
+                .filter(Boolean),
+            ),
+          ]);
+        }}
+      />
+      <span className="text-sm font-medium text-muted-foreground">{description}</span>
+    </label>
   );
 }

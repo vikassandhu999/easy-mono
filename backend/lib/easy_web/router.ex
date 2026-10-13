@@ -148,35 +148,34 @@ defmodule EasyWeb.Router do
     delete "/coaches/:id", TeamController, :revoke_invite
     post "/coaches/:id/remove", TeamController, :remove
 
+    get "/exercises", ExerciseController, :index
+    post "/exercises", ExerciseController, :create
+    get "/exercises/:id", ExerciseController, :show
+    patch "/exercises/:id", ExerciseController, :update
+    delete "/exercises/:id", ExerciseController, :delete
+    post "/exercises/:id/copy", ExerciseController, :copy
+    get "/workouts", WorkoutController, :index
+    post "/workouts", WorkoutController, :create
+    get "/workouts/:id", WorkoutController, :show
+    patch "/workouts/:id", WorkoutController, :update
+    delete "/workouts/:id", WorkoutController, :delete
+    post "/workouts/:id/copy", WorkoutController, :copy
+    get "/clients/:client_id/workouts", ClientWorkoutController, :index
+    post "/clients/:client_id/workouts", ClientWorkoutController, :create
+    get "/clients/:client_id/workouts/:id", ClientWorkoutController, :show
+    patch "/clients/:client_id/workouts/:id", ClientWorkoutController, :update
+    delete "/clients/:client_id/workouts/:id", ClientWorkoutController, :delete
+    post "/clients/:client_id/workouts/:id/copy", ClientWorkoutController, :copy
+    post "/clients/:client_id/workouts/:id/assign", ClientWorkoutController, :assign
+    get "/clients/:client_id/workout-week", WorkoutWeekController, :show
+    post "/clients/:client_id/workout-schedules", WorkoutWeekController, :create_schedule
+    patch "/clients/:client_id/workout-schedules/:id", WorkoutWeekController, :update_schedule
+    delete "/clients/:client_id/workout-schedules/:id", WorkoutWeekController, :remove_schedule
+    post "/clients/:client_id/workout-undo", WorkoutWeekController, :undo
+
     # Client-scoped plan lists
-    get "/clients/:client_id/training-occurrences", ClientTrainingPlanController, :occurrences
-    get "/clients/:client_id/exercises/:exercise_id/history", ClientTrainingPlanController, :exercise_history
-    get "/clients/:client_id/training-plans", ClientTrainingPlanController, :index
-
-    get "/training-exercises", ExerciseController, :index
-    post "/training-exercises", ExerciseController, :create
-    get "/training-exercises/:id", ExerciseController, :show
-    patch "/training-exercises/:id", ExerciseController, :update
-    delete "/training-exercises/:id", ExerciseController, :delete
-    post "/training-exercises/:id/copy", ExerciseController, :copy
-
-    get "/training-muscles", MuscleController, :index
-    get "/training-equipment", EquipmentController, :index
-
-    get "/training-plans", TrainingPlanController, :index
-    post "/training-plans", TrainingPlanController, :create
-    get "/training-plans/:id", TrainingPlanController, :show
-    patch "/training-plans/:id", TrainingPlanController, :update
-    delete "/training-plans/:id/revisions/:revision_id", TrainingPlanController, :withdraw
-    delete "/training-plans/:id", TrainingPlanController, :delete
-    post "/training-plans/:id/archive", TrainingPlanController, :archive
-    post "/training-plans/:id/restore", TrainingPlanController, :restore
-    post "/training-plans/:id/duplicate", TrainingPlanController, :duplicate
-    post "/clients/:client_id/training-plans/:id/assign", TrainingPlanController, :assign
 
     # Client-scoped training sessions (read-only)
-    get "/clients/:client_id/training-sessions", WorkoutSessionController, :index
-    get "/clients/:client_id/training-sessions/:id", WorkoutSessionController, :show
 
     # Chat
     get "/conversations", ConversationController, :index
@@ -230,28 +229,10 @@ defmodule EasyWeb.Router do
     get "/attachments/download-urls", UploadController, :download_urls
 
     # Training plans (read-only)
-    get "/training-plans", TrainingPlanController, :index
-    get "/training-plans/occurrences", TrainingPlanController, :occurrences
-    get "/training-plans/coverage", TrainingPlanController, :coverage
-    get "/training-plans/:id", TrainingPlanController, :show
-
-    get "/training-exercises/:exercise_id/history", TrainingPlanController, :exercise_history
 
     # Exercises (read-only)
-    get "/training-exercises", ExerciseController, :index
-    get "/training-exercises/:id", ExerciseController, :show
 
     # Training sessions
-    get "/training-sessions", WorkoutSessionController, :index
-    post "/training-sessions", WorkoutSessionController, :create
-    get "/training-sessions/active", WorkoutSessionController, :active
-    post "/training-sessions/:id/complete", WorkoutSessionController, :complete
-    post "/training-sessions/:id/discard", WorkoutSessionController, :discard
-    get "/training-sessions/:id", WorkoutSessionController, :show
-    patch "/training-sessions/:id", WorkoutSessionController, :update
-    post "/training-sessions/:session_id/performed-sets", PerformedSetController, :create
-    patch "/training-performed-sets/:id", PerformedSetController, :update
-    delete "/training-performed-sets/:id", PerformedSetController, :delete
 
     # Foods (read-only)
 

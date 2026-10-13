@@ -1,4 +1,4 @@
-import type {Tracker, TrackerEntry, TrackerEvent, TrackerInput} from '../api/trackers';
+import type {Tracker, TrackerEntry, TrackerInput} from '../api/trackers';
 
 export type TrackerDraft = {
   version: 1;
@@ -103,16 +103,11 @@ export function parseTrackerDraft(raw: unknown, resource: string): TrackerDraft 
   }
   return d as TrackerDraft;
 }
-export function trackerInput(
-  draft: TrackerDraft,
-  tracker: Tracker,
-  attachmentIds: string[],
-  event?: TrackerEvent,
-): TrackerInput {
+export function trackerInput(draft: TrackerDraft, tracker: Tracker, attachmentIds: string[]): TrackerInput {
   if (draft.attempt) {
     return draft.attempt;
   }
-  const input: TrackerInput = {tracker_id: tracker.id, request_id: draft.requestId, local_date: draft.date, ...event};
+  const input: TrackerInput = {tracker_id: tracker.id, request_id: draft.requestId, local_date: draft.date};
   if (tracker.kind === 'number' || tracker.kind === 'rating') {
     const value = Number(draft.value);
     if (!draft.value.trim() || !Number.isFinite(value)) {

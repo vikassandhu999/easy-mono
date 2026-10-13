@@ -1,69 +1,30 @@
 defmodule EasyWeb.Coaches.ExerciseController do
   use EasyWeb, :typed_controller
-
-  alias Easy.Training.Library
-  alias EasyWeb.Types.Training.Exercise
-  alias EasyWeb.Types.Training.ExerciseIndex
-
-  typed(:index, query: Exercise.cursor_query(), ok: {200, ExerciseIndex.t()})
+  alias Easy.Workouts
+  alias EasyWeb.Types.{Exercise, ExerciseIndex}
+  typed(:index, query: Exercise.list_query(), ok: {200, ExerciseIndex.t()})
   typed(:show, ok: {200, data(Exercise.t())})
   typed(:create, body: Exercise.create(), ok: {201, data(Exercise.t())})
   typed(:update, body: Exercise.update(), ok: {200, data(Exercise.t())})
+  typed(:copy, ok: {201, data(Exercise.t())})
   typed(:delete, ok: {204, nil})
-  typed(:copy, body: Exercise.copy(), ok: {201, data(Exercise.t())})
-
-  @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def create(conn, _params) do
-    with {:ok, exercise} <- Library.create_exercise(conn.assigns.ctx, conn.body_params) do
-      ok(conn, %{data: exercise})
-    end
-  end
+  @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def index(conn, _params), do: with({:ok, result} <- Workouts.list_exercises(conn.assigns.ctx, opts(conn.query_params)), do: ok(conn, result))
 
   @spec show(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def show(conn, _params) do
-    with {:ok, exercise} <- Library.get_exercise(conn.assigns.ctx, conn.path_params["id"]) do
-      ok(conn, %{data: exercise})
-    end
-  end
+  def show(conn, _params), do: with({:ok, result} <- Workouts.get_exercise(conn.assigns.ctx, conn.path_params["id"]), do: ok(conn, %{data: result}))
+
+  @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def create(conn, _params), do: with({:ok, result} <- Workouts.create_exercise(conn.assigns.ctx, conn.body_params), do: ok(conn, %{data: result}))
 
   @spec update(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def update(conn, _params) do
-    with {:ok, exercise} <-
-           Library.update_exercise(conn.assigns.ctx, conn.path_params["id"], conn.body_params) do
-      ok(conn, %{data: exercise})
-    end
-  end
-
-  @spec delete(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def delete(conn, _params) do
-    with {:ok, _exercise} <- Library.delete_exercise(conn.assigns.ctx, conn.path_params["id"]) do
-      ok(conn)
-    end
-  end
+  def update(conn, _params), do: with({:ok, result} <- Workouts.update_exercise(conn.assigns.ctx, conn.path_params["id"], conn.body_params), do: ok(conn, %{data: result}))
 
   @spec copy(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def copy(conn, _params) do
-    with {:ok, exercise} <-
-           Library.duplicate_exercise(conn.assigns.ctx, conn.path_params["id"], conn.body_params) do
-      ok(conn, %{data: exercise})
-    end
-  end
+  def copy(conn, _params), do: with({:ok, result} <- Workouts.copy_exercise(conn.assigns.ctx, conn.path_params["id"]), do: ok(conn, %{data: result}))
 
-  @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def index(conn, _params) do
-    params = conn.query_params
+  @spec delete(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def delete(conn, _params), do: with({:ok, _result} <- Workouts.delete_exercise(conn.assigns.ctx, conn.path_params["id"]), do: ok(conn))
 
-    opts = [
-      cursor: Map.get(params, "cursor"),
-      offset: Map.get(params, "offset", 0),
-      limit: Map.get(params, "limit", 20),
-      search: Map.get(params, "search", ""),
-      muscle_ids: Map.get(params, "muscle_ids"),
-      equipment_ids: Map.get(params, "equipment_ids")
-    ]
-
-    with {:ok, page} <- Library.list_exercise_page(conn.assigns.ctx, opts) do
-      ok(conn, page)
-    end
-  end
+  defp opts(q), do: Enum.map([:search, :kind, :goal, :place, :equipment, :muscle, :type, :cursor, :limit], &{&1, q[to_string(&1)]})
 end

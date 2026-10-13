@@ -198,7 +198,6 @@ function Entry({entry, unit, clientId}: {entry: TrackerEntry; unit: string; clie
       <p className="whitespace-pre-wrap break-words">{entryValue(entry, unit)}</p>
       <p className="text-sm text-muted-foreground">
         {entry.recorded_by_type === 'coach' ? 'Recorded by coach' : 'Recorded by client'}
-        {entry.about_session_id ? ' · After workout' : ''}
       </p>
       {entry.attachments.length > 0 && <TrackerEntryFiles entry={entry} />}
     </article>

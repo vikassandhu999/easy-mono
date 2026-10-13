@@ -121,7 +121,6 @@ defmodule EasyWeb.Types.TrackerEntry do
           required(:rating_value) => pos_integer() | nil,
           required(:yes_no_value) => boolean() | nil,
           required(:text_value) => String.t() | nil,
-          required(:about_session_id) => String.t() | nil,
           required(:attachments) => [EasyWeb.Types.TrackerAttachment.t()],
           required(:inserted_at) => DateTime.t(),
           required(:updated_at) => DateTime.t()
@@ -135,7 +134,6 @@ defmodule EasyWeb.Types.TrackerEntry do
           optional(:rating_value) => pos_integer() | nil,
           optional(:yes_no_value) => boolean() | nil,
           optional(:text_value) => String.t() | nil,
-          optional(:about_session_id) => String.t() | nil,
           optional(:attachment_ids) => [String.t()]
         }
   @type update :: %{
@@ -147,7 +145,6 @@ defmodule EasyWeb.Types.TrackerEntry do
           optional(:rating_value) => pos_integer() | nil,
           optional(:yes_no_value) => boolean() | nil,
           optional(:text_value) => String.t() | nil,
-          optional(:about_session_id) => String.t() | nil,
           optional(:attachment_ids) => [String.t()]
         }
   @type list_query :: %{
@@ -244,9 +241,7 @@ defmodule EasyWeb.Types.TrackerToday do
           required(:due) => [EasyWeb.Types.TrackerAssignment.t()],
           required(:requests) => [EasyWeb.Types.TrackerRequest.t()]
         }
-  @type prompt_query :: %{
-          optional(:about_session_id) => String.t()
-        }
+  @type prompt_query :: %{}
 end
 
 defmodule EasyWeb.Types.TrackerSeriesPoint do

@@ -23,8 +23,6 @@ try {
   expect(response.status()).toBe(200);
   expect(response.request().postDataJSON()).toEqual({email: fixture.client.email, otp: '123456'});
   await expect(page.getByRole('heading', {name: 'Today', exact: true})).toBeVisible();
-  await page.goto('/training');
-  await expect(page.getByRole('button', {name: 'Start freestyle workout'})).toBeVisible();
   const profile = await page.evaluate(async () => {
     const token = JSON.parse(localStorage.getItem('clientapp.auth.v1')).tokens.access_token;
     const response = await fetch('/v1/client/me', {headers: {Authorization: `Bearer ${token}`}});
@@ -36,7 +34,7 @@ try {
   expect(profile.current_term.ends_on).toBeNull();
   expect(profile.terms).toEqual([profile.current_term]);
   await page.reload();
-  await expect(page.getByRole('button', {name: 'Start freestyle workout'})).toBeVisible();
+  await expect(page.getByRole('heading', {name: 'Today', exact: true})).toBeVisible();
   await mkdir('tests/coaching/artifacts', {recursive: true});
   await page.screenshot({path: 'tests/coaching/artifacts/connected-free-acceptance-375.png', fullPage: true});
   await writeFile(

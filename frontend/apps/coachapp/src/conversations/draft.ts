@@ -1,14 +1,6 @@
-export type RecordReference = {
-  type: 'training_session';
-  id: string;
-  title: string;
-  revision: number;
-  occurredOn: string | null;
-};
 export type SavedAttachment = {key: string; name: string; id: string | null};
 export type ConversationDraft = {
   body: string;
-  reference: RecordReference | null;
   attachments: SavedAttachment[];
   requestId: string;
   teammateThrough?: string | null;
@@ -17,7 +9,6 @@ export type ConversationDraft = {
 export function emptyDraft(): ConversationDraft {
   return {
     body: '',
-    reference: null,
     attachments: [],
     requestId: crypto.randomUUID(),
     state: 'editing',
@@ -38,8 +29,7 @@ export function parseDraft(raw: string | null): ConversationDraft | null {
       (value.state !== 'editing' && value.state !== 'uncertain') ||
       !('attachments' in value) ||
       !Array.isArray(value.attachments) ||
-      value.attachments.length > 4 ||
-      !('reference' in value)
+      value.attachments.length > 4
     ) {
       return null;
     }
@@ -59,29 +49,6 @@ export function parseDraft(raw: string | null): ConversationDraft | null {
       }
       attachments.push({key: item.key, name: item.name, id: item.id});
     }
-    let reference: RecordReference | null = null;
-    const ref = value.reference;
-    if (ref !== null) {
-      if (
-        !ref ||
-        typeof ref !== 'object' ||
-        !('type' in ref) ||
-        ref.type !== 'training_session' ||
-        !('id' in ref) ||
-        typeof ref.id !== 'string' ||
-        !('title' in ref) ||
-        typeof ref.title !== 'string' ||
-        !('revision' in ref) ||
-        typeof ref.revision !== 'number' ||
-        !Number.isInteger(ref.revision) ||
-        ref.revision < 1 ||
-        !('occurredOn' in ref) ||
-        (ref.occurredOn !== null && typeof ref.occurredOn !== 'string')
-      ) {
-        return null;
-      }
-      reference = {type: ref.type, id: ref.id, title: ref.title, revision: ref.revision, occurredOn: ref.occurredOn};
-    }
     const teammateThrough = 'teammateThrough' in value ? value.teammateThrough : undefined;
     if (
       teammateThrough !== undefined &&
@@ -95,7 +62,6 @@ export function parseDraft(raw: string | null): ConversationDraft | null {
       requestId: value.requestId,
       state: value.state,
       attachments,
-      reference,
       ...(teammateThrough !== undefined ? {teammateThrough} : {}),
     };
   } catch {

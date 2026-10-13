@@ -5,12 +5,10 @@ defmodule Easy.Trackers.Reader do
   alias Easy.LocalCalendar
   alias Easy.Repo
   alias Easy.Trackers
-  alias Easy.Trackers.Assignment
   alias Easy.Trackers.Assignments
   alias Easy.Trackers.Entry
   alias Easy.Trackers.Records
   alias Easy.Trackers.Request
-  alias Easy.Training.TrainingSession
   import Ecto.Query
 
   @spec entries_for_client(Ctx.t(), String.t(), keyword()) :: {:ok, map()} | {:error, term()}
@@ -147,39 +145,7 @@ defmodule Easy.Trackers.Reader do
   end
 
   @spec prompts_for_client(Ctx.t(), String.t(), map()) :: {:ok, [map()]} | {:error, term()}
-  def prompts_for_client(ctx, client_id, params) do
-    with {:ok, client} <- Trackers.client(ctx, client_id),
-         {:ok, {event, timing, field}} <- event(ctx, client_id, params) do
-      date = event.local_date
-
-      if term_on(client, date) do
-        recorded =
-          Repo.all(from(e in entries(ctx, client_id), where: field(e, ^field) == ^event.id, select: e.tracker_id))
-          |> MapSet.new()
-
-        rows =
-          Assignments.current(ctx, client_id, date)
-          |> Enum.filter(&(&1.timing == timing and is_nil(&1.tracker.archived_at) and not MapSet.member?(recorded, &1.tracker_id)))
-
-        {:ok, Enum.map(rows, &Assignments.present(ctx, &1))}
-      else
-        {:ok, []}
-      end
-    end
-  end
-
-  defp event(ctx, client_id, params) do
-    case Map.get(params, "about_session_id", Map.get(params, :about_session_id)) do
-      nil -> {:error, :invalid_tracker_value}
-      session -> find_event(ctx, client_id, TrainingSession, session, :after_workout, :about_session_id)
-    end
-  end
-
-  defp find_event(ctx, client_id, schema, id, timing, field) do
-    with :ok <- Records.event_links(ctx, client_id, %{field => id}) do
-      {:ok, {Repo.one(from(e in schema, where: e.business_id == ^ctx.business_id and e.client_id == ^client_id and e.id == ^id)), timing, field}}
-    end
-  end
+  def prompts_for_client(ctx, client_id, _params), do: with({:ok, _} <- Trackers.client(ctx, client_id), do: {:ok, []})
 
   @spec metrics_for_client(Ctx.t(), String.t(), String.t(), keyword()) :: {:ok, map()} | {:error, term()}
   def metrics_for_client(ctx, client_id, tracker_id, opts \\ []) do
@@ -240,36 +206,7 @@ defmodule Easy.Trackers.Reader do
   defp delta(latest, previous),
     do: if(is_number(numeric(latest)) and is_number(numeric(previous)), do: numeric(latest) - numeric(previous))
 
-  defp coverage(ctx, client_id, tracker_id, from_date, to_date, timing) do
-    {query, link} = completed_events(timing)
-    ids = query |> assigned_events(ctx, client_id, tracker_id, timing) |> filter_date(from_date, to_date) |> Repo.all()
-
-    recorded =
-      Repo.one(
-        from(e in entries(ctx, client_id),
-          where: e.tracker_id == ^tracker_id and field(e, ^link) in ^ids,
-          select: count(field(e, ^link), :distinct)
-        )
-      )
-
-    %{recorded: recorded, total: length(ids)}
-  end
-
-  defp completed_events(:after_workout) do
-    {from(e in TrainingSession, where: e.state == :completed), :about_session_id}
-  end
-
-  defp assigned_events(query, ctx, client_id, tracker_id, timing) do
-    from(e in query,
-      join: a in Assignment,
-      on: a.business_id == e.business_id and a.client_id == e.client_id,
-      where: a.tracker_id == ^tracker_id and a.timing == ^timing,
-      where: a.starts_on <= e.local_date and (is_nil(a.ends_on) or a.ends_on >= e.local_date),
-      where: e.business_id == ^ctx.business_id and e.client_id == ^client_id,
-      distinct: true,
-      select: e.id
-    )
-  end
+  defp coverage(_ctx, _client_id, _tracker_id, _from_date, _to_date, _timing), do: %{recorded: 0, total: 0}
 
   defp range(client, opts) do
     today = Client.local_date(client, DateTime.utc_now())

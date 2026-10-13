@@ -9,7 +9,6 @@ defmodule Easy.Trackers.Records do
   alias Easy.Trackers
   alias Easy.Trackers.Entry
   alias Easy.Trackers.EntryAttachment
-  alias Easy.Training.TrainingSession
   alias Easy.Units
   import Ecto.Query
   import Ecto.Changeset
@@ -58,7 +57,6 @@ defmodule Easy.Trackers.Records do
   defp create(ctx, client, attrs) do
     with {:ok, tracker} <- Trackers.active_tracker(ctx, value(attrs, :tracker_id)),
          {:ok, attrs} <- normalize(tracker, attrs),
-         :ok <- event_links(ctx, client.id, attrs),
          {:ok, attachments} <- attachments(ctx, client.id, tracker.kind, value(attrs, :attachment_ids) || []),
          timezone = LocalCalendar.applied_timezone(client.timezone, client.business.timezone),
          {:ok, row} <- Entry.insert_changeset(ctx.business_id, client.id, RecordJournal.actor(ctx), tracker.id, timezone, attrs) |> validate_value(tracker) |> Repo.insert(),
@@ -72,7 +70,6 @@ defmodule Easy.Trackers.Records do
          :ok <- Revision.check(old, value(attrs, :expected_revision)),
          {:ok, tracker} <- Trackers.get_tracker(ctx, old.tracker_id),
          {:ok, attrs} <- normalize_patch(tracker, old, attrs),
-         :ok <- event_links(ctx, client.id, event_attrs(old, attrs)),
          {:ok, attachments} <- attachments(ctx, client.id, tracker.kind, attachment_ids(old, attrs)),
          {:ok, row} <- old |> Entry.update_changeset(attrs) |> put_change(:revision, old.revision + 1) |> validate_value(tracker) |> Repo.update(),
          {:ok, changes} <- replace_attachments(ctx, row, attachments) do
@@ -108,10 +105,6 @@ defmodule Easy.Trackers.Records do
 
   defp normalize_patch(_, _, attrs), do: {:ok, attrs}
 
-  defp event_attrs(old, attrs) do
-    old |> Map.take([:about_session_id]) |> string_keys() |> Map.merge(string_keys(attrs))
-  end
-
   defp attachment_ids(old, attrs) do
     if supplied?(attrs, :attachment_ids) do
       value(attrs, :attachment_ids)
@@ -136,22 +129,6 @@ defmodule Easy.Trackers.Records do
     cs = validate_required(cs, allowed)
     if tracker.kind == :rating, do: validate_number(cs, :rating_value, greater_than_or_equal_to: 1, less_than_or_equal_to: tracker.scale_max), else: cs
   end
-
-  @spec event_links(Ctx.t(), String.t(), map()) :: :ok | {:error, term()}
-  def event_links(ctx, client_id, attrs) do
-    case value(attrs, :about_session_id) do
-      nil -> :ok
-      session_id -> exists_event(TrainingSession, ctx, client_id, session_id, :completed)
-    end
-  end
-
-  defp exists_event(schema, ctx, client_id, id, state) do
-    query = from(e in schema, where: e.business_id == ^ctx.business_id and e.client_id == ^client_id and e.id == ^id)
-    query = completed_event(query, state)
-    if Repo.exists?(query), do: :ok, else: {:error, :not_found}
-  end
-
-  defp completed_event(query, :completed), do: where(query, [e], e.state == :completed)
 
   defp attachments(ctx, client_id, kind, ids) when is_list(ids) do
     valid_count = length(ids) <= 50 and length(Enum.uniq(ids)) == length(ids)
@@ -267,7 +244,6 @@ defmodule Easy.Trackers.Records do
 
   defp retry_matches?(snapshot, attrs, mode) do
     fields = [:local_date, :number_value, :entered_unit, :rating_value, :yes_no_value, :text_value]
-    fields = fields ++ [:about_session_id]
     fields = if mode == :update, do: Enum.filter(fields, &supplied?(attrs, &1)), else: fields
     same_values = Enum.all?(fields, fn key -> equal_value?(key, snapshot[to_string(key)], value(attrs, key)) end)
     check_attachments? = mode == :create or supplied?(attrs, :attachment_ids)
@@ -323,7 +299,6 @@ defmodule Easy.Trackers.Records do
       :rating_value,
       :yes_no_value,
       :text_value,
-      :about_session_id,
       :inserted_at,
       :updated_at
     ])

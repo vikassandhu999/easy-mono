@@ -58,47 +58,39 @@ try {
   for (const name of ['Goblet squat', 'Dumbbell Romanian deadlift', 'Seated cable row']) {
     exercises.push(
       (
-        await send('post', '/v1/coach/training-exercises', {
+        await send('post', '/v1/coach/exercises', {
           name,
-          instructions: 'Move with control. Leave two repetitions in reserve.',
+          kind: 'movement',
+          goals: ['strength'],
+          places: ['gym'],
+          metrics: ['reps', 'weight'],
         })
       ).data,
     );
   }
-  let training = (
-    await send('post', '/v1/coach/training-plans', {
+  const training = (
+    await send('post', '/v1/coach/workouts', {
       name: 'Stronger every week',
-      description: 'Three full-body sessions. Build strength at your pace.',
-    })
-  ).data;
-  training = (
-    await send('put', `/v1/coach/training-plans/${training.id}/prescription`, {
-      expected_revision: training.revision,
-      workouts: ['Full body A', 'Full body B'].map((name, index) => ({
-        local_ref: `w${index}`,
-        name,
-        position: index,
-        prescribed_exercises: exercises.map((exercise, position) => ({
-          local_ref: `e${index}${position}`,
-          exercise_id: exercise.id,
-          position,
-          prescribed_sets: Array.from({length: 3}, () => ({
-            set_type: 'working',
-            reps: '8–10',
-            load_value: '12',
-            load_unit: 'kg',
-            rest_seconds: 90,
-            notes: '',
+      type: 'prescribed',
+      description: 'Move with control.',
+      groups: [
+        {
+          name: 'Full body A',
+          rounds: 3,
+          exercises: exercises.map((exercise) => ({
+            exercise_id: exercise.id,
+            targets_mode: 'same_for_all',
+            targets: [{reps: {mode: 'range', min: 8, max: 10}, weight: {mode: 'exact', value: 12}}],
+            rest: [{mode: 'exact', value: 90}],
           })),
-        })),
-      })),
-      schedule: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'].map(
-        (weekday, index) => ({weekday, ...([0, 2, 4].includes(index) ? {workout_ref: index === 2 ? 'w1' : 'w0'} : {})}),
-      ),
+        },
+      ],
     })
   ).data;
-  const today = new Date().toISOString().slice(0, 10);
-  await send('post', `/v1/coach/clients/${alex.person.id}/training-plans/${training.id}/assign`, {start_date: today});
+  await send('post', `/v1/coach/clients/${alex.person.id}/workout-schedules`, {
+    library_workout_id: training.id,
+    weekdays_mask: 21,
+  });
   await send(
     'post',
     '/v1/client/conversation/messages',
@@ -118,7 +110,7 @@ try {
 
   const screens = [
     ['clients', `/clients/${alex.person.id}`, 'Alex Morgan'],
-    ['training', `/training-plans/${training.id}`, 'Stronger every week'],
+    ['training', `/workouts/${training.id}`, 'Stronger every week'],
     ['workspace', `/clients/${alex.person.id}/conversation`, 'Can we make Wednesday a 30-minute session?'],
   ];
   for (const [device, width, height] of [
@@ -141,7 +133,7 @@ try {
       if (name === 'training' || name === 'nutrition') {
         await expect(
           page.getByRole('textbox', {
-            name: name === 'training' ? 'Plan name · edit anytime' : 'Plan name',
+            name: name === 'training' ? 'Workout name' : 'Plan name',
             exact: true,
           }),
         ).toHaveValue(text);

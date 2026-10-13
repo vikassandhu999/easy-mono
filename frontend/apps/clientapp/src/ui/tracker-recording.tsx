@@ -5,7 +5,7 @@ import {useProfile} from '../api/auth';
 import {ApiError, errorMessage} from '../api/client';
 import {readPhotos, removePhoto, type StoredPhoto, savePhoto} from '../api/photo-store';
 import {getSession} from '../api/session';
-import {type Tracker, type TrackerEntry, type TrackerEvent, useSaveTracker} from '../api/trackers';
+import {type Tracker, type TrackerEntry, useSaveTracker} from '../api/trackers';
 import {Button} from './button';
 import {useCoaching} from './coaching';
 import {useOnline} from './connection-status';
@@ -29,19 +29,17 @@ import {useDurableDraft} from './use-durable-draft';
 export function TrackerRecording({
   tracker,
   date,
-  event,
   entry,
   onSaved,
 }: {
   tracker: Tracker;
   date: string;
-  event?: TrackerEvent;
   entry?: TrackerEntry;
   onSaved: () => void;
 }) {
   const profile = useProfile().data?.data;
   const session = getSession();
-  const resource = `tracker.${tracker.id}.${entry?.id ?? event?.about_session_id ?? 'new'}`;
+  const resource = `tracker.${tracker.id}.${entry?.id ?? 'new'}`;
   const initial = trackerDraft(resource, tracker, date, profile?.unit_system ?? 'metric', entry);
   const controller = useDurableDraft({
     initial,
@@ -165,7 +163,7 @@ export function TrackerRecording({
         for (const file of ordered) {
           ids.push((await uploadAttachment(file, session.id)).attachmentId ?? '');
         }
-        input = trackerInput(draft, tracker, ids, event);
+        input = trackerInput(draft, tracker, ids);
         if (!(await update((current) => ({...current, attempt: input}), true))) {
           throw new Error('Your request could not be kept safely. No entry was sent.');
         }

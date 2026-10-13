@@ -7,11 +7,9 @@ export function safeReturnTo(value: string | null) {
   }
   try {
     const url = new URL(value, 'https://clientapp.invalid');
-    return [routes.home, routes.trackers, routes.account, routes.accountDetails, routes.messages, routes.training].some(
+    return [routes.home, routes.trackers, routes.account, routes.accountDetails, routes.messages].some(
       (route) => route === url.pathname,
-    ) ||
-      /^\/trackers\/[^/]+$/.test(url.pathname) ||
-      /^\/training\/(sessions\/[^/]+|plans\/[^/]+(?:\/workouts\/[^/]+)?)$/.test(url.pathname)
+    ) || /^\/trackers\/[^/]+$/.test(url.pathname)
       ? `${url.pathname}${url.search}${url.hash}`
       : routes.home;
   } catch {

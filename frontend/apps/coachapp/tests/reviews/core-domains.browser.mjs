@@ -46,7 +46,7 @@ async function login(page, email) {
   await expect(page).toHaveURL(/\/(clients|welcome)$/);
 }
 
-async function runReviewJourney({person, token, today, earlier, weight, sessionId}) {
+async function runReviewJourney({person, token, today, earlier, weight}) {
   const privateNote = 'Coach only: discuss recovery at our next call.';
   const reply = 'Keep your workouts steady this week.';
   const editedReply = 'Keep your workouts steady and take a rest day.';
@@ -66,10 +66,8 @@ async function runReviewJourney({person, token, today, earlier, weight, sessionI
   await expect(coach.getByRole('heading', {name: 'New since last review', exact: true})).toBeVisible();
   await expect(coach.getByRole('heading', {name: 'Summary', exact: true})).toBeVisible();
   const screen = (await send('get', `/v1/coach/clients/${person.id}/review-screen`, undefined, token)).data;
-  expect(screen.changes.map((group) => group.record_type).sort()).toEqual(['tracker_entry', 'workout']);
-  expect(screen.changes.find((group) => group.record_type === 'workout').title).toBe('Freestyle workout');
+  expect(screen.changes.map((group) => group.record_type).sort()).toEqual(['tracker_entry']);
   expect(screen.changes.find((group) => group.record_type === 'tracker_entry').title).toBe('Body weight');
-  expect(screen.training_counts).toEqual({expected: 0, completed: 0, extra: 1});
   await shot(coach, '03-review-new-375');
   await coach.setViewportSize({width: 1280, height: 900});
   await shot(coach, '04-review-new-1280');
@@ -148,16 +146,6 @@ async function runReviewJourney({person, token, today, earlier, weight, sessionI
   await expect(clientPage.getByText('Needs attention', {exact: true})).toHaveCount(0);
   await shot(clientPage, '07-client-reply-history-375');
 
-  const clientToken = await clientPage.evaluate(
-    () => JSON.parse(localStorage.getItem('clientapp.auth.v1')).tokens.access_token,
-  );
-  const session = (await send('get', `/v1/client/training-sessions/${sessionId}`, undefined, clientToken)).data;
-  await send(
-    'patch',
-    `/v1/client/training-sessions/${sessionId}`,
-    {expected_revision: session.revision, notes: 'After correction'},
-    clientToken,
-  );
   await clientPage.goto(`/trackers/${weight.id}`);
   await clientPage.getByRole('button', {name: 'Remove entry', exact: true}).click();
   await clientPage.getByRole('dialog').getByRole('button', {name: 'Remove entry', exact: true}).click();
@@ -181,26 +169,15 @@ async function runReviewJourney({person, token, today, earlier, weight, sessionI
   await shot(coach, '08-roster-reviewed-1280');
   await coach.goto(`/clients/${person.id}/reviews/new`);
   const nextScreen = (await send('get', `/v1/coach/clients/${person.id}/review-screen`, undefined, token)).data;
-  expect(nextScreen.changes.map((group) => group.record_type).sort()).toEqual(['tracker_entry', 'workout']);
-  const changedWorkout = nextScreen.changes.find((group) => group.record_type === 'workout');
-  expect(changedWorkout.title).toBe('Freestyle workout');
-  const correctedSession = changedWorkout.changes.find((change) => change.new_value?.notes === 'After correction');
-  expect(correctedSession.old_value.notes).toBe('Before correction');
+  expect(nextScreen.changes.map((group) => group.record_type).sort()).toEqual(['tracker_entry']);
   const removedEntry = nextScreen.changes.find((group) => group.record_type === 'tracker_entry');
   expect(removedEntry.title).toBe('Body weight');
   expect(removedEntry.changes.some((change) => change.action === 'removed')).toBe(true);
   await expect(coach.getByText(privateNote, {exact: true})).toBeVisible();
-  await expect(coach.getByText(/Before correction/).first()).toBeVisible();
-  await expect(coach.getByText(/After correction/).first()).toBeVisible();
   await expect(coach.getByRole('heading', {name: 'Body weight · removed', exact: true})).toBeVisible();
-  await expect(
-    coach
-      .getByRole('region', {name: 'New since last review', exact: true})
-      .getByRole('link', {name: 'Open record', exact: true}),
-  ).toHaveAttribute('href', new RegExp(`/training-sessions/${sessionId}$`));
-  await shot(coach, '09-two-changes-1280');
+  await shot(coach, '09-tracker-removal-1280');
   await coach.setViewportSize({width: 375, height: 812});
-  await shot(coach, '10-two-changes-375');
+  await shot(coach, '10-tracker-removal-375');
 
   await clientPage.goto('/messages');
   await expect(clientPage.getByText(reply, {exact: true})).toBeVisible();
@@ -371,29 +348,6 @@ try {
     },
   );
   await login(coach, email);
-  await clientPage.goto('/training');
-  await clientPage.getByRole('button', {name: 'Start freestyle workout', exact: true}).click();
-  await expect(clientPage).toHaveURL(/training\/sessions\/[0-9a-f-]{36}/);
-  const sessionId = new URL(clientPage.url()).pathname.split('/').at(-1);
-  await clientPage.getByRole('button', {name: 'Finish workout', exact: true}).click();
-  await clientPage.getByRole('button', {name: 'Finish and save workout', exact: true}).click();
-  await expect
-    .poll(
-      async () =>
-        (await send('get', `/v1/coach/clients/${person.id}/training-sessions/${sessionId}`, undefined, token)).data
-          .state,
-    )
-    .toBe('completed');
-  const clientToken = await clientPage.evaluate(
-    () => JSON.parse(localStorage.getItem('clientapp.auth.v1')).tokens.access_token,
-  );
-  const completed = (await send('get', `/v1/client/training-sessions/${sessionId}`, undefined, clientToken)).data;
-  await send(
-    'patch',
-    `/v1/client/training-sessions/${sessionId}`,
-    {expected_revision: completed.revision, notes: 'Before correction'},
-    clientToken,
-  );
   const weight = (await send('get', '/v1/coach/trackers?search=Body%20weight&limit=100', undefined, token)).data.find(
     (item) => item.name === 'Body weight',
   );
@@ -402,7 +356,7 @@ try {
   await form.getByLabel('Value', {exact: true}).fill('82');
   await form.getByRole('button', {name: 'Save entry', exact: true}).click();
   await expect(form).toHaveCount(0);
-  const result = await runReviewJourney({person, token, today, earlier, weight, sessionId});
+  const result = await runReviewJourney({person, token, today, earlier, weight});
   expect(errors).toEqual([]);
   expect(failures).toEqual([]);
   await writeFile(
@@ -422,7 +376,7 @@ try {
       2,
     ),
   );
-  console.log('Slice 4 Review flow passed: coach 1280/375, client 375, correction/removal and live reply edit/delete.');
+  console.log('Slice 4 Review flow passed: coach 1280/375, client 375, Tracker removal and live reply edit/delete.');
 } catch (error) {
   await writeFile(`${screens}/failure-responses.json`, JSON.stringify(failures, null, 2));
   for (const [name, page] of [

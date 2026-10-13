@@ -20,7 +20,7 @@ defmodule Easy.Chat.Message do
     field :body, :string
     field :request_id, :binary_id
     field :request_fingerprint, :string
-    field :embed_type, Ecto.Enum, values: [:training_session, :review]
+    field :embed_type, Ecto.Enum, values: [:review]
     field :embed_id, :binary_id
     field :embed_snapshot, :map
     field :sender_type, Ecto.Enum, values: [:coach, :client]
@@ -111,26 +111,8 @@ defmodule Easy.Chat.Message do
 
   @spec embed_reference(Ecto.Changeset.t()) :: {:ok, map() | nil} | {:error, :not_found | Ecto.Changeset.t()}
   def embed_reference(changeset) do
-    embed = normalize_embed(Map.get(changeset.params || %{}, "embed"))
-
-    case {get_field(changeset, :sender_type), embed} do
-      {_, nil} ->
-        {:ok, nil}
-
-      {_, %{"type" => type, "id" => id} = reference}
-      when type in [:training_session, "training_session"] and is_binary(id) ->
-        case Ecto.UUID.cast(id) do
-          {:ok, id} -> {:ok, %{type: to_string(type), id: id, revision: Map.get(reference, "revision")}}
-          :error -> {:error, :not_found}
-        end
-
-      _ ->
-        {:error, add_error(changeset, :embed, "is invalid")}
-    end
+    if Map.get(changeset.params || %{}, "embed"), do: {:error, add_error(changeset, :embed, "is invalid")}, else: {:ok, nil}
   end
-
-  defp normalize_embed(embed) when is_map(embed), do: Map.new(embed, fn {key, value} -> {to_string(key), value} end)
-  defp normalize_embed(embed), do: embed
 
   defp put_embed(changeset, nil), do: changeset
 

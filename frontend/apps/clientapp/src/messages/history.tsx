@@ -1,7 +1,7 @@
 import {focusManager} from '@tanstack/react-query';
 import {ChevronRight, ClipboardCheck, MessageCircle, RefreshCw} from 'lucide-react';
 import {useEffect, useRef, useState, useSyncExternalStore} from 'react';
-import {generatePath, Link} from 'react-router-dom';
+import {Link} from 'react-router-dom';
 import {useAttachmentUrls} from '../api/attachments';
 import {type ChatMessage, useConversationHistory, useReadConversation} from '../api/conversation';
 import {latestPageCount} from '../api/pagination';
@@ -275,20 +275,7 @@ export function History() {
 }
 
 function referencePath(embed: NonNullable<ChatMessage['embed']>) {
-  const snapshot = embed.snapshot;
-  const params = new URLSearchParams({returnTo: routes.messages, referenceId: embed.id});
-  if (snapshot.revision) {
-    params.set('referenceRevision', String(snapshot.revision));
-  }
-  let path: string;
-  switch (embed.type) {
-    case 'review':
-      return `${routes.checkIns}?${new URLSearchParams({review: embed.id})}`;
-    case 'training_session':
-      path = generatePath(routes.trainingSession, {id: embed.id});
-      break;
-  }
-  return `${path}?${params}`;
+  return `${routes.checkIns}?${new URLSearchParams({review: embed.id})}`;
 }
 
 function MessageMedia({attachment}: {attachment: ChatMessage['attachments'][number]}) {

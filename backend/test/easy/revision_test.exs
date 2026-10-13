@@ -1,13 +1,13 @@
 defmodule Easy.RevisionTest do
   use Easy.SchemaCase
 
-  alias Easy.Plans.Template
   alias Easy.Repo
   alias Easy.Revision
+  alias Easy.Trackers.Template
 
   test "missing records do not invoke the mutation" do
     business = insert(:business)
-    query = Template.for_business(business.id, :training)
+    query = Template.for_business(business.id)
 
     assert {:error, :not_found} =
              Revision.locked(query, Ecto.UUID.generate(), :any, fn _record ->
@@ -16,10 +16,10 @@ defmodule Easy.RevisionTest do
   end
 
   test "stale revisions preserve the record and do not invoke the mutation" do
-    template = insert(:training_plan)
+    template = insert(:tracker_template)
 
     assert {:error, changeset} =
-             Revision.locked(Template.for_business(template.business_id, :training), template.id, template.revision + 1, fn _record ->
+             Revision.locked(Template.for_business(template.business_id), template.id, template.revision + 1, fn _record ->
                flunk("mutation must not run for a stale revision")
              end)
 
@@ -30,8 +30,8 @@ defmodule Easy.RevisionTest do
   end
 
   test "callback failures roll back writes and successful results commit" do
-    template = insert(:training_plan)
-    query = Template.for_business(template.business_id, :training)
+    template = insert(:tracker_template)
+    query = Template.for_business(template.business_id)
 
     assert {:error, :rejected} =
              Revision.locked(query, template.id, template.revision, fn locked ->

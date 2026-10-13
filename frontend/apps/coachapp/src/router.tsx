@@ -24,7 +24,6 @@ import {ClientTrackers} from './client-trackers/client-trackers';
 import {RecordTracker} from './client-trackers/record-tracker';
 import {TrackerHistory} from './client-trackers/tracker-history';
 import {ClientWeekPrototype} from './client-week-prototype/client-week-prototype';
-import {AssignTrainingPlan} from './clients/assign-training-plan';
 import {ChangeClientCoach} from './clients/change-client-coach';
 import {ClientOverview} from './clients/client-overview';
 import {ClientProfile} from './clients/client-profile';
@@ -38,9 +37,6 @@ import {FoodEditor} from './foods/food-editor';
 import {Foods} from './foods/foods';
 import {NutritionWeek} from './nutrition-week/nutrition-week';
 import {NutritionWeekPrototype} from './nutrition-week-prototype/nutrition-week-prototype';
-import {ClientPlanManagement} from './plan-management/client-plan-management';
-import {ClientPlans} from './plan-management/client-plans';
-import {PlanManagement} from './plan-management/plan-management';
 import {ReviewHistory} from './reviews/review-history';
 import {ReviewScreen} from './reviews/review-screen';
 import {routes} from './routes';
@@ -52,11 +48,10 @@ import {TrackerTemplateEditor} from './tracker-templates/tracker-template-editor
 import {TrackerTemplates} from './tracker-templates/tracker-templates';
 import {TrackerEditor} from './trackers/tracker-editor';
 import {Trackers} from './trackers/trackers';
-import {TrainingPlanEditor} from './training-plans/training-plan-editor';
-import {TrainingPlans} from './training-plans/training-plans';
-import {TrainingSession} from './training-sessions/training-session';
-import {TrainingSessions} from './training-sessions/training-sessions';
+import {WorkoutBuilder} from './workout-builder/workout-builder';
 import {WorkoutBuilderPrototype} from './workout-builder-prototype/workout-builder-prototype';
+import {WorkoutWeek} from './workout-week/workout-week';
+import {WorkoutLibrary} from './workouts/workouts';
 
 function Gate({guest = false}: {guest?: boolean}) {
   const session = parseSession(useSyncExternalStore(subscribeSession, sessionSnapshot));
@@ -122,24 +117,24 @@ function Root() {
         getKey={(location) =>
           location.pathname === routes.team ||
           location.pathname === routes.conversations ||
-          location.pathname === routes.trainingPlans ||
+          location.pathname === routes.workouts ||
           location.pathname === routes.exercises ||
           location.pathname === routes.foods ||
           location.pathname === routes.trackers ||
           location.pathname === routes.trackerTemplates ||
           matchPath(routes.trackerHistory, location.pathname) ||
-          matchPath(routes.manageTrainingPlan, location.pathname) ||
-          matchPath(routes.clientTrainingPlans, location.pathname) ||
-          matchPath(routes.manageClientTrainingPlan, location.pathname) ||
-          matchPath(routes.trainingSessions, location.pathname) ||
-          location.pathname === routes.home ||
-          matchPath(routes.assignTrainingPlan, location.pathname)
+          location.pathname === routes.home
             ? location.pathname + location.search
             : location.key
         }
       />
     </>
   );
+}
+
+function ClientTraining() {
+  const {id = ''} = useParams();
+  return <WorkoutWeek clientId={id} />;
 }
 
 function ClientNutrition() {
@@ -204,20 +199,15 @@ export const router = createBrowserRouter([
               {path: routes.clientProfile, element: <ClientProfile />},
               {path: routes.conversations, element: <Conversations />},
               {path: routes.clientConversation, element: <Conversation />},
-              {path: routes.trainingSessions, element: <TrainingSessions />},
-              {path: routes.trainingSession, element: <TrainingSession />},
-              {path: routes.assignTrainingPlan, element: <AssignTrainingPlan />},
-              {path: routes.previewTrainingPlan, element: <AssignTrainingPlan />},
-              {path: routes.trainingPlans, element: <TrainingPlans />},
+              {path: routes.clientTraining, element: <ClientTraining />},
+              {path: routes.workouts, element: <WorkoutLibrary />},
+              {path: routes.createWorkout, element: <WorkoutBuilder />},
+              {path: routes.workout, element: <WorkoutBuilder />},
+              {path: routes.createClientWorkout, element: <WorkoutBuilder />},
+              {path: routes.clientWorkout, element: <WorkoutBuilder />},
               {path: routes.exercises, element: <Exercises />},
               {path: routes.createExercise, element: <ExerciseEditor />},
               {path: routes.exercise, element: <ExerciseEditor />},
-              {path: routes.createTrainingPlan, element: <TrainingPlanEditor />},
-              {path: routes.clientTrainingPlans, element: <ClientPlans />},
-              {path: routes.manageClientTrainingPlan, element: <ClientPlanManagement />},
-              {path: routes.manageTrainingPlan, element: <PlanManagement />},
-              {path: routes.editTrainingPlan, element: <TrainingPlanEditor />},
-              {path: routes.editClientTrainingPlan, element: <TrainingPlanEditor />},
               {path: routes.foods, element: <Foods />},
               {path: routes.createFood, element: <FoodEditor />},
               {path: routes.food, element: <FoodEditor />},

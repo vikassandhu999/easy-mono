@@ -40,7 +40,7 @@ try {
     let release;
     try {
       // This token really expired in the API database; recovery must preserve the destination.
-      await page.goto(`/verify?token=${fixture.verification_token}&returnTo=%2Ftraining-exercises%2Fnew`);
+      await page.goto(`/verify?token=${fixture.verification_token}&returnTo=%2Fexercises%2Fnew`);
       await page.getByRole('button', {name: 'Confirm email', exact: true}).click();
       await expect(page.getByRole('alert')).toBeFocused();
       await expect(page.getByRole('alert')).toContainText('expired');
@@ -49,7 +49,7 @@ try {
       await expect(page.getByRole('link', {name: 'Sign in with a code'})).toBeFocused();
       await capture(page, 'expired-link', width);
       await page.keyboard.press('Enter');
-      await expect(page).toHaveURL('/login?returnTo=%2Ftraining-exercises%2Fnew');
+      await expect(page).toHaveURL('/login?returnTo=%2Fexercises%2Fnew');
       await page.getByLabel('Email', {exact: true}).fill(fixture.verification_email);
       await page.getByRole('button', {name: 'Continue with email'}).click();
       await page.getByLabel('Verification code').fill('123456');

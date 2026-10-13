@@ -3,10 +3,10 @@ defmodule Easy.Trackers do
   alias Easy.Clients.Client
   alias Easy.Ctx
   alias Easy.CursorPage
-  alias Easy.Plans.Template
   alias Easy.Repo
   alias Easy.Result
   alias Easy.Trackers.Entry
+  alias Easy.Trackers.Template
   alias Easy.Trackers.Tracker
   alias Easy.Units
   alias Easy.Utils

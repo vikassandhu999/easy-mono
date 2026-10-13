@@ -1,5 +1,5 @@
 import {Pill, Plus, Target} from 'lucide-react';
-import {useCallback, useEffect, useRef, useState, useSyncExternalStore} from 'react';
+import {useCallback, useEffect, useRef, useState} from 'react';
 import {useBeforeUnload, useBlocker} from 'react-router-dom';
 import {errorMessage} from '../api/client';
 import {useClient} from '../api/clients';
@@ -8,7 +8,7 @@ import {Button} from '../ui/button';
 import {Dialog, DialogHeader, DialogTitle} from '../ui/dialog';
 import {FormError} from '../ui/form-error';
 import {Page, PageHeader} from '../ui/page';
-import {Tab, TabList, TabPanel, Tabs} from '../ui/tabs';
+import {WeekColumns} from '../ui/week-columns';
 import {AddDialog} from './add-dialog';
 import {MealEditor} from './meal-editor';
 import {
@@ -30,13 +30,6 @@ import {ScheduleDialog} from './schedule-dialog';
 import {TargetsDialog} from './targets-dialog';
 
 type Editing = {meal: Meal; newOn: Day | null; scrollY: number; focus: string};
-const wide = '(min-width: 80rem)';
-const subscribe = (notify: () => void) => {
-  const query = window.matchMedia(wide);
-  query.addEventListener('change', notify);
-  return () => query.removeEventListener('change', notify);
-};
-const useWide = () => useSyncExternalStore(subscribe, () => window.matchMedia(wide).matches);
 const cardId = (schedule: Schedule, day: Day) => `card-${schedule.id}-${day.bit}`;
 const targetsId = (day: Day) => `targets-${day.bit}`;
 const addId = (day: Day) => `add-${day.bit}`;
@@ -72,8 +65,6 @@ function NutritionWeekScreen({clientId}: {clientId: string}) {
   const refocus = (id: string, fallback: string) => setReturnFocus({id, fallback});
   const undoSave = useUndoNutrition(clientId);
   const clearUndo = useCallback(() => setUndo(null), []);
-  const [shown, setShown] = useState<number>(weekdays[0].bit);
-  const isWide = useWide();
   const lastDay = useRef<Day>(weekdays[0]);
   const guards = useRef(new Map<string, boolean>());
   const register = useCallback((id: string, active: boolean, pending: boolean) => {
@@ -113,7 +104,6 @@ function NutritionWeekScreen({clientId}: {clientId: string}) {
     const set = targetsOn(state, day.bit);
     return (
       <>
-        {isWide && <h2 className="px-1 text-base font-semibold">{day.long}</h2>}
         <Button
           id={targetsId(day)}
           variant="ghost"
@@ -196,7 +186,6 @@ function NutritionWeekScreen({clientId}: {clientId: string}) {
       </>
     );
   };
-  const columnClass = 'flex min-w-0 flex-col gap-2 rounded-2xl bg-muted p-2';
   return (
     <DraftGuard value={register}>
       {state && editing && (
@@ -266,49 +255,7 @@ function NutritionWeekScreen({clientId}: {clientId: string}) {
                   Updating week…
                 </p>
               )}
-              {isWide ? (
-                <ol className="grid grid-cols-7 gap-2">
-                  {weekdays.map((day) => (
-                    <li
-                      key={day.bit}
-                      aria-label={day.long}
-                      className={columnClass}
-                    >
-                      {column(day)}
-                    </li>
-                  ))}
-                </ol>
-              ) : (
-                <Tabs
-                  selectedKey={String(shown)}
-                  onSelectionChange={(key) => setShown(Number(key))}
-                >
-                  <TabList
-                    aria-label="Day"
-                    className="grid grid-cols-7 border-b border-border"
-                  >
-                    {weekdays.map((day) => (
-                      <Tab
-                        key={day.bit}
-                        id={String(day.bit)}
-                        aria-label={day.long}
-                        className="-mb-px flex min-h-11 items-center justify-center border-b-2 border-transparent text-sm font-medium text-muted-foreground data-selected:border-foreground data-selected:font-semibold data-selected:text-foreground"
-                      >
-                        {day.short}
-                      </Tab>
-                    ))}
-                  </TabList>
-                  {weekdays.map((day) => (
-                    <TabPanel
-                      key={day.bit}
-                      id={String(day.bit)}
-                      className={`${columnClass} mt-3`}
-                    >
-                      {column(day)}
-                    </TabPanel>
-                  ))}
-                </Tabs>
-              )}
+              <WeekColumns>{column}</WeekColumns>
             </>
           )}
         </Page>

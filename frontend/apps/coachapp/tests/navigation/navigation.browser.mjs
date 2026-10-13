@@ -128,7 +128,7 @@ try {
 
         for (const [label, path, title] of [
           ['Messages', '/messages', 'Messages'],
-          ['Training', '/training-plans', 'Training plans'],
+          ['Workouts', '/workouts', 'Workout library'],
           ['Foods', '/foods', 'Food catalogue'],
           ['Clients', '/clients', 'Clients'],
         ]) {
@@ -160,7 +160,7 @@ try {
         }
 
         for (const [parent, parentPath, label, path, back] of [
-          ['Training', '/training-plans', 'Exercise library', '/training-exercises', 'Back to training plans'],
+          ['Workouts', '/workouts', 'Exercise library', '/exercises', 'Workout library'],
         ]) {
           await primary(page, parent, parentPath);
           await openLink(page, label, path);
@@ -178,9 +178,8 @@ try {
         for (const [label, suffixPath, back] of [
           ['Client details', '/profile', 'Back to client'],
           ['Messages', '/conversation', 'Client details'],
-          ['View training history', '/training-sessions', 'Back to client'],
-          ['All training plans', '/training-plans?status=all', 'Back to client'],
-          ['Assign training plan', '/training-plans/assign', 'Back to client'],
+          ['Training', '/training', name],
+          ['Nutrition', '/nutrition', name],
         ]) {
           await openLink(page, label, clientPath + suffixPath, {scope: page.getByRole('main')});
           const active = suffixPath === '/conversation' ? 'Messages' : 'Clients';

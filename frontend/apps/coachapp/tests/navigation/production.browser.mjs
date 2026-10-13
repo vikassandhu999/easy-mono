@@ -36,7 +36,7 @@ try {
     const email = `production-${suffix}@example.test`;
     const name = `Test Production ${engine} ${width}`;
     try {
-      await page.goto('/training-exercises/new');
+      await page.goto('/exercises/new');
       await expect(page).toHaveURL(/\/login\?returnTo=/);
       await page.getByRole('link', {name: 'Create an account', exact: true}).click();
       await page.getByLabel('Full name', {exact: true}).fill('Test Production');
@@ -50,7 +50,7 @@ try {
       await page.getByLabel('Business name', {exact: true}).fill('Test Production Business');
       await page.getByLabel('Business handle', {exact: true}).fill(`production-${suffix}`);
       await page.getByRole('button', {name: 'Create business', exact: true}).click();
-      await expect(page).toHaveURL(`${baseURL}/welcome?returnTo=%2Ftraining-exercises%2Fnew`);
+      await expect(page).toHaveURL(`${baseURL}/welcome?returnTo=%2Fexercises%2Fnew`);
       for (const title of ['Build once. Coach each person.', 'Make healthy choices easier.']) {
         const heading = page.getByRole('heading', {level: 1, name: title, exact: true});
         await expect(heading).toBeVisible();
@@ -70,25 +70,25 @@ try {
       }
       await page.screenshot({path: `/tmp/coachapp-welcome-production-${engine}-${width}.png`, animations: 'disabled'});
       await page.getByRole('button', {name: 'Continue to your page', exact: true}).click();
-      await expect(page).toHaveURL(`${baseURL}/training-exercises/new`);
+      await expect(page).toHaveURL(`${baseURL}/exercises/new`);
       await page.getByLabel('Exercise name', {exact: true}).fill(name);
       const createdResponse = page.waitForResponse(
         (response) =>
-          response.url().endsWith('/v1/coach/training-exercises') &&
+          response.url().endsWith('/v1/coach/exercises') &&
           response.request().method() === 'POST' &&
           response.status() === 201,
       );
       await page.getByRole('button', {name: 'Save exercise', exact: true}).click();
       const exercise = (await (await createdResponse).json()).data;
       expect(exercise.name).toBe(name);
-      await page.goto(`/training-exercises/${exercise.id}`);
+      await page.goto(`/exercises/${exercise.id}`);
       await expect(page.getByLabel('Exercise name', {exact: true})).toHaveValue(name);
       await page.reload();
       await expect(page.getByLabel('Exercise name', {exact: true})).toHaveValue(name);
       for (const [label, path, title] of [
         ['Messages', '/messages', 'Messages'],
         ['Clients', '/clients', 'Clients'],
-        ['Training', '/training-plans', 'Training plans'],
+        ['Workouts', '/workouts', 'Workout library'],
         ['Foods', '/foods', 'Food catalogue'],
       ]) {
         await page
@@ -105,24 +105,24 @@ try {
         path: `tests/navigation/artifacts/production-${engine}-${width}.png`,
         animations: 'disabled',
       });
-      await page.goto(`/training-exercises/${exercise.id}`);
+      await page.goto(`/exercises/${exercise.id}`);
       const session = await page.evaluate(() => JSON.parse(localStorage.getItem('coachapp.auth.v1')));
-      const removal = await context.request.delete(`${baseURL}/v1/coach/training-exercises/${exercise.id}`, {
+      const removal = await context.request.delete(`${baseURL}/v1/coach/exercises/${exercise.id}`, {
         headers: {authorization: `Bearer ${session.tokens.access_token}`},
       });
       expect(removal.status()).toBe(204);
       await page.getByRole('button', {name: 'Your account', exact: true}).click();
       await page.getByRole('menuitem', {name: 'Sign out', exact: true}).click();
       await expect(page).toHaveURL(`${baseURL}/login`);
-      await page.goto(`/training-exercises/${exercise.id}`);
+      await page.goto(`/exercises/${exercise.id}`);
       await expect(page).toHaveURL(/\/login\?returnTo=/);
       await page.getByLabel('Email', {exact: true}).fill(email);
       await page.getByRole('button', {name: 'Continue with email', exact: true}).click();
       await page.getByLabel('Verification code', {exact: true}).fill('123456');
       await page.getByRole('button', {name: 'Verify and continue', exact: true}).click();
-      await expect(page).toHaveURL(`${baseURL}/training-exercises/${exercise.id}`);
+      await expect(page).toHaveURL(`${baseURL}/exercises/${exercise.id}`);
       await expect(page.getByRole('alert')).toContainText('The requested resource was not found.');
-      await page.getByRole('link', {name: 'Back to exercises', exact: true}).click();
+      await page.getByRole('link', {name: 'Exercise library', exact: true}).click();
       await expect(page.getByRole('heading', {name: 'Exercise library', exact: true})).toBeVisible();
       expect([...scripts].every((path) => path.startsWith('/assets/') && path.endsWith('.js'))).toBe(true);
       expect(errors).toEqual([]);

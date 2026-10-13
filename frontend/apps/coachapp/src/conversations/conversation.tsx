@@ -1,4 +1,4 @@
-import {ArrowLeft, X} from 'lucide-react';
+import {ArrowLeft} from 'lucide-react';
 import {useCallback, useState} from 'react';
 import {generatePath, Link, useParams} from 'react-router-dom';
 import {errorMessage} from '../api/client';
@@ -15,10 +15,8 @@ import {FormError} from '../ui/form-error';
 import {useListLocation} from '../ui/list-location';
 import {MessageScrollerProvider} from '../ui/message-scroller';
 import {Surface} from '../ui/page';
-import type {RecordReference} from './draft';
 import {MessageComposer} from './message-composer';
 import {MessageHistory} from './message-history';
-import {RecordDetail} from './record-detail';
 
 export function Conversation() {
   const {clientId = ''} = useParams();
@@ -77,74 +75,9 @@ export function Conversation() {
   );
 }
 function ConversationThread({conversation}: {conversation: ConversationData}) {
-  const [context, setContext] = useState<RecordReference | null>(null);
-  const [reference, setReference] = useState<RecordReference | null>(null);
-  const consumeReference = useCallback(() => setReference(null), []);
-  function discuss(record: RecordReference) {
-    setReference(record);
-    setContext(null);
-  }
-  return (
-    <>
-      <div
-        className={
-          context
-            ? 'grid min-h-0 flex-1 items-stretch gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(20rem,0.8fr)]'
-            : 'mx-auto flex min-h-0 w-full max-w-3xl flex-1'
-        }
-      >
-        <div className={context ? 'hidden min-h-0 flex-col gap-3 lg:flex' : 'flex min-h-0 flex-1 flex-col gap-3'}>
-          <Thread
-            conversation={conversation}
-            requestedReference={reference}
-            onReferenceConsumed={consumeReference}
-            onOpen={setContext}
-          />
-        </div>
-        {context && (
-          <aside
-            aria-label="Client context"
-            className="min-h-0 min-w-0 space-y-5 overflow-y-auto rounded-2xl border border-border bg-surface p-4"
-          >
-            <div className="flex items-center justify-between gap-3">
-              <h2 className="min-w-0 break-words font-semibold">{context.title}</h2>
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                aria-label="Back to conversation"
-                onPress={() => setContext(null)}
-              >
-                <X aria-hidden="true" />
-              </Button>
-            </div>
-            <RecordDetail
-              clientId={conversation.client_id}
-              record={context}
-              onDiscuss={discuss}
-            />
-            <Button
-              variant="outline"
-              onPress={() => setContext(null)}
-            >
-              Back to conversation
-            </Button>
-          </aside>
-        )}
-      </div>
-    </>
-  );
+  return <Thread conversation={conversation} />;
 }
-function Thread({
-  conversation,
-  requestedReference,
-  onReferenceConsumed,
-  onOpen,
-}: {
-  conversation: ConversationData;
-  requestedReference: RecordReference | null;
-  onReferenceConsumed: () => void;
-  onOpen: (record: RecordReference) => void;
-}) {
+function Thread({conversation}: {conversation: ConversationData}) {
   const messages = useMessages(conversation.id);
   const action = useConversationAction(conversation.id);
   const connection = useConversationUpdates();
@@ -209,14 +142,9 @@ function Thread({
         query={messages}
         clientId={conversation.client_id}
         clientName={conversation.client_name || 'Client'}
-        onOpenRecord={onOpen}
         onShownMessage={onShownMessage}
       />
-      <MessageComposer
-        conversation={conversation}
-        requestedReference={requestedReference}
-        onReferenceConsumed={onReferenceConsumed}
-      />
+      <MessageComposer conversation={conversation} />
     </MessageScrollerProvider>
   );
 }

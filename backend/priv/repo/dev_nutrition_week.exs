@@ -48,7 +48,7 @@ defmodule Easy.Repo.Seeds.NutritionWeek do
         unit_system: :metric
       })
 
-    get_or_insert(CoachingTerm, %{client_id: client.id, starts_on: Date.add(Date.utc_today(), -45)}, %{})
+    get_or_insert(CoachingTerm, %{client_id: client.id}, %{starts_on: Date.add(Date.utc_today(), -45)})
     foods = Foods.for_business(business)
     rows = seed_week(business, client, coach, foods)
 

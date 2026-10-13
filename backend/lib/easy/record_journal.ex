@@ -49,7 +49,7 @@ defmodule Easy.RecordJournal do
   defp finish_write(_ctx, _client, {:error, _} = error), do: error
 
   @spec change(String.t(), String.t(), struct() | nil, struct() | nil, String.t()) :: map()
-  def change(record_id, row_type, old, new, record_type \\ "workout") do
+  def change(record_id, row_type, old, new, record_type \\ "tracker_entry") do
     row = new || old
 
     %{

@@ -19,7 +19,6 @@ defmodule Easy.Trackers.Entry do
     field :rating_value, :integer
     field :yes_no_value, :boolean
     field :text_value, :string
-    field :about_session_id, :binary_id
     field :deleted_at, :utc_datetime
     has_many :attachments, Easy.Trackers.EntryAttachment
     timestamps(type: :utc_datetime_usec)
@@ -35,16 +34,14 @@ defmodule Easy.Trackers.Entry do
   end
 
   @editable [:local_date, :request_id, :number_value, :entered_unit, :rating_value, :yes_no_value, :text_value]
-  @links [:about_session_id]
   @spec update_changeset(t() | Ecto.Changeset.t(), map()) :: Ecto.Changeset.t()
   def update_changeset(row, attrs) do
     row
-    |> cast(attrs, @editable ++ @links)
+    |> cast(attrs, @editable)
     |> validate_required([:local_date, :request_id])
     |> validate_length(:text_value, max: 10_000)
     |> unique_constraint(:request_id, name: :tracker_entries_client_id_request_id_key)
     |> check_constraint(:number_value, name: :tracker_entries_value)
-    |> foreign_key_constraint(:about_session_id, name: :tracker_entries_about_session_id_client_id_business_id_fkey)
     |> foreign_key_constraint(:tracker_id, name: :tracker_tenant_reference)
   end
 end

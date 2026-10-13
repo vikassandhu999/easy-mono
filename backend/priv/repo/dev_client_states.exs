@@ -44,19 +44,6 @@ fixtures =
         {:ok, conversation} = Easy.Chat.get_or_create_conversation_for_client(ctx, client.id)
         {:ok, _} = Easy.Chat.send_message(ctx, conversation.id, %{body: "Your coaching history stays here."})
 
-        if state == :ended do
-          Repo.insert!(%Easy.Training.TrainingSession{
-            business_id: business.id,
-            client_id: client.id,
-            kind: :freestyle,
-            state: :completed,
-            date: Date.add(today, -2),
-            started_at: DateTime.add(now, -172_800),
-            closed_at: DateTime.add(now, -172_000),
-            notes: "Coaching term history"
-          })
-        end
-
         {state, %{id: client.id, full_name: client.full_name, preferred_name: client.preferred_name, email: email}}
       end
 

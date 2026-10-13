@@ -48,76 +48,12 @@ defmodule EasyWeb.Clients.ConversationControllerTest do
     assert %{"data" => %{"unread_count" => 0}} = json_response(read_conn, 200)
   end
 
-  test "rejects unavailable record references", %{conn: conn} do
-    conn =
-      post(conn, "/v1/client/conversation/messages", %{
-        "embed" => %{"type" => "training_session", "id" => Ecto.UUID.generate()}
-      })
-
-    assert json_response(conn, 404)
-  end
-
   test "rejects unknown message keys and invalid list query values", %{conn: conn} do
     unknown_body = post(conn, "/v1/client/conversation/messages", %{"body" => "hello", "role" => "coach"})
     invalid_query = get(conn, "/v1/client/conversation/messages", %{"limit" => "many"})
 
     assert json_response(unknown_body, 422)
     assert json_response(invalid_query, 422)
-  end
-
-  test "lists coach attachment metadata and workout record embeds", %{
-    conn: conn,
-    coach: coach,
-    client: client
-  } do
-    {:ok, conversation} =
-      Easy.Chat.get_or_create_conversation_for_client(
-        Easy.Ctx.new(coach.business_id, coach.user_id, coach.id, true),
-        client.id
-      )
-
-    attachment = insert(:attachment, business: client.business, client: client)
-    entry = insert(:workout_session, state: :completed, business: client.business, client: client)
-
-    assert {:ok, _message} =
-             Easy.Chat.send_message(
-               Easy.Ctx.new(coach.business_id, coach.user_id, coach.id, true),
-               conversation.id,
-               %{
-                 attachment_ids: [attachment.id],
-                 embed: %{type: "training_session", id: entry.id}
-               }
-             )
-
-    response = conn |> get("/v1/client/conversation/messages") |> json_response(200)
-
-    assert %{
-             "data" => [
-               %{
-                 "attachments" => [
-                   %{
-                     "id" => attachment_id,
-                     "content_type" => "image/jpeg",
-                     "byte_size" => 1024,
-                     "duration_ms" => nil
-                   }
-                 ],
-                 "embed" => %{
-                   "type" => "training_session",
-                   "id" => entry_id,
-                   "snapshot" => %{
-                     "title" => title,
-                     "recorded_at" => recorded_at
-                   }
-                 }
-               }
-             ]
-           } = response
-
-    assert attachment_id == attachment.id
-    assert entry_id == entry.id
-    assert title == "Workout"
-    assert recorded_at == DateTime.to_iso8601(entry.ended_at)
   end
 
   test "requires authentication" do

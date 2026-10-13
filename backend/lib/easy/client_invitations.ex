@@ -84,7 +84,6 @@ defmodule Easy.ClientInvitations do
 
   defp delete_without_records(client) do
     records = [
-      from(s in Easy.Training.TrainingSession, where: s.business_id == ^client.business_id and s.client_id == ^client.id),
       from(m in Easy.Chat.Message, join: c in Easy.Chat.Conversation, on: c.id == m.conversation_id, where: c.business_id == ^client.business_id and c.client_id == ^client.id)
     ]
 

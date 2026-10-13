@@ -23,19 +23,16 @@ import {
   MessageScrollerItem,
   MessageScrollerViewport,
 } from '../ui/message-scroller';
-import type {RecordReference} from './draft';
 
 export function MessageHistory({
   query,
   clientName,
   clientId,
-  onOpenRecord,
   onShownMessage,
 }: {
   query: ReturnType<typeof useMessages>;
   clientName: string;
   clientId: string;
-  onOpenRecord: (record: RecordReference) => void;
   onShownMessage: (id: string, timestamp: string) => void;
 }) {
   const viewport = useRef<HTMLDivElement>(null);
@@ -179,38 +176,13 @@ export function MessageHistory({
                               <BubbleContent className="whitespace-pre-wrap">{message.body}</BubbleContent>
                             </Bubble>
                           )}
-                          {message.embed?.type === 'review' ? (
+                          {message.embed?.type === 'review' && (
                             <Link
                               className="text-link text-sm"
                               to={`${generatePath(routes.reviews, {clientId})}#${message.embed.id}`}
                             >
                               Open Review
                             </Link>
-                          ) : (
-                            message.embed && (
-                              <Button
-                                variant="outline"
-                                className="h-auto max-w-full justify-start py-3 text-left whitespace-normal"
-                                onPress={() => {
-                                  if (message.embed && message.embed.type !== 'review') {
-                                    onOpenRecord({
-                                      type: message.embed.type,
-                                      id: message.embed.id,
-                                      title: message.embed.snapshot.title,
-                                      revision: message.embed.snapshot.revision ?? 1,
-                                      occurredOn: message.embed.snapshot.occurred_on ?? null,
-                                    });
-                                  }
-                                }}
-                              >
-                                <span>
-                                  <span className="block break-words">{message.embed.snapshot.title}</span>
-                                  <span className="mt-1 block text-xs font-normal text-muted-foreground">
-                                    Shared revision {message.embed.snapshot.revision ?? 1} · Open latest record
-                                  </span>
-                                </span>
-                              </Button>
-                            )
                           )}
                           {message.attachments.map((attachment) => (
                             <MessageAttachment

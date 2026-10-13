@@ -4,7 +4,7 @@
  */
 
 /* typed-routes:types */
-/* typed-routes:hash c2e08b6b72dedeb844748b242432c5d03ba19ffb9acd30bafc3aa0ade46425f5 */
+/* typed-routes:hash dc7b726f2eefd3c29b0f3132b32ace31805b0e1900fd8521d2d91c3bb8f5af23 */
 export type Attachment = {
   id: string;
   content_type:
@@ -94,14 +94,8 @@ export type ChatMessage = {
   embed: ChatMessageEmbed | null;
   inserted_at: string;
 };
-export type ChatMessageCoachCreate = {
-  body?: string | null;
-  request_id?: string;
-  attachment_ids?: Array<string>;
-  embed?: ChatMessageEmbedRequest | null;
-};
-export type ChatMessageEmbed = {type: 'training_session' | 'review'; id: string; snapshot: ChatRecordSnapshot};
-export type ChatMessageEmbedRequest = {type: 'training_session'; id: string; revision?: number};
+export type ChatMessageCoachCreate = {body?: string | null; request_id?: string; attachment_ids?: Array<string>};
+export type ChatMessageEmbed = {type: 'review'; id: string; snapshot: ChatRecordSnapshot};
 export type ChatMessageHistory = {
   data: Array<ChatMessage>;
   count: number;
@@ -133,7 +127,6 @@ export type Client = {
   invited_at: string | null;
   invitation_expires_at: string | null;
   last_active_at: string | null;
-  training_plan_name: string | null;
   inserted_at: string;
   updated_at: string;
 };
@@ -205,64 +198,64 @@ export type ConversationInbox = {data: Array<Conversation>; count: number; next_
 export type ConversationInboxQuery = {cursor?: string; limit?: number; search?: string; status?: 'all' | 'unread'};
 export type ConversationListQuery = {offset?: number; limit?: number; search?: string};
 export type ConversationMarkReadQuery = {through?: string};
-export type Equipment = {id: string; name: string; description: string | null};
-export type EquipmentListQuery = {search?: string};
 export type Exercise = {
   id: string;
-  built_in: boolean;
-  measures: Array<'reps' | 'load' | 'duration' | 'distance'>;
-  bodyweight: boolean;
-  media_id: string | null;
-  archived_at: string | null;
   name: string;
-  instructions: string | null;
-  mechanics: 'compound' | 'isolation' | 'isometric' | null;
-  force: 'push' | 'pull' | 'static' | null;
-  media: ExerciseMedia | null;
-  muscles: Array<ExerciseRelation>;
-  equipment: Array<ExerciseRelation>;
-  inserted_at: string;
-  updated_at: string;
+  kind: 'movement' | 'activity' | 'sport' | 'practice';
+  goals: Array<string>;
+  places: Array<string>;
+  metrics: Array<string>;
+  count_label: string | null;
+  grade_scale: Array<string>;
+  unilateral: boolean;
+  equipment: Array<string>;
+  muscles: Array<string>;
+  media: string | null;
+  is_builtin: boolean;
 };
-export type ExerciseBest = {reps: number; best_kg: string};
-export type ExerciseCopy = {name: string};
 export type ExerciseCreate = {
-  measures: Array<'reps' | 'load' | 'duration' | 'distance'>;
-  bodyweight?: boolean;
   name: string;
-  instructions?: string | null;
-  mechanics?: 'compound' | 'isolation' | 'isometric' | null;
-  force?: 'push' | 'pull' | 'static' | null;
-  media_id?: string | null;
-  muscle_ids?: Array<string>;
-  equipment_ids?: Array<string>;
+  kind: 'movement' | 'activity' | 'sport' | 'practice';
+  goals: Array<string>;
+  places: Array<string>;
+  metrics?: Array<string>;
+  count_label?: string | null;
+  grade_scale?: Array<string>;
+  unilateral?: boolean;
+  equipment?: Array<string>;
+  muscles?: Array<string>;
+  media?: string | null;
 };
-export type ExerciseCursorQuery = {
-  cursor?: string;
-  offset?: number;
-  limit?: number;
-  search?: string;
-  muscle_ids?: Array<string>;
-  equipment_ids?: Array<string>;
+export type ExerciseGroup = {id: string; name: string | null; rounds: number; exercises: Array<WorkoutExercise>};
+export type ExerciseGroupCreate = {
+  id?: string;
+  name?: string | null;
+  rounds: number;
+  exercises: Array<WorkoutExerciseCreate>;
 };
-export type ExerciseHistory = {bests: Array<ExerciseBest>; sets: Array<PerformedSet>};
 export type ExerciseIndex = {data: Array<Exercise>; count: number; next_cursor: string | null};
-export type ExerciseMedia = {
-  id: string;
-  kind: 'image' | 'video';
-  content_type: string | null;
-  byte_size: number | null;
-  url: string | null;
+export type ExerciseListQuery = {
+  search?: string;
+  kind?: 'movement' | 'activity' | 'sport' | 'practice';
+  goal?: string;
+  place?: string;
+  equipment?: string;
+  muscle?: string;
+  cursor?: string;
+  limit?: number;
 };
-export type ExerciseRelation = {id: string; name: string; description: string | null};
 export type ExerciseUpdate = {
   name?: string;
-  instructions?: string | null;
-  mechanics?: 'compound' | 'isolation' | 'isometric' | null;
-  force?: 'push' | 'pull' | 'static' | null;
-  media_id?: string | null;
-  muscle_ids?: Array<string>;
-  equipment_ids?: Array<string>;
+  kind?: 'movement' | 'activity' | 'sport' | 'practice';
+  goals?: Array<string>;
+  places?: Array<string>;
+  metrics?: Array<string>;
+  count_label?: string | null;
+  grade_scale?: Array<string>;
+  unilateral?: boolean;
+  equipment?: Array<string>;
+  muscles?: Array<string>;
+  media?: string | null;
 };
 export type Food = {
   id: string;
@@ -328,8 +321,6 @@ export type MealOption = {
   totals: NutrientTotals;
 };
 export type MealOptionCreate = {name?: string | null; items: Array<MealItemCreate>};
-export type Muscle = {id: string; name: string; description: string | null};
-export type MuscleListQuery = {search?: string};
 export type Nutrient = {code: string; name: string; unit: string};
 export type NutrientIndex = {data: Array<Nutrient>};
 export type NutrientMap = {[key: string]: number};
@@ -429,31 +420,6 @@ export type PendingBillingCheckout = {
   status: 'pending' | 'unknown';
   kind: 'create' | 'update';
 };
-export type PerformedSet = {
-  id: string;
-  session_id: string;
-  position: number;
-  request_id: string | null;
-  item_id: string | null;
-  set_id: string | null;
-  exercise_id: string | null;
-  exercise_name: string | null;
-  kind: 'warmup' | 'working' | 'drop';
-  outcome: 'done' | 'failed' | 'skipped';
-  reps: number | null;
-  load_kg: string | null;
-  entered_load_unit: 'kg' | 'lb' | null;
-  duration_s: number | null;
-  distance_m: string | null;
-  entered_distance_unit: 'm' | 'km' | 'mi' | null;
-  rpe: string | null;
-  rir: number | null;
-  notes: string | null;
-  deleted_at: string | null;
-  local_date?: string | null;
-  inserted_at: string;
-  updated_at: string;
-};
 export type Review = {
   id: string;
   client_id: string;
@@ -479,7 +445,7 @@ export type ReviewChangeGroup = {
   title: string;
   local_date: string | null;
   tracker_id: string | null;
-  record_type: 'workout' | 'tracker_entry';
+  record_type: 'tracker_entry';
   record_id: string;
   changes: Array<ReviewChange>;
 };
@@ -491,7 +457,6 @@ export type ReviewCreate = {
 };
 export type ReviewIndex = {data: Array<Review>; count: number; next_cursor: string | null};
 export type ReviewListQuery = {cursor?: string; limit?: number};
-export type ReviewPlanLink = {id: string; name: string; domain: 'training'};
 export type ReviewRoster = {data: Array<ReviewRosterRow>; count: number; next_cursor: string | null};
 export type ReviewRosterRow = {
   id: string;
@@ -535,11 +500,8 @@ export type ReviewScreen = {
   to: string;
   last_review: Review | null;
   changes: Array<ReviewChangeGroup>;
-  training: TrainingOccurrences;
-  training_counts: {expected: number; completed: number; extra: number};
   trackers: Array<TrackerMetrics>;
   requests: Array<TrackerRequest>;
-  plans: Array<ReviewPlanLink>;
 };
 export type ReviewScreenQuery = {from?: string; to?: string};
 export type ReviewSettings = {default_review_frequency_days: number};
@@ -550,35 +512,6 @@ export type ReviewUpdate = {
   reply?: string | null;
 };
 export type Revision = {expected_revision: number};
-export type Session = {
-  id: string;
-  revision: number;
-  local_date: string;
-  timezone: string;
-  started_at: string;
-  ended_at: string | null;
-  state: 'active' | 'completed' | 'discarded';
-  notes: string | null;
-  request_id: string | null;
-  plan_revision_id: string | null;
-  workout_id: string | null;
-  schedule_entry_id: string | null;
-  occurrence_date: string | null;
-  prescription: TrainingWorkout | null;
-  performed_sets: Array<PerformedSet>;
-  inserted_at: string;
-  updated_at: string;
-};
-export type SessionCoachListQuery = {
-  from?: string;
-  to?: string;
-  offset?: number;
-  limit?: number;
-  cursor?: string;
-  search?: string;
-  state?: 'active' | 'completed' | 'discarded';
-};
-export type SessionIndex = {data: Array<Session>; count: number; next_cursor: string | null};
 export type TargetBounds = {[key: string]: NutrientTarget};
 export type TargetSchedule = {
   id: string;
@@ -672,7 +605,6 @@ export type TrackerEntry = {
   rating_value: number | null;
   yes_no_value: boolean | null;
   text_value: string | null;
-  about_session_id: string | null;
   attachments: Array<TrackerAttachment>;
   inserted_at: string;
   updated_at: string;
@@ -686,7 +618,6 @@ export type TrackerEntryCreate = {
   rating_value?: number | null;
   yes_no_value?: boolean | null;
   text_value?: string | null;
-  about_session_id?: string | null;
   attachment_ids?: Array<string>;
 };
 export type TrackerEntryIndex = {data: Array<TrackerEntry>; count: number; next_cursor: string | null};
@@ -707,7 +638,6 @@ export type TrackerEntryUpdate = {
   rating_value?: number | null;
   yes_no_value?: boolean | null;
   text_value?: string | null;
-  about_session_id?: string | null;
   attachment_ids?: Array<string>;
 };
 export type TrackerIndex = {data: Array<Tracker>; count: number; next_cursor: string | null};
@@ -774,112 +704,9 @@ export type TrackerTemplateUpdate = {
   content?: TrackerTemplateContent;
 };
 export type TrackerToday = {date: string; due: Array<TrackerAssignment>; requests: Array<TrackerRequest>};
-export type TrackerTodayPromptQuery = {about_session_id?: string};
+export type TrackerTodayPromptQuery = {};
 export type TrackerUnit = {unit: string; to_base_factor: number};
 export type TrackerUpdate = {name: string};
-export type TrainingBlock = {
-  id: string;
-  format: 'straight' | 'superset' | 'circuit';
-  rounds?: number | null;
-  rest_s?: number | null;
-  notes?: string | null;
-  items: Array<TrainingItem>;
-};
-export type TrainingContent = {workouts: Array<TrainingWorkout>; schedule: TrainingSchedule};
-export type TrainingDistance = {m: number; entered_unit: 'm' | 'km' | 'mi'};
-export type TrainingItem = {
-  id: string;
-  exercise_id: string;
-  exercise_name?: string | null;
-  notes?: string | null;
-  sets: Array<TrainingPrescribedSet>;
-};
-export type TrainingLoad = {kg: number; entered_unit: 'kg' | 'lb'};
-export type TrainingOccurrence = {
-  plan_id: string;
-  plan_revision_id: string;
-  schedule_entry_id: string;
-  occurrence_date: string;
-  workout_id: string;
-  workout_name: string;
-  session_id: string | null;
-};
-export type TrainingOccurrences = {data: Array<TrainingOccurrence>; extra_sessions: Array<Session>};
-export type TrainingPlan = {
-  id: string;
-  kind: 'template' | 'client_plan';
-  name: string;
-  description: string | null;
-  revision: number;
-  archived_at: string | null;
-  status: 'active' | 'archived';
-  lifecycle: 'incomplete' | 'waiting' | 'upcoming' | 'current' | 'ended' | 'archived' | null;
-  workout_count: number;
-  client: TrainingPlanClient | null;
-  start_date: string | null;
-  end_date: string | null;
-  created_local_date: string | null;
-  client_id: string | null;
-  source_template_id: string | null;
-  content: TrainingContent;
-  current_revision: TrainingPlanRevision | null;
-  scheduled_revisions: Array<TrainingPlanRevision>;
-  stopped_on: string | null;
-  inserted_at: string;
-  updated_at: string;
-};
-export type TrainingPlanAssign = {expected_revision?: number; start_date?: string | null; end_date?: string | null};
-export type TrainingPlanClient = {id: string; full_name: string; preferred_name: string | null};
-export type TrainingPlanClientScopedListQuery = {
-  cursor?: string;
-  offset?: number;
-  limit?: number;
-  search?: string;
-  archived?: boolean;
-  status?: 'active' | 'archived';
-};
-export type TrainingPlanCreate = {name: string; description?: string | null; content: TrainingContent};
-export type TrainingPlanIndex = {data: Array<TrainingPlan>; count: number; next_cursor: string | null};
-export type TrainingPlanListQuery = {
-  cursor?: string;
-  offset?: number;
-  limit?: number;
-  search?: string;
-  archived?: boolean;
-};
-export type TrainingPlanRangeQuery = {from: string; to: string};
-export type TrainingPlanRevision = {id: string; number: number; effective_on: string | null; content: TrainingContent};
-export type TrainingPlanUpdate = {
-  expected_revision: number;
-  name?: string;
-  description?: string | null;
-  content?: TrainingContent;
-  start_date?: string | null;
-  end_date?: string | null;
-  effective_on?: string;
-};
-export type TrainingPrescribedSet = {
-  id: string;
-  kind: 'warmup' | 'working' | 'drop';
-  reps?: TrainingReps | null;
-  load?: TrainingLoad | null;
-  rpe?: number | null;
-  rir?: number | null;
-  tempo?: string | null;
-  duration_s?: number | null;
-  distance?: TrainingDistance | null;
-  rest_s?: number | null;
-  notes?: string | null;
-};
-export type TrainingReps = {
-  type: 'exact' | 'range' | 'amrap';
-  value?: number | null;
-  min?: number | null;
-  max?: number | null;
-};
-export type TrainingSchedule = {cycle_weeks: number; entries: Array<TrainingScheduleEntry>};
-export type TrainingScheduleEntry = {id: string; day: number; ref: string};
-export type TrainingWorkout = {id: string; name: string; notes?: string | null; blocks: Array<TrainingBlock>};
 export type Upload = {
   id: string;
   content_type:
@@ -920,11 +747,102 @@ export type UploadCreate = {
 };
 export type UploadDownload = {id: string; download_url: string; download_url_expires_at: string};
 export type UploadDownloadUrls = {attachment_ids: Array<string>};
+export type Workout = {
+  id: string;
+  client_id: string | null;
+  name: string;
+  description: string | null;
+  type: 'prescribed' | 'video' | 'open';
+  video: string | null;
+  groups: Array<ExerciseGroup>;
+};
+export type WorkoutCoach = {id: string; name: string};
+export type WorkoutCreate = {
+  name: string;
+  description?: string | null;
+  type?: 'prescribed' | 'video' | 'open';
+  video?: string | null;
+  groups?: Array<ExerciseGroupCreate>;
+};
+export type WorkoutExercise = {
+  id: string;
+  exercise_id: string;
+  exercise: Exercise;
+  targets_mode: 'same_for_all' | 'per_round';
+  targets: Array<WorkoutTargets>;
+  rest: Array<WorkoutTarget | null>;
+};
+export type WorkoutExerciseCreate = {
+  id?: string;
+  exercise_id: string;
+  targets_mode?: 'same_for_all' | 'per_round';
+  targets?: Array<WorkoutTargets>;
+  rest?: Array<WorkoutTarget | null>;
+};
+export type WorkoutIndex = {data: Array<Workout>; count: number; next_cursor: string | null};
+export type WorkoutListQuery = {
+  search?: string;
+  type?: 'prescribed' | 'video' | 'open';
+  cursor?: string;
+  limit?: number;
+};
+export type WorkoutMutation = {data: Workout; undo_token: string};
+export type WorkoutSchedule = {
+  id: string;
+  workout_id: string;
+  client_id: string;
+  weekdays_mask: number;
+  from_date: string;
+  until_date: string | null;
+  time: string | null;
+  place: string | null;
+  meeting_url: string | null;
+  coach_id: string | null;
+};
+export type WorkoutScheduleCreate = {
+  workout_id?: string;
+  library_workout_id?: string;
+  weekdays_mask: number;
+  time?: string | null;
+  place?: string | null;
+  meeting_url?: string | null;
+  coach_id?: string | null;
+};
+export type WorkoutScheduleMutation = {data: WorkoutSchedule; undo_token: string};
+export type WorkoutScheduleRemoveQuery = {weekday?: number};
+export type WorkoutScheduleUpdate = {
+  weekdays_mask?: number;
+  time?: string | null;
+  place?: string | null;
+  meeting_url?: string | null;
+  coach_id?: string | null;
+};
+export type WorkoutTarget =
+  | {mode: 'exact'; value: number | string}
+  | {mode: 'range'; min: number; max: number}
+  | {mode: 'max'};
+export type WorkoutTargets = {[key: string]: WorkoutTarget};
+export type WorkoutUpdate = {
+  name?: string;
+  description?: string | null;
+  type?: 'prescribed' | 'video' | 'open';
+  video?: string | null;
+  groups?: Array<ExerciseGroupCreate>;
+};
+export type WorkoutWeek = {
+  today: string;
+  workouts: Array<Workout>;
+  schedules: Array<WorkoutSchedule>;
+  coaches: Array<WorkoutCoach>;
+};
+export type WorkoutWeekMutation = {data: WorkoutWeek; undo_token: string};
+export type WorkoutWeekQuery = {on?: string};
+export type WorkoutWeekUndo = {token: string};
 /* typed-routes:types-end */
 
 export interface paths {
   /* typed-routes:paths */
-  /* typed-routes:hash 0c12c108d8c23758765f819bc78bba586f95d6064be40abac8daf37d13101e6a */
+  /* typed-routes:hash 45eb40d3f2af0b92c9be1dc1870aea1bb04259e5ea6e697c32bb82e13f6ae85c */
   '/api/health': {
     get: {
       parameters: {
@@ -1105,19 +1023,6 @@ export interface paths {
       };
       responses: {
         200: {content: {'application/json': {data: Conversation}}};
-      };
-    };
-  };
-  '/v1/coach/clients/{client_id}/exercises/{exercise_id}/history': {
-    get: {
-      parameters: {
-        query?: never;
-        header?: {Authorization?: string};
-        path: {client_id: string; exercise_id: string};
-        cookie?: never;
-      };
-      responses: {
-        200: {content: {'application/json': {data: ExerciseHistory}}};
       };
     };
   };
@@ -1522,72 +1427,6 @@ export interface paths {
       };
     };
   };
-  '/v1/coach/clients/{client_id}/training-occurrences': {
-    get: {
-      parameters: {
-        query: TrainingPlanRangeQuery;
-        header?: {Authorization?: string};
-        path: {client_id: string};
-        cookie?: never;
-      };
-      responses: {
-        200: {content: {'application/json': TrainingOccurrences}};
-      };
-    };
-  };
-  '/v1/coach/clients/{client_id}/training-plans': {
-    get: {
-      parameters: {
-        query?: TrainingPlanClientScopedListQuery;
-        header?: {Authorization?: string};
-        path: {client_id: string};
-        cookie?: never;
-      };
-      responses: {
-        200: {content: {'application/json': TrainingPlanIndex}};
-      };
-    };
-  };
-  '/v1/coach/clients/{client_id}/training-plans/{id}/assign': {
-    post: {
-      parameters: {
-        query?: never;
-        header?: {Authorization?: string};
-        path: {client_id: string; id: string};
-        cookie?: never;
-      };
-      requestBody: {content: {'application/json': TrainingPlanAssign}};
-      responses: {
-        201: {content: {'application/json': {data: TrainingPlan}}};
-      };
-    };
-  };
-  '/v1/coach/clients/{client_id}/training-sessions': {
-    get: {
-      parameters: {
-        query?: SessionCoachListQuery;
-        header?: {Authorization?: string};
-        path: {client_id: string};
-        cookie?: never;
-      };
-      responses: {
-        200: {content: {'application/json': SessionIndex}};
-      };
-    };
-  };
-  '/v1/coach/clients/{client_id}/training-sessions/{id}': {
-    get: {
-      parameters: {
-        query?: never;
-        header?: {Authorization?: string};
-        path: {client_id: string; id: string};
-        cookie?: never;
-      };
-      responses: {
-        200: {content: {'application/json': {data: Session}}};
-      };
-    };
-  };
   '/v1/coach/clients/{client_id}/uploads': {
     post: {
       parameters: {
@@ -1599,6 +1438,159 @@ export interface paths {
       requestBody: {content: {'application/json': UploadCreate}};
       responses: {
         201: {content: {'application/json': {data: Upload}}};
+      };
+    };
+  };
+  '/v1/coach/clients/{client_id}/workout-schedules': {
+    post: {
+      parameters: {
+        query?: never;
+        header?: {Authorization?: string};
+        path: {client_id: string};
+        cookie?: never;
+      };
+      requestBody: {content: {'application/json': WorkoutScheduleCreate}};
+      responses: {
+        201: {content: {'application/json': WorkoutScheduleMutation}};
+      };
+    };
+  };
+  '/v1/coach/clients/{client_id}/workout-schedules/{id}': {
+    delete: {
+      parameters: {
+        query?: WorkoutScheduleRemoveQuery;
+        header?: {Authorization?: string};
+        path: {client_id: string; id: string};
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': WorkoutWeekMutation}};
+      };
+    };
+    patch: {
+      parameters: {
+        query?: never;
+        header?: {Authorization?: string};
+        path: {client_id: string; id: string};
+        cookie?: never;
+      };
+      requestBody: {content: {'application/json': WorkoutScheduleUpdate}};
+      responses: {
+        200: {content: {'application/json': WorkoutScheduleMutation}};
+      };
+    };
+  };
+  '/v1/coach/clients/{client_id}/workout-undo': {
+    post: {
+      parameters: {
+        query?: never;
+        header?: {Authorization?: string};
+        path: {client_id: string};
+        cookie?: never;
+      };
+      requestBody: {content: {'application/json': WorkoutWeekUndo}};
+      responses: {
+        200: {content: {'application/json': {data: WorkoutWeek}}};
+      };
+    };
+  };
+  '/v1/coach/clients/{client_id}/workout-week': {
+    get: {
+      parameters: {
+        query?: WorkoutWeekQuery;
+        header?: {Authorization?: string};
+        path: {client_id: string};
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': {data: WorkoutWeek}}};
+      };
+    };
+  };
+  '/v1/coach/clients/{client_id}/workouts': {
+    get: {
+      parameters: {
+        query?: WorkoutListQuery;
+        header?: {Authorization?: string};
+        path: {client_id: string};
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': WorkoutIndex}};
+      };
+    };
+    post: {
+      parameters: {
+        query?: never;
+        header?: {Authorization?: string};
+        path: {client_id: string};
+        cookie?: never;
+      };
+      requestBody: {content: {'application/json': WorkoutCreate}};
+      responses: {
+        201: {content: {'application/json': WorkoutMutation}};
+      };
+    };
+  };
+  '/v1/coach/clients/{client_id}/workouts/{id}': {
+    delete: {
+      parameters: {
+        query?: never;
+        header?: {Authorization?: string};
+        path: {client_id: string; id: string};
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': WorkoutWeekMutation}};
+      };
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: {Authorization?: string};
+        path: {client_id: string; id: string};
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': {data: Workout}}};
+      };
+    };
+    patch: {
+      parameters: {
+        query?: never;
+        header?: {Authorization?: string};
+        path: {client_id: string; id: string};
+        cookie?: never;
+      };
+      requestBody: {content: {'application/json': WorkoutUpdate}};
+      responses: {
+        200: {content: {'application/json': WorkoutMutation}};
+      };
+    };
+  };
+  '/v1/coach/clients/{client_id}/workouts/{id}/assign': {
+    post: {
+      parameters: {
+        query?: never;
+        header?: {Authorization?: string};
+        path: {client_id: string; id: string};
+        cookie?: never;
+      };
+      responses: {
+        201: {content: {'application/json': WorkoutMutation}};
+      };
+    };
+  };
+  '/v1/coach/clients/{client_id}/workouts/{id}/copy': {
+    post: {
+      parameters: {
+        query?: never;
+        header?: {Authorization?: string};
+        path: {client_id: string; id: string};
+        cookie?: never;
+      };
+      responses: {
+        201: {content: {'application/json': WorkoutMutation}};
       };
     };
   };
@@ -1826,6 +1818,80 @@ export interface paths {
       };
       responses: {
         200: {content: {'application/json': {data: Conversation}}};
+      };
+    };
+  };
+  '/v1/coach/exercises': {
+    get: {
+      parameters: {
+        query?: ExerciseListQuery;
+        header?: {Authorization?: string};
+        path?: never;
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': ExerciseIndex}};
+      };
+    };
+    post: {
+      parameters: {
+        query?: never;
+        header?: {Authorization?: string};
+        path?: never;
+        cookie?: never;
+      };
+      requestBody: {content: {'application/json': ExerciseCreate}};
+      responses: {
+        201: {content: {'application/json': {data: Exercise}}};
+      };
+    };
+  };
+  '/v1/coach/exercises/{id}': {
+    delete: {
+      parameters: {
+        query?: never;
+        header?: {Authorization?: string};
+        path: {id: string};
+        cookie?: never;
+      };
+      responses: {
+        204: {content?: never};
+      };
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: {Authorization?: string};
+        path: {id: string};
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': {data: Exercise}}};
+      };
+    };
+    patch: {
+      parameters: {
+        query?: never;
+        header?: {Authorization?: string};
+        path: {id: string};
+        cookie?: never;
+      };
+      requestBody: {content: {'application/json': ExerciseUpdate}};
+      responses: {
+        200: {content: {'application/json': {data: Exercise}}};
+      };
+    };
+  };
+  '/v1/coach/exercises/{id}/copy': {
+    post: {
+      parameters: {
+        query?: never;
+        header?: {Authorization?: string};
+        path: {id: string};
+        cookie?: never;
+      };
+      responses: {
+        201: {content: {'application/json': {data: Exercise}}};
       };
     };
   };
@@ -2145,29 +2211,16 @@ export interface paths {
       };
     };
   };
-  '/v1/coach/training-equipment': {
+  '/v1/coach/workouts': {
     get: {
       parameters: {
-        query?: EquipmentListQuery;
+        query?: WorkoutListQuery;
         header?: {Authorization?: string};
         path?: never;
         cookie?: never;
       };
       responses: {
-        200: {content: {'application/json': {data: Array<Equipment>}}};
-      };
-    };
-  };
-  '/v1/coach/training-exercises': {
-    get: {
-      parameters: {
-        query?: ExerciseCursorQuery;
-        header?: {Authorization?: string};
-        path?: never;
-        cookie?: never;
-      };
-      responses: {
-        200: {content: {'application/json': ExerciseIndex}};
+        200: {content: {'application/json': WorkoutIndex}};
       };
     };
     post: {
@@ -2177,13 +2230,13 @@ export interface paths {
         path?: never;
         cookie?: never;
       };
-      requestBody: {content: {'application/json': ExerciseCreate}};
+      requestBody: {content: {'application/json': WorkoutCreate}};
       responses: {
-        201: {content: {'application/json': {data: Exercise}}};
+        201: {content: {'application/json': {data: Workout}}};
       };
     };
   };
-  '/v1/coach/training-exercises/{id}': {
+  '/v1/coach/workouts/{id}': {
     delete: {
       parameters: {
         query?: never;
@@ -2203,7 +2256,7 @@ export interface paths {
         cookie?: never;
       };
       responses: {
-        200: {content: {'application/json': {data: Exercise}}};
+        200: {content: {'application/json': {data: Workout}}};
       };
     };
     patch: {
@@ -2213,115 +2266,13 @@ export interface paths {
         path: {id: string};
         cookie?: never;
       };
-      requestBody: {content: {'application/json': ExerciseUpdate}};
+      requestBody: {content: {'application/json': WorkoutUpdate}};
       responses: {
-        200: {content: {'application/json': {data: Exercise}}};
+        200: {content: {'application/json': {data: Workout}}};
       };
     };
   };
-  '/v1/coach/training-exercises/{id}/copy': {
-    post: {
-      parameters: {
-        query?: never;
-        header?: {Authorization?: string};
-        path: {id: string};
-        cookie?: never;
-      };
-      requestBody: {content: {'application/json': ExerciseCopy}};
-      responses: {
-        201: {content: {'application/json': {data: Exercise}}};
-      };
-    };
-  };
-  '/v1/coach/training-muscles': {
-    get: {
-      parameters: {
-        query?: MuscleListQuery;
-        header?: {Authorization?: string};
-        path?: never;
-        cookie?: never;
-      };
-      responses: {
-        200: {content: {'application/json': {data: Array<Muscle>}}};
-      };
-    };
-  };
-  '/v1/coach/training-plans': {
-    get: {
-      parameters: {
-        query?: TrainingPlanListQuery;
-        header?: {Authorization?: string};
-        path?: never;
-        cookie?: never;
-      };
-      responses: {
-        200: {content: {'application/json': TrainingPlanIndex}};
-      };
-    };
-    post: {
-      parameters: {
-        query?: never;
-        header?: {Authorization?: string};
-        path?: never;
-        cookie?: never;
-      };
-      requestBody: {content: {'application/json': TrainingPlanCreate}};
-      responses: {
-        201: {content: {'application/json': {data: TrainingPlan}}};
-      };
-    };
-  };
-  '/v1/coach/training-plans/{id}': {
-    delete: {
-      parameters: {
-        query: Revision;
-        header?: {Authorization?: string};
-        path: {id: string};
-        cookie?: never;
-      };
-      responses: {
-        204: {content?: never};
-      };
-    };
-    get: {
-      parameters: {
-        query?: never;
-        header?: {Authorization?: string};
-        path: {id: string};
-        cookie?: never;
-      };
-      responses: {
-        200: {content: {'application/json': {data: TrainingPlan}}};
-      };
-    };
-    patch: {
-      parameters: {
-        query?: never;
-        header?: {Authorization?: string};
-        path: {id: string};
-        cookie?: never;
-      };
-      requestBody: {content: {'application/json': TrainingPlanUpdate}};
-      responses: {
-        200: {content: {'application/json': {data: TrainingPlan}}};
-      };
-    };
-  };
-  '/v1/coach/training-plans/{id}/archive': {
-    post: {
-      parameters: {
-        query?: never;
-        header?: {Authorization?: string};
-        path: {id: string};
-        cookie?: never;
-      };
-      requestBody: {content: {'application/json': Revision}};
-      responses: {
-        200: {content: {'application/json': {data: TrainingPlan}}};
-      };
-    };
-  };
-  '/v1/coach/training-plans/{id}/duplicate': {
+  '/v1/coach/workouts/{id}/copy': {
     post: {
       parameters: {
         query?: never;
@@ -2330,34 +2281,7 @@ export interface paths {
         cookie?: never;
       };
       responses: {
-        201: {content: {'application/json': {data: TrainingPlan}}};
-      };
-    };
-  };
-  '/v1/coach/training-plans/{id}/restore': {
-    post: {
-      parameters: {
-        query?: never;
-        header?: {Authorization?: string};
-        path: {id: string};
-        cookie?: never;
-      };
-      requestBody: {content: {'application/json': Revision}};
-      responses: {
-        200: {content: {'application/json': {data: TrainingPlan}}};
-      };
-    };
-  };
-  '/v1/coach/training-plans/{id}/revisions/{revision_id}': {
-    delete: {
-      parameters: {
-        query: Revision;
-        header?: {Authorization?: string};
-        path: {id: string; revision_id: string};
-        cookie?: never;
-      };
-      responses: {
-        200: {content: {'application/json': {data: TrainingPlan}}};
+        201: {content: {'application/json': {data: Workout}}};
       };
     };
   };

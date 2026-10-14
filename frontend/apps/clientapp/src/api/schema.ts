@@ -4,7 +4,7 @@
  */
 
 /* typed-routes:types */
-/* typed-routes:hash 171b14f7c02b53d0d77c0b1b5ce2d39eb008fba6822eb788bc43b54db25ba200 */
+/* typed-routes:hash 2df908e68c804c328241981f7e7d3aa5d4e2e246d4217a121413eaa5ee904f6b */
 export type Attachment = {
   id: string;
   content_type:
@@ -46,6 +46,21 @@ export type ChatMessageHistoryQuery = {cursor?: string; limit?: number};
 export type ChatMessageListQuery = {before?: string; limit?: number};
 export type ChatMessagePage = {data: Array<ChatMessage>; has_more: boolean};
 export type ChatRecordSnapshot = {title: string; revision?: number; occurred_on?: string; recorded_at?: string};
+export type ClientDay = {
+  date: string;
+  today: string;
+  nutrition_schedules: Array<NutritionSchedule>;
+  presets: Array<NutritionPreset>;
+  workout_schedules: Array<WorkoutSchedule>;
+  workouts: Array<Workout>;
+  coaches: Array<WorkoutCoach>;
+  target_set: NutritionTargets | null;
+  nutrients: Array<Nutrient>;
+  nutrition_logs: Array<NutritionLog>;
+  workout_logs: Array<WorkoutLog>;
+  active_workout: WorkoutLog | null;
+};
+export type ClientExerciseQuery = {search?: string; cursor?: string; limit?: number};
 export type ClientProfile = {
   id: string;
   focus: string | null;
@@ -80,9 +95,186 @@ export type Conversation = {
   updated_at: string;
 };
 export type ConversationMarkReadQuery = {through?: string};
+export type EnteredUnits = {[key: string]: string};
+export type Exercise = {
+  id: string;
+  name: string;
+  kind: 'movement' | 'activity' | 'sport' | 'practice';
+  goals: Array<string>;
+  places: Array<string>;
+  metrics: Array<string>;
+  count_label: string | null;
+  grade_scale: Array<string>;
+  unilateral: boolean;
+  equipment: Array<string>;
+  muscles: Array<string>;
+  media: string | null;
+  is_builtin: boolean;
+};
+export type ExerciseGroup = {id: string; name: string | null; rounds: number; exercises: Array<WorkoutExercise>};
+export type ExerciseIndex = {data: Array<Exercise>; count: number; next_cursor: string | null};
+export type ExerciseSet = {
+  id: string;
+  workout_exercise_id: string | null;
+  exercise_id: string;
+  exercise: Exercise;
+  round: number;
+  side: 'left' | 'right' | null;
+  entered_units: EnteredUnits;
+  reps: number | null;
+  weight_kg: number | null;
+  duration_s: number | null;
+  distance_m: number | null;
+  elevation_gain_m: number | null;
+  height_cm: number | null;
+  calories_kcal: number | null;
+  speed_m_s: number | null;
+  incline_pct: number | null;
+  level: number | null;
+  power_w: number | null;
+  cadence_rpm: number | null;
+  heart_rate_bpm: number | null;
+  effort: number | null;
+  reserve: number | null;
+  successes: number | null;
+  attempts: number | null;
+  score: number | null;
+  result: 'win' | 'draw' | 'loss' | null;
+  grade: string | null;
+};
+export type ExerciseSetWrite = {
+  id?: string;
+  workout_exercise_id?: string | null;
+  exercise_id: string;
+  round: number;
+  side?: 'left' | 'right' | null;
+  entered_units?: EnteredUnits;
+  reps?: number | null;
+  weight_kg?: number | null;
+  duration_s?: number | null;
+  distance_m?: number | null;
+  elevation_gain_m?: number | null;
+  height_cm?: number | null;
+  calories_kcal?: number | null;
+  speed_m_s?: number | null;
+  incline_pct?: number | null;
+  level?: number | null;
+  power_w?: number | null;
+  cadence_rpm?: number | null;
+  heart_rate_bpm?: number | null;
+  effort?: number | null;
+  reserve?: number | null;
+  successes?: number | null;
+  attempts?: number | null;
+  score?: number | null;
+  result?: 'win' | 'draw' | 'loss' | null;
+  grade?: string | null;
+};
+export type Food = {
+  id: string;
+  name: string;
+  kind: 'food' | 'supplement';
+  basis: '100g' | '100ml' | '1unit';
+  unit_label: string | null;
+  nutrients: NutrientMap;
+  servings: Array<FoodServing>;
+  inserted_at: string;
+  updated_at: string;
+};
+export type FoodIndex = {data: Array<Food>; count: number; next_cursor: string | null};
+export type FoodListQuery = {search?: string; kind?: 'food' | 'supplement'; cursor?: string; limit?: number};
+export type FoodLog = {
+  id: string;
+  meal_item_id: string | null;
+  food_id: string;
+  amount: number;
+  unit: string;
+  name: string;
+  kind: 'food' | 'supplement';
+  basis: '100g' | '100ml' | '1unit';
+  unit_label: string | null;
+  servings: Array<FoodServing>;
+  nutrients: NutrientMap;
+};
+export type FoodLogWrite = {id?: string; meal_item_id?: string | null; food_id: string; amount: number; unit: string};
+export type FoodServing = {label: string; amount: number};
 export type Health = {status: string; service: string; timestamp: string; version: string};
+export type LogRestore = {undo_token: string};
+export type MealItem = {
+  id: string;
+  food_id: string;
+  amount: number;
+  unit: string;
+  position: number;
+  food: Food;
+  nutrients: NutrientMap;
+};
+export type MealOption = {
+  id: string;
+  name: string | null;
+  position: number;
+  items: Array<MealItem>;
+  totals: NutrientTotals;
+};
+export type Nutrient = {code: string; name: string; unit: string};
+export type NutrientMap = {[key: string]: number};
+export type NutrientTarget = {min?: number; max?: number};
+export type NutrientTotal = {value: number | null; known_entries: number; total_entries: number; incomplete: boolean};
+export type NutrientTotals = {[key: string]: NutrientTotal};
+export type NutritionLog = {
+  id: string;
+  type: 'meal' | 'food' | 'supplement';
+  logged_on: string;
+  logged_at: string | null;
+  recorded_by: string;
+  nutrition_schedule_id: string | null;
+  scheduled_date: string | null;
+  nutrition_preset_id: string | null;
+  meal_option_id: string | null;
+  food_logs: Array<FoodLog>;
+};
+export type NutritionLogCreate = {
+  logged_on: string;
+  logged_at?: string | null;
+  nutrition_schedule_id?: string | null;
+  scheduled_date?: string | null;
+  meal_option_id?: string | null;
+  food_logs: Array<FoodLogWrite>;
+};
+export type NutritionLogMutation = {data: NutritionLog; undo_token: string};
+export type NutritionLogUpdate = {
+  logged_on?: string;
+  logged_at?: string | null;
+  meal_option_id?: string | null;
+  food_logs?: Array<FoodLogWrite>;
+};
+export type NutritionPreset = {
+  id: string;
+  type: 'meal' | 'food' | 'supplement';
+  name: string | null;
+  instructions: string | null;
+  food_id: string | null;
+  amount: number | null;
+  unit: string | null;
+  food: Food | null;
+  options: Array<MealOption>;
+  totals: NutrientTotals | null;
+};
+export type NutritionSchedule = {
+  id: string;
+  nutrition_preset_id: string;
+  date: string | null;
+  weekdays_mask: number | null;
+  from_date: string | null;
+  until_date: string | null;
+  time: string | null;
+  coach_id: string | null;
+};
+export type NutritionTargets = {id: string; name: string; targets: TargetBounds};
 export type ReviewReplyQuery = {cursor?: string; limit?: number; review_id?: string};
 export type Revision = {expected_revision: number};
+export type SwapExercises = {[key: string]: Exercise};
+export type TargetBounds = {[key: string]: NutrientTarget};
 export type Tracker = {
   id: string;
   name: string;
@@ -233,11 +425,92 @@ export type UploadCreate = {
 };
 export type UploadDownload = {id: string; download_url: string; download_url_expires_at: string};
 export type UploadDownloadUrls = {attachment_ids: Array<string>};
+export type WeekMarker = {date: string; has_records: boolean};
+export type WeekMarkerIndex = {data: Array<WeekMarker>};
+export type WeekMarkerQuery = {from: string};
+export type Workout = {
+  id: string;
+  client_id: string | null;
+  name: string;
+  description: string | null;
+  type: 'prescribed' | 'video' | 'open';
+  video: string | null;
+  groups: Array<ExerciseGroup>;
+};
+export type WorkoutCoach = {id: string; name: string};
+export type WorkoutExercise = {
+  id: string;
+  exercise_id: string;
+  exercise: Exercise;
+  targets_mode: 'same_for_all' | 'per_round';
+  targets: Array<WorkoutTargets>;
+  rest: Array<WorkoutTarget | null>;
+};
+export type WorkoutLog = {
+  id: string;
+  date: string;
+  time: string | null;
+  at_utc: string | null;
+  text: string | null;
+  recorded_by: string;
+  state: 'active' | 'completed' | 'discarded';
+  difficulty: 'too_easy' | 'just_right' | 'too_hard' | null;
+  pain: boolean | null;
+  pain_note: string | null;
+  workout_id: string | null;
+  schedule_id: string | null;
+  scheduled_date: string | null;
+  sets: Array<ExerciseSet>;
+  swaps: WorkoutSwaps;
+  swap_exercises: SwapExercises;
+};
+export type WorkoutLogFinish = {
+  time?: string | null;
+  text?: string | null;
+  sets?: Array<ExerciseSetWrite>;
+  swaps?: WorkoutSwaps;
+  difficulty: 'too_easy' | 'just_right' | 'too_hard';
+  pain: boolean;
+  pain_note?: string | null;
+};
+export type WorkoutLogMutation = {data: WorkoutLog; undo_token: string};
+export type WorkoutLogStart = {
+  date: string;
+  time?: string | null;
+  text?: string | null;
+  workout_id?: string | null;
+  schedule_id?: string | null;
+  scheduled_date?: string | null;
+};
+export type WorkoutLogUpdate = {
+  time?: string | null;
+  text?: string | null;
+  sets?: Array<ExerciseSetWrite>;
+  swaps?: WorkoutSwaps;
+};
+export type WorkoutSchedule = {
+  id: string;
+  workout_id: string;
+  client_id: string;
+  weekdays_mask: number;
+  from_date: string;
+  until_date: string | null;
+  time: string | null;
+  place: string | null;
+  meeting_url: string | null;
+  coach_id: string | null;
+};
+export type WorkoutSwaps = {[key: string]: string};
+export type WorkoutTarget =
+  | {mode: 'exact'; value: number | string}
+  | {mode: 'range'; min: number; max: number}
+  | {mode: 'max'};
+export type WorkoutTargets = {[key: string]: WorkoutTarget};
 /* typed-routes:types-end */
 
 export interface paths {
   /* typed-routes:paths */
-  /* typed-routes:hash 8ac3b8776a21f9541a0018af4db2d34a4d4d5f90163c569cde9c8083b48efc44 */
+  /* typed-routes:hash 262b9846371b127ea643028aa87a8c63af5de6fb38d2bb555b9fe996b101825a */
   '/api/health': {
     get: {
       parameters: {
@@ -328,6 +601,45 @@ export interface paths {
       };
     };
   };
+  '/v1/client/days/{date}': {
+    get: {
+      parameters: {
+        query?: never;
+        header?: {Authorization?: string};
+        path: {date: string};
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': {data: ClientDay}}};
+      };
+    };
+  };
+  '/v1/client/exercises': {
+    get: {
+      parameters: {
+        query?: ClientExerciseQuery;
+        header?: {Authorization?: string};
+        path?: never;
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': ExerciseIndex}};
+      };
+    };
+  };
+  '/v1/client/foods': {
+    get: {
+      parameters: {
+        query?: FoodListQuery;
+        header?: {Authorization?: string};
+        path?: never;
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': FoodIndex}};
+      };
+    };
+  };
   '/v1/client/me': {
     get: {
       parameters: {
@@ -350,6 +662,70 @@ export interface paths {
       requestBody: {content: {'application/json': ClientProfileUpdate}};
       responses: {
         200: {content: {'application/json': {data: ClientProfile}}};
+      };
+    };
+  };
+  '/v1/client/nutrition-logs': {
+    post: {
+      parameters: {
+        query?: never;
+        header?: {Authorization?: string};
+        path?: never;
+        cookie?: never;
+      };
+      requestBody: {content: {'application/json': NutritionLogCreate}};
+      responses: {
+        201: {content: {'application/json': {data: NutritionLog}}};
+      };
+    };
+  };
+  '/v1/client/nutrition-logs/restore': {
+    post: {
+      parameters: {
+        query?: never;
+        header?: {Authorization?: string};
+        path?: never;
+        cookie?: never;
+      };
+      requestBody: {content: {'application/json': LogRestore}};
+      responses: {
+        200: {content: {'application/json': {data: NutritionLog}}};
+      };
+    };
+  };
+  '/v1/client/nutrition-logs/{id}': {
+    delete: {
+      parameters: {
+        query?: never;
+        header?: {Authorization?: string};
+        path: {id: string};
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': LogRestore}};
+      };
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: {Authorization?: string};
+        path: {id: string};
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': {data: NutritionLog}}};
+      };
+    };
+    patch: {
+      parameters: {
+        query?: never;
+        header?: {Authorization?: string};
+        path: {id: string};
+        cookie?: never;
+      };
+      requestBody: {content: {'application/json': NutritionLogUpdate}};
+      responses: {
+        200: {content: {'application/json': NutritionLogMutation}};
       };
     };
   };
@@ -518,6 +894,123 @@ export interface paths {
       requestBody: {content: {'application/json': UploadCreate}};
       responses: {
         201: {content: {'application/json': {data: Upload}}};
+      };
+    };
+  };
+  '/v1/client/week-markers': {
+    get: {
+      parameters: {
+        query: WeekMarkerQuery;
+        header?: {Authorization?: string};
+        path?: never;
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': WeekMarkerIndex}};
+      };
+    };
+  };
+  '/v1/client/workout-logs': {
+    post: {
+      parameters: {
+        query?: never;
+        header?: {Authorization?: string};
+        path?: never;
+        cookie?: never;
+      };
+      requestBody: {content: {'application/json': WorkoutLogStart}};
+      responses: {
+        201: {content: {'application/json': {data: WorkoutLog}}};
+      };
+    };
+  };
+  '/v1/client/workout-logs/restore': {
+    post: {
+      parameters: {
+        query?: never;
+        header?: {Authorization?: string};
+        path?: never;
+        cookie?: never;
+      };
+      requestBody: {content: {'application/json': LogRestore}};
+      responses: {
+        200: {content: {'application/json': {data: WorkoutLog}}};
+      };
+    };
+  };
+  '/v1/client/workout-logs/{id}': {
+    delete: {
+      parameters: {
+        query?: never;
+        header?: {Authorization?: string};
+        path: {id: string};
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': LogRestore}};
+      };
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: {Authorization?: string};
+        path: {id: string};
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': {data: WorkoutLog}}};
+      };
+    };
+    patch: {
+      parameters: {
+        query?: never;
+        header?: {Authorization?: string};
+        path: {id: string};
+        cookie?: never;
+      };
+      requestBody: {content: {'application/json': WorkoutLogUpdate}};
+      responses: {
+        200: {content: {'application/json': WorkoutLogMutation}};
+      };
+    };
+  };
+  '/v1/client/workout-logs/{id}/discard': {
+    post: {
+      parameters: {
+        query?: never;
+        header?: {Authorization?: string};
+        path: {id: string};
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': WorkoutLogMutation}};
+      };
+    };
+  };
+  '/v1/client/workout-logs/{id}/finish': {
+    post: {
+      parameters: {
+        query?: never;
+        header?: {Authorization?: string};
+        path: {id: string};
+        cookie?: never;
+      };
+      requestBody: {content: {'application/json': WorkoutLogFinish}};
+      responses: {
+        200: {content: {'application/json': WorkoutLogMutation}};
+      };
+    };
+  };
+  '/v1/client/workout-logs/{id}/reopen': {
+    post: {
+      parameters: {
+        query?: never;
+        header?: {Authorization?: string};
+        path: {id: string};
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': WorkoutLogMutation}};
       };
     };
   };

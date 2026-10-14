@@ -209,6 +209,24 @@ defmodule EasyWeb.Router do
   scope "/v1/client", EasyWeb.Clients do
     pipe_through :require_client
 
+    get "/days/:date", DayController, :show
+    get "/week-markers", DayController, :markers
+    get "/foods", NutritionLogController, :foods
+    get "/exercises", DayController, :exercises
+    post "/nutrition-logs/restore", NutritionLogController, :restore
+    post "/nutrition-logs", NutritionLogController, :create
+    get "/nutrition-logs/:id", NutritionLogController, :show
+    patch "/nutrition-logs/:id", NutritionLogController, :update
+    delete "/nutrition-logs/:id", NutritionLogController, :delete
+    post "/workout-logs/restore", WorkoutLogController, :restore
+    post "/workout-logs", WorkoutLogController, :start
+    get "/workout-logs/:id", WorkoutLogController, :show
+    patch "/workout-logs/:id", WorkoutLogController, :update
+    post "/workout-logs/:id/finish", WorkoutLogController, :finish
+    post "/workout-logs/:id/discard", WorkoutLogController, :discard
+    post "/workout-logs/:id/reopen", WorkoutLogController, :reopen
+    delete "/workout-logs/:id", WorkoutLogController, :delete
+
     get "/review-replies", ReviewReplyController, :index
     get "/trackers", TrackerController, :index
     get "/trackers/:id", TrackerController, :show

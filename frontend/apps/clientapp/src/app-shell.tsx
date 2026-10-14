@@ -6,61 +6,69 @@ import {clearSession, parseSession, sessionSnapshot, subscribeSession} from './a
 import {authPath} from './auth/return-to';
 import {TodayMessages} from './messages/messages';
 import {routes} from './routes';
+import {Today} from './today/today';
 import {TodayTrackers} from './trackers/trackers';
 import {ActionCard} from './ui/action-card';
 import {Button} from './ui/button';
 import {Focus} from './ui/focus';
 import {Page} from './ui/page';
 import {ReadState} from './ui/read-state';
+import {UndoMessageProvider} from './ui/undo-message';
 
 export function AppShell() {
   const session = parseSession(useSyncExternalStore(subscribeSession, sessionSnapshot));
   const location = useLocation();
-  const focusedEditor = location.pathname === routes.messages || location.pathname === routes.accountDetails;
+  const focusedEditor =
+    location.pathname === routes.messages ||
+    location.pathname === routes.accountDetails ||
+    location.pathname.startsWith('/meals/') ||
+    location.pathname.startsWith('/workouts/');
   return session ? (
     <VerifiedAccount key={session.id}>
-      <div>
-        {!focusedEditor && location.pathname !== routes.account && (
-          <header className="app-header">
-            <Link
-              to={routes.home}
-              className="app-brand"
+      <UndoMessageProvider>
+        <div>
+          {!focusedEditor && location.pathname !== routes.account && (
+            <header className="app-header">
+              <Link
+                to={routes.home}
+                className="app-brand"
+              >
+                <Flower2 aria-hidden="true" />
+                easy
+              </Link>
+              <Link
+                to={routes.account}
+                className="account-button"
+                aria-label="Your account"
+              >
+                <UserRound
+                  className="size-5"
+                  aria-hidden="true"
+                />
+              </Link>
+            </header>
+          )}
+          <Outlet />
+          {!focusedEditor && (
+            <nav
+              aria-label="Main navigation"
+              className="mobile-nav"
             >
-              <Flower2 aria-hidden="true" />
-              easy
-            </Link>
-            <Link
-              to={routes.account}
-              className="account-button"
-              aria-label="Your account"
-            >
-              <UserRound
-                className="size-5"
-                aria-hidden="true"
-              />
-            </Link>
-          </header>
-        )}
-        <Outlet />
-        {!focusedEditor && (
-          <nav
-            aria-label="Main navigation"
-            className="mobile-nav"
-          >
-            <NavLink
-              to={routes.home}
-              end
-            >
-              <House aria-hidden="true" />
-              Today
-            </NavLink>
-            <NavLink to={routes.messages}>
-              <MessageCircle aria-hidden="true" />
-              Messages
-            </NavLink>
-          </nav>
-        )}
-      </div>
+              <NavLink
+                to={routes.home}
+                end
+              >
+                <House aria-hidden="true" />
+                Today
+              </NavLink>
+              <NavLink to={routes.messages}>
+                <MessageCircle aria-hidden="true" />
+                Messages
+              </NavLink>
+            </nav>
+          )}
+        </div>
+      </UndoMessageProvider>
     </VerifiedAccount>
   ) : (
     <Navigate
@@ -115,25 +123,8 @@ function VerifiedAccount({children}: {children: ReactNode}) {
 }
 
 export function Home() {
-  const profile = useProfile();
   return (
-    <Page
-      title="Today"
-      description={
-        profile.data
-          ? `${profile.data.data.preferred_name || profile.data.data.full_name} · ${new Date(`${profile.data.data.local_date}T12:00:00`).toLocaleDateString('en', {weekday: 'long', month: 'short', day: 'numeric'})}`
-          : 'Your coaching and messages.'
-      }
-    >
-      {!profile.data && (
-        <ReadState
-          label="your account"
-          failed={profile.isError}
-          retry={() => {
-            profile.refetch();
-          }}
-        />
-      )}
+    <Today>
       <Focus />
       <TodayTrackers />
       <section className="mb-4">
@@ -153,6 +144,6 @@ export function Home() {
         />
         Your pace. Your progress.
       </p>
-    </Page>
+    </Today>
   );
 }

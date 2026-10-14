@@ -8,6 +8,7 @@ defmodule Easy.Nutrition do
     Food,
     MealItem,
     Nutrient,
+    NutritionLog,
     NutritionPreset,
     NutritionSchedule,
     NutritionTargets,
@@ -104,7 +105,7 @@ defmodule Easy.Nutrition do
 
       Enum.each(schedules, &end_schedule(&1, today))
 
-      if Enum.any?(schedules, &Timing.last_fact(&1, today)),
+      if Enum.any?(schedules, &last_fact(&1, today)),
         do: save(Ecto.Changeset.change(row, archived_at: DateTime.utc_now(:second))),
         else: remove(row)
 
@@ -339,6 +340,11 @@ defmodule Easy.Nutrition do
     presets = Repo.all(presets)
     sets = Repo.all(sets)
 
+    schedules =
+      if current,
+        do: Enum.filter(schedules, fn s -> Enum.any?(presets, &(&1.id == s.nutrition_preset_id)) end),
+        else: schedules
+
     presets =
       if current,
         do: presets,
@@ -425,7 +431,7 @@ defmodule Easy.Nutrition do
         |> where([s], s.nutrition_preset_id == ^id)
         |> Repo.all()
 
-      if Enum.any?(schedules, &Timing.last_fact(&1, today)),
+      if Enum.any?(schedules, &last_fact(&1, today)),
         do: copy_preset_version(ctx, client_id, row, schedules, attrs, today),
         else: edit_unused_preset(ctx, client_id, row, schedules, attrs)
     end
@@ -464,7 +470,7 @@ defmodule Easy.Nutrition do
       schedules =
         TargetSchedule.for_client(ctx.business_id, client_id) |> where([s], s.nutrition_targets_id == ^id) |> Repo.all()
 
-      if Enum.any?(schedules, &Timing.last_fact(&1, today)),
+      if Enum.any?(schedules, &last_fact(&1, today)),
         do: copy_target_version(ctx, client_id, row, schedules, attrs, today),
         else: Repo.update(NutritionTargets.update_changeset(row, attrs) |> validate_codes(:targets))
     end
@@ -515,14 +521,21 @@ defmodule Easy.Nutrition do
   defp change_schedule(row, attrs, today) do
     module = row.__struct__
 
-    if Timing.last_fact(row, today) do
-      save(Ecto.Changeset.change(row, until_date: Date.add(today, -1)))
-      attrs = attrs |> Map.put("from_date", today)
-      insert_schedule_copy(row, attrs, module)
+    if fact = last_fact(row, today) do
+      split_schedule(row, attrs, fact, today)
     else
       parent = parent_field(row)
       module.update_changeset(row, attrs) |> Ecto.Changeset.put_change(parent, attrs[Atom.to_string(parent)]) |> save()
     end
+  end
+
+  defp split_schedule(row, attrs, fact, today) do
+    ended = retain_schedule_fact(row, fact)
+    next_date = later_date(today, Date.add(fact, 1))
+
+    if Timing.future?(row, next_date),
+      do: insert_schedule_copy(row, Map.put(attrs, "from_date", next_date), row.__struct__),
+      else: ended
   end
 
   defp insert_schedule_copy(row, attrs, module) do
@@ -535,7 +548,7 @@ defmodule Easy.Nutrition do
   defp end_schedule(row, today) do
     cond do
       not Timing.future?(row, today) -> row
-      Timing.last_fact(row, today) -> save(Ecto.Changeset.change(row, until_date: Date.add(today, -1)))
+      last_fact(row, today) -> retain_schedule_fact(row, last_fact(row, today))
       true -> remove(row)
     end
   end
@@ -544,20 +557,28 @@ defmodule Easy.Nutrition do
   defp parent_field(%TargetSchedule{}), do: :nutrition_targets_id
 
   defp move_content_schedule(row, new_id, today) do
-    if Timing.future?(row, today) do
-      parent = parent_field(row)
+    parent = parent_field(row)
 
-      if fact = Timing.last_fact(row, today) do
-        save(Ecto.Changeset.change(row, until_date: fact))
-        attrs = timing_attrs(row) |> Map.put(Atom.to_string(parent), new_id) |> Map.put("from_date", today)
-        insert_schedule_copy(row, attrs, row.__struct__)
-      else
-        save(Ecto.Changeset.change(row, [{parent, new_id}]))
-      end
-    else
-      row
+    cond do
+      not Timing.future?(row, today) -> row
+      fact = last_fact(row, today) -> split_schedule(row, Map.put(timing_attrs(row), Atom.to_string(parent), new_id), fact, today)
+      true -> save(Ecto.Changeset.change(row, [{parent, new_id}]))
     end
   end
+
+  defp last_fact(%NutritionSchedule{} = row, today) do
+    claimed? =
+      NutritionLog.for_client(row.business_id, row.client_id)
+      |> where([l], l.nutrition_schedule_id == ^row.id and l.scheduled_date == ^today)
+      |> Repo.exists?()
+
+    Timing.last_fact(row, today, claimed?)
+  end
+
+  defp last_fact(row, today), do: Timing.last_fact(row, today)
+  defp retain_schedule_fact(%{date: %Date{}} = row, _fact), do: row
+  defp retain_schedule_fact(row, fact), do: save(Ecto.Changeset.change(row, until_date: fact))
+  defp later_date(left, right), do: if(Date.compare(left, right) == :gt, do: left, else: right)
 
   defp replace_target_days(ctx, client_id, id, mask, today) do
     rows = current_target_rows(ctx, client_id, today)

@@ -56,6 +56,7 @@ defmodule EasyWeb.FallbackController do
              :invalid_nutrition_item,
              :invalid_unit,
              :invalid_exercise,
+             :invalid_set,
              :past_effective_date
            ] do
     call(conn, {:error, Error.new(reason, "The data provided was invalid.", %{}, :unprocessable_entity)})

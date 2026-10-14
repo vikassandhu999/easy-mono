@@ -1,4 +1,4 @@
-import type {ReactNode} from 'react';
+import {type ReactNode, useEffect, useState} from 'react';
 import {Dialog, Heading, Modal, ModalOverlay} from 'react-aria-components';
 import {Button} from './button';
 
@@ -7,6 +7,8 @@ export function Confirm({
   children,
   action,
   pending,
+  destructive = false,
+  cancel = 'Keep editing',
   onConfirm,
   onClose,
 }: {
@@ -14,13 +16,26 @@ export function Confirm({
   children: ReactNode;
   action: string;
   pending: boolean;
+  /** A destructive action is red and is not dismissed by a stray tap outside the dialog. */
+  destructive?: boolean;
+  cancel?: string;
   onConfirm: () => void;
   onClose: () => void;
 }) {
+  const [trigger] = useState(() => document.activeElement);
+  useEffect(() => {
+    return () => {
+      requestAnimationFrame(() => {
+        if (trigger instanceof HTMLElement && trigger.isConnected) {
+          trigger.focus({preventScroll: true});
+        }
+      });
+    };
+  }, [trigger]);
   return (
     <ModalOverlay
       isOpen
-      isDismissable={!pending}
+      isDismissable={!pending && !destructive}
       isKeyboardDismissDisabled={pending}
       onOpenChange={(open) => {
         if (!open) {
@@ -40,6 +55,7 @@ export function Confirm({
           <div className="text-muted-foreground">{children}</div>
           <Button
             className="w-full"
+            variant={destructive ? 'destructive' : 'default'}
             isPending={pending}
             onPress={onConfirm}
           >
@@ -51,7 +67,7 @@ export function Confirm({
             isDisabled={pending}
             onPress={onClose}
           >
-            Keep editing
+            {cancel}
           </Button>
         </Dialog>
       </Modal>

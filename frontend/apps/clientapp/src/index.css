@@ -12,7 +12,7 @@
   --color-popover-foreground: var(--foreground);
   --color-accent: var(--muted);
   --color-accent-foreground: var(--foreground);
-  --color-input: var(--border);
+  --color-input: var(--input);
   --color-ring: var(--primary);
   --color-destructive: var(--destructive);
 }
@@ -29,6 +29,8 @@
   --muted: #f0eae4;
   --muted-foreground: #686070;
   --border: #e1d9d2;
+  /* Form-field boundaries need 3:1 against the surface (WCAG 1.4.11); --border is for decorative edges. */
+  --input: #8a8294;
   --destructive: #a62e35;
   --training: #eae4ff;
   --coach: #ffe6d9;

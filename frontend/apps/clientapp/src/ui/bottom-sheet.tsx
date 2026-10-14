@@ -1,15 +1,36 @@
 import {X} from 'lucide-react';
-import type {ReactNode} from 'react';
+import {type ReactNode, useEffect, useState} from 'react';
 import {Dialog, Heading, Modal, ModalOverlay} from 'react-aria-components';
 import {Button} from './button';
 
-export function BottomSheet({title, children, onClose}: {title: string; children: ReactNode; onClose: () => void}) {
+export function BottomSheet({
+  title,
+  children,
+  onClose,
+  pending = false,
+}: {
+  title: string;
+  children: ReactNode;
+  onClose: () => void;
+  pending?: boolean;
+}) {
+  const [trigger] = useState(() => document.activeElement);
+  useEffect(() => {
+    return () => {
+      requestAnimationFrame(() => {
+        if (trigger instanceof HTMLElement && trigger.isConnected) {
+          trigger.focus({preventScroll: true});
+        }
+      });
+    };
+  }, [trigger]);
   return (
     <ModalOverlay
       isOpen
-      isDismissable
+      isDismissable={!pending}
+      isKeyboardDismissDisabled={pending}
       onOpenChange={(open) => {
-        if (!open) {
+        if (!open && !pending) {
           onClose();
         }
       }}
@@ -32,6 +53,7 @@ export function BottomSheet({title, children, onClose}: {title: string; children
               variant="ghost"
               aria-label="Close"
               onPress={onClose}
+              isDisabled={pending}
               className="size-11 shrink-0 rounded-full p-0"
             >
               <X

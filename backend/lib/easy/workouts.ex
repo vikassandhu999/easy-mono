@@ -66,9 +66,17 @@ defmodule Easy.Workouts do
       |> found()
       |> unwrap()
 
-    if Repo.exists?(from(e in WorkoutExercise, where: e.business_id == ^ctx.business_id and e.exercise_id == ^row.id)),
+    if exercise_in_use?(ctx, row.id),
       do: Repo.rollback(:in_use),
       else: remove(row)
+  end
+
+  defp exercise_in_use?(ctx, id) do
+    Repo.exists?(from(e in WorkoutExercise, where: e.business_id == ^ctx.business_id and e.exercise_id == ^id)) or
+      Repo.exists?(from(s in Easy.Workouts.ExerciseSet, where: s.business_id == ^ctx.business_id and s.exercise_id == ^id)) or
+      Repo.exists?(
+        from(l in Easy.Workouts.WorkoutLog, where: l.business_id == ^ctx.business_id and fragment("EXISTS(SELECT 1 FROM jsonb_each(?) s WHERE s.value->>'id'=?)", l.swaps, ^id))
+      )
   end
 
   defp own_exercise(ctx, id), do: Exercise.for_business(ctx.business_id) |> Repo.get(id) |> found()
@@ -132,10 +140,10 @@ defmodule Easy.Workouts do
 
   defp delete_owned(ctx, client_id, id, today) do
     with {:ok, row} <- workout(ctx, client_id, id) do
-      rows = schedules(ctx, client_id, id)
+      rows = schedules(ctx, client_id, id, today)
       Enum.each(rows, &end_schedule(&1, today))
 
-      if Enum.any?(rows, &Timing.last_fact(&1, today)),
+      if Enum.any?(rows, &Timing.last_fact(&1, today)) or logged?(ctx, row.id),
         do: save(Ecto.Changeset.change(row, archived_at: DateTime.utc_now(:second))),
         else: remove(row)
 
@@ -167,7 +175,7 @@ defmodule Easy.Workouts do
     do: write(ctx, client_id, &update_schedule(ctx, client_id, id, attrs, &1))
 
   defp update_schedule(ctx, client_id, id, attrs, today) do
-    with {:ok, row} <- schedule(ctx, client_id, id),
+    with {:ok, row} <- schedule(ctx, client_id, id, today),
          true <- Timing.future?(row, today) || {:error, :not_found} do
       next = Map.merge(timing_attrs(row), encode(attrs)) |> Map.put("from_date", today)
 
@@ -181,7 +189,7 @@ defmodule Easy.Workouts do
     do: write(ctx, client_id, &remove_schedule(ctx, client_id, id, weekday, &1))
 
   defp remove_schedule(ctx, client_id, id, weekday, today) do
-    with {:ok, row} <- schedule(ctx, client_id, id),
+    with {:ok, row} <- schedule(ctx, client_id, id, today),
          true <- Timing.future?(row, today) || {:error, :not_found},
          :ok <- valid_weekday(weekday) do
       mask = if weekday, do: row.weekdays_mask &&& bnot(Timing.bit(weekday)), else: 0
@@ -398,13 +406,15 @@ defmodule Easy.Workouts do
 
   defp update_owned(ctx, client_id, id, attrs, today) do
     with {:ok, row} <- workout(ctx, client_id, id) do
-      rows = schedules(ctx, client_id, id)
+      rows = schedules(ctx, client_id, id, today)
 
-      if Enum.any?(rows, &Timing.last_fact(&1, today)),
+      if Enum.any?(rows, &Timing.last_fact(&1, today)) or logged?(ctx, row.id),
         do: copy_owned(ctx, row, rows, attrs, today),
         else: edit_workout(ctx, row, attrs)
     end
   end
+
+  defp logged?(ctx, id), do: Repo.exists?(from(l in Easy.Workouts.WorkoutLog, where: l.business_id == ^ctx.business_id and l.workout_id == ^id))
 
   defp copy_owned(ctx, row, rows, attrs, today) do
     with {:ok, copy} <- insert_workout(ctx, row.client_id, Map.merge(content(row), encode(attrs)), row) do
@@ -414,11 +424,17 @@ defmodule Easy.Workouts do
     end
   end
 
-  defp schedules(ctx, client_id, workout_id),
-    do: WorkoutSchedule.for_client(ctx.business_id, client_id) |> where([s], s.workout_id == ^workout_id) |> Repo.all()
+  defp schedules(ctx, client_id, workout_id, today),
+    do: WorkoutSchedule.for_client(ctx.business_id, client_id) |> where([s], s.workout_id == ^workout_id) |> claimed_on(today) |> Repo.all()
 
-  defp schedule(ctx, client_id, id),
-    do: WorkoutSchedule.for_client(ctx.business_id, client_id) |> Repo.get(id) |> found()
+  defp schedule(ctx, client_id, id, today),
+    do: WorkoutSchedule.for_client(ctx.business_id, client_id) |> claimed_on(today) |> Repo.get(id) |> found()
+
+  defp claimed_on(query, today),
+    do:
+      select_merge(query, [s], %{
+        claimed_today: fragment("EXISTS(SELECT 1 FROM workout_logs l WHERE l.schedule_id=? AND l.business_id=? AND l.scheduled_date=?)", s.id, s.business_id, ^today)
+      })
 
   defp timing_attrs(row),
     do: row |> Map.take([:weekdays_mask, :from_date, :until_date, :time, :place, :meeting_url, :coach_id]) |> encode()
@@ -444,7 +460,7 @@ defmodule Easy.Workouts do
     with {:ok, desired} <- Ecto.Changeset.apply_action(cs, :insert),
          {:ok, _} <- validate_schedule(ctx, desired, attrs) do
       existing =
-        schedules(ctx, client_id, workout_id)
+        schedules(ctx, client_id, workout_id, today)
         |> Enum.find(&(Timing.future?(&1, today) and occasion(&1) == occasion(desired)))
 
       if existing,
@@ -461,7 +477,7 @@ defmodule Easy.Workouts do
 
   defp merge_changed_schedule(ctx, row, desired, attrs, today) do
     other =
-      schedules(ctx, row.client_id, row.workout_id)
+      schedules(ctx, row.client_id, row.workout_id, today)
       |> Enum.find(&(&1.id != row.id and Timing.future?(&1, today) and occasion(&1) == occasion(desired)))
 
     if other do
@@ -494,7 +510,7 @@ defmodule Easy.Workouts do
         row.business_id,
         row.client_id,
         row.workout_id,
-        Map.put(attrs, "from_date", today)
+        Map.put(attrs, "from_date", next_date(row, today))
       )
       |> Repo.insert()
       |> unwrap()
@@ -512,7 +528,7 @@ defmodule Easy.Workouts do
           row.business_id,
           row.client_id,
           workout_id,
-          Map.put(timing_attrs(row), "from_date", today)
+          Map.put(timing_attrs(row), "from_date", next_date(row, today))
         )
         |> Repo.insert()
         |> unwrap()
@@ -521,6 +537,8 @@ defmodule Easy.Workouts do
       end
     end
   end
+
+  defp next_date(row, today), do: if(Timing.last_fact(row, today) == today, do: Date.add(today, 1), else: today)
 
   defp week(ctx, client_id, on, today) do
     current = Date.compare(on, today) != :lt
@@ -541,6 +559,10 @@ defmodule Easy.Workouts do
         do: Workout.active(workouts),
         else: where(workouts, [w], w.id in ^Enum.map(schedules, & &1.workout_id))
 
+    workouts = Repo.all(workouts)
+    active_ids = Enum.map(workouts, & &1.id)
+    schedules = if current, do: Enum.filter(schedules, &(&1.workout_id in active_ids)), else: schedules
+
     coaches =
       Coach.for_business(ctx.business_id)
       |> Coach.active()
@@ -548,6 +570,6 @@ defmodule Easy.Workouts do
       |> Repo.all()
       |> Enum.map(&%{id: &1.id, name: Coach.full_name(&1)})
 
-    %{today: today, workouts: Repo.all(workouts), schedules: schedules, coaches: coaches}
+    %{today: today, workouts: workouts, schedules: schedules, coaches: coaches}
   end
 end

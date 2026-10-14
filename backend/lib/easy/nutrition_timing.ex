@@ -45,10 +45,16 @@ defmodule Easy.Nutrition.Timing do
       (mask &&& bit(Date.day_of_week(on))) != 0
   end
 
-  @spec last_fact(map(), Date.t()) :: Date.t() | nil
-  def last_fact(%{date: %Date{} = date}, today), do: if(Date.compare(date, today) == :lt, do: date)
+  @spec last_fact(map(), Date.t(), boolean()) :: Date.t() | nil
+  def last_fact(row, today, claimed_today? \\ false)
 
-  def last_fact(row, today) do
+  def last_fact(row, today, true) do
+    if applies?(row, today), do: today, else: last_fact(row, today, false)
+  end
+
+  def last_fact(%{date: %Date{} = date}, today, false), do: if(Date.compare(date, today) == :lt, do: date)
+
+  def last_fact(row, today, false) do
     before = Date.add(today, -1)
     upper = if row.until_date && Date.compare(row.until_date, before) == :lt, do: row.until_date, else: before
     Enum.find(Enum.map(0..6, &Date.add(upper, -&1)), &applies?(row, &1))

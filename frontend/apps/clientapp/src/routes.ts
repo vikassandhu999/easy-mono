@@ -9,4 +9,7 @@ export const routes = {
   account: '/account',
   accountDetails: '/account/details',
   messages: '/messages',
+  meal: '/meals/:date/:scheduleId',
+  workout: '/workouts/:date/:scheduleId',
+  todayPrototype: '/prototype/today',
 } as const;

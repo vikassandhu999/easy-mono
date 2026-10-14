@@ -12,6 +12,7 @@ defmodule Easy.Workouts.WorkoutSchedule do
     field :time, :time
     field :place, :string
     field :meeting_url, :string
+    field :claimed_today, :boolean, virtual: true, default: false
     belongs_to :coach, Easy.Orgs.Coach
     belongs_to :business, Easy.Orgs.Business
     belongs_to :client, Easy.Clients.Client

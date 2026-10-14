@@ -38,6 +38,11 @@ Reference: [Workout concept](../workout/concept.md). Only the workout rules expl
 | N35 | (12 Oct 2026) Presets and NutritionTargets belong to one client (`client_id`). There is no nutrition library and no sharing between clients. Within the client, several schedules can use one preset (N7). Program nutrition stays open. |
 | N36 | History without version tables (answers N11). A preset or NutritionTargets row that applied on a past date never changes. An edit before that is made in place. An edit after it copies the row (with its options and items); every schedule that uses it ends on its last fact date and a new row starts on the copy (W14); the old row is archived (W32). A log points to the preset and option it used, which never change. |
 | N37 | A food edit changes the catalogue from now on (as W31). Meal items keep their amounts; food logs keep a copy of the nutrients they used. |
+| N38 | (13 Oct 2026, client logging) The client never chooses a log type (N12 stays). A planned record takes its preset's type. An unplanned record is `food` or `supplement` by its food's kind, and `meal` when it holds several items. |
+| N39 | A FoodLog links to the prescribed item it follows: `meal_item_id` (null for an extra item; a food or supplement preset's own item counts as prescribed through the log's preset). As for workout sets (W19), planned, replaced and extra items are calculated, not stored. The links are stable because applied presets never change (N36). |
+| N40 | A FoodLog copies its food's name, basis, unit label, servings and nutrients at save (N37). A correction recalculates from that copy, never from the current catalogue. |
+| N41 | A NutritionLog saves in one action; there is no server draft. Unsaved input stays on the device. Only workouts have an `active` state (W18). |
+| N42 | A date with no records reads "Not recorded", never zero intake or "missed". There is no client "skipped" record; the coach's skip (W15) stays deferred. Prescribed totals, recorded totals and targets are three separate values; a slot with alternatives has no single prescribed total. |
 
 ## Tables (12 Oct 2026)
 
@@ -53,8 +58,8 @@ One table per concept, with the concept's name. Every table also has `id`, `busi
 | NutritionSchedule | `nutrition_schedules` | `client_id`, `nutrition_preset_id`, `date` or `weekdays_mask` + `from_date` + `until_date` (N8), `time`, `coach_id` |
 | NutritionTargets | `nutrition_targets` | `client_id`, `name`, `targets` jsonb `{code: {min?, max?}}` (N33), `archived_at` |
 | Target schedule | `target_schedules` | `client_id`, `nutrition_targets_id`, `date` or `weekdays_mask` + `from_date` + `until_date` (N19) |
-| NutritionLog | `nutrition_logs` | `client_id`, `type`, `logged_on`, `logged_at`, `nutrition_schedule_id` + `scheduled_date` (the occurrence, as W13), `nutrition_preset_id`, `meal_option_id` |
-| FoodLog | `food_logs` | `nutrition_log_id`, `food_id`, `amount`, `unit`, `nutrients` jsonb (copy at save) |
+| NutritionLog | `nutrition_logs` | `client_id`, `type` (set by the app, N38), `logged_on`, `logged_at`, `recorded_by`, `nutrition_schedule_id` + `scheduled_date` (the occurrence, as W13), `nutrition_preset_id`, `meal_option_id` |
+| FoodLog | `food_logs` | `nutrition_log_id`, `meal_item_id` (N39), `food_id`, `amount`, `unit`, and a copy at save of `name`, `basis`, `unit_label`, `servings`, `nutrients` (N40) |
 
 Rules: a meal preset has one or more options, each with one or more items, and no `food_id`. A food or supplement preset has `food_id`, `amount` and `unit`, no options, and its food's kind matches its type. `weekdays_mask` is 1–127 and `until_date >= from_date`. Saved logs obey N13; drafts are not decided.
 
@@ -146,8 +151,8 @@ The core concepts are agreed. Detailed design is required before implementation.
 1. Recipes: ingredient storage and yield calculation (ADR 0002).
 2. Programs: whether nutrition has program presets and program schedules (as W11).
 3. One-off changes (N9): how a replacement names the occurrence it replaces (as W15).
-4. Same-day edits: W14 makes today a fact only when a log claims today's occurrence, but NU8 and V5 always end the old row yesterday. Proposed: W14 wins; a change starts tomorrow when today's occurrence is already logged.
-5. Logging: drafts, photo-only records, substitutions, corrections, duplicates, permissions, and type changes. FoodLog may carry a prescribed-item reference, to tell "rice replaced toast" from "toast skipped, rice added". From the Cronometer study, not decided: one "Add food" with no occasion type (against N12–N14), corrections that rescale from the copied nutrients, and "Not recorded" for an empty day.
+4. (Closed by W39: W14 wins for both domains.)
+5. Logging: mostly answered by N38–N42 and `.scratch/client/concept.md`. Still open: photo-only records, copying a day, quick add with energy only, duplicates, and the coach's view of client records.
 6. Water, medicine, and tracker boundaries.
 7. Integration: tenancy, journal, reviews, coaching-term access, API, and complete implementation slices.
 

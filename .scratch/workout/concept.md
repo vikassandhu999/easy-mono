@@ -22,7 +22,7 @@ Status: in design, 9 October 2026. Replaces the training part of `.scratch/core-
 | W14 | A schedule row never changes its facts. Fact dates: every date before today, and today only if a log claims today's occurrence; future dates are never facts. Change or delete = set `until_date` to the last fact date (and, for a change, start a new row after it); a row with no fact dates is deleted. A same-day replace is therefore a clean delete. There is no separate archive: an ended row is the archive. (Rule refined 9 Oct 2026.) |
 | W15 | A change to one occurrence: `ScheduleSkip { schedule_id, date }`. Skip = one skip row; a skipped occurrence is not expected and does not count as missed. Move = a skip plus a new one-off schedule row. |
 | W16 | A schedule row carries the occasion: optional `time`, `place` or `meeting_url` (at most one), and `coach_id` (the coach who leads). Example: a prescribed leg workout on "Tue 18:00, Gold's Gym, with Sam". |
-| W17 | Anyone who takes part can record a log: the client, or a coach with access to the client. The log stores `recorded_by` (client or coach); the journal stores who made each change. The app offers recording to the leader: an occurrence with a `coach_id` shows "Start session" in that coach's app, other occurrences show "Start workout" to the client. One log per occurrence at a time; the other person sees "<name> is recording this session". Replaces M17. |
+| W17 | Anyone who takes part can record a log: the client, or a coach with access to the client. The log stores `recorded_by` (client or coach). The app offers recording to the leader: an occurrence with a `coach_id` shows "Start session" in that coach's app, other occurrences show "Start workout" to the client. One log per occurrence at a time; the other person sees "<name> is recording this session". Replaces M17. |
 | W18 | Log states: `active` → `completed` or `discarded`. One active log per client. Workout feedback (difficulty, pain, pain note; roadmap row 1) is on the log. |
 | W19 | Every log can have sets, whatever the workout type; for `video` and `open` they are optional. A set stores `workout_exercise_id`: the id of the prescribed exercise inside the log's WorkoutHistory copy (not a foreign key to the live workout, so later edits never break it), so only sets of a `prescribed` workout can link. Calculated, not stored: planned set (link, same exercise), swap (link, other exercise), extra set (no link). `is_quick_add` is removed. |
 | W20 | `Program { id, business_id, name, description, weeks }`. Assign: the coach picks a client and a start date; each program workout is copied to the client with new ids; each program schedule row becomes a client schedule row that points to the copy. The client's existing schedule is not touched; two workouts on one day are allowed. |
@@ -39,10 +39,12 @@ Status: in design, 9 October 2026. Replaces the training part of `.scratch/core-
 | W31 | Everything on an exercise is editable (metric list, `kind`, `unilateral`, name). An exercise describes how to show and log it from now on; it never changes data that already exists. Removed metrics stay in old logs and reports. WorkoutHistory copies keep old names. Replaces M13. |
 | W32 | Deleting a workout: apply W14 to its schedule rows first. If any row remains, the workout is archived (`archived_at`); otherwise it is deleted. Done work never needs the original: logs point to WorkoutHistory copies, so `WorkoutHistory.workout_id` is a plain id, not a foreign key. Library and program workouts have no schedule facts, so they are deleted. One sentence for W14 and W32: keep every date that is a fact; remove everything else; a row or a workout with no facts is deleted. |
 | W33 | Progression across weeks needs no new concept: a program schedules a separate workout per week where targets change ("Lower A (week 1)" on a `week` row, "Lower A (week 2)" on the next). The builder offers "Duplicate for next week". Replaces the "Not now" for progression (M8). |
-| W34 | `WorkoutLog` and `ExerciseSet` are records on the shared spine: shared record fields, `Easy.RecordJournal` writes, `record_changes`, `clients.last_change_seq` (M9, M10). "New since the last review" and "pain reported" work for them unchanged. |
+| W34 | *Withdrawn 13 Oct 2026 (user decision).* Logs use only their own tables (`workout_logs`, `exercise_sets`). No shared record spine, no `Easy.RecordJournal`, no `record_changes`, no `last_change_seq`. |
 | W35 | Every table carries `business_id` (tenant). A library workout is `business_id` set, `client_id` and `program_id` null. Built-in exercises keep `business_id` null. |
 | W36 | Workout schedule rows use `weekdays_mask` (Mon=1 … Sun=64), the same convention as nutrition (N8) and trackers (R6). One row can cover several weekdays. Replaces the single `day_of_week` in W6 and W11. (10 Oct 2026.) |
 | W37 | (12 Oct 2026) History storage for W8, the same rule as nutrition N36: a workout that applied on a past date never changes. An edit before that is made in place. An edit after it copies the workout with its groups, exercises and targets; each schedule row that uses it ends on its last fact date and a new row starts on the copy (W14); the old workout is archived (W32). No version tables. WorkoutHistory copies for logs (W7, W19) stay as decided and are built with logging. |
+| W38 | (13 Oct 2026) No WorkoutHistory. Under W37 a workout that applied never changes, so a WorkoutLog points to `workout_id` and an ExerciseSet to `workout_exercise_id` directly (both foreign keys). Replaces the WorkoutHistory copy in W7, W8, W19 and W32: "planned set / swap / extra set" stay calculated as in W19. |
+| W39 | (13 Oct 2026) Same-day edits follow W14 for workouts and nutrition: today is a fact once a log claims today's occurrence. A coach's edit after that copies the workout or preset (W37, N36), so the client's record keeps what it followed; before any log, the edit applies to today in place. Closes nutrition open question 4. |
 
 ## Model
 
@@ -54,8 +56,7 @@ ExerciseGroup    { id, workout_id, name?, rounds }
 WorkoutExercise  { id, group_id, exercise_id, rest (target), targets: same_for_all | per_round, [ metrics (W28) ] }
 Schedule         { id, workout_id, client_id, date? | day_of_week + from_date + until_date?, time?, place? | meeting_url?, coach_id? }
 ProgramSchedule  { id, workout_id, program_id, week? | day_of_week + from_week + until_week }
-WorkoutHistory   { id, client_id, workout_id, started, ended?, workout: jsonb } // provisional: revise storage and effective boundaries under W8
-WorkoutLog       { id, business_id, client_id, shared record fields (M9), state, date, time, at_utc, text, difficulty?, pain?, pain_note?, workout_history_id?, schedule_id?, scheduled_date?, recorded_by }
+WorkoutLog       { id, business_id, client_id, state, date, time, at_utc, text, difficulty?, pain?, pain_note?, workout_id?, schedule_id?, scheduled_date?, recorded_by }  // W38: no WorkoutHistory
 ScheduleSkip     { id, schedule_id, date }
 ExerciseMax      { id, client_id, exercise_id, kg, date, entered_by }
 ExerciseSet      { id, log_id, workout_exercise_id?, exercise_id, round, side?, metrics (W28) }
@@ -154,7 +155,8 @@ Settled with a clickable prototype: route `/prototype/client-week` in the coach 
 | M8 occurrence exceptions; progression "Not now" | Replaced by W15 (skips) and W33 (progression). |
 | M13 measures fixed at creation | Replaced by W31. |
 | M17 only the client records workouts | Replaced by W17. |
-| M9, M10 record spine; M14 base units; M18 counts, not scores | Kept (W34, W28). |
+| M9, M10 record spine | Not used for logs (W34 withdrawn). |
+| M14 base units; M18 counts, not scores | Kept (W28). |
 
 ## Open questions
 

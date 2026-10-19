@@ -21,10 +21,23 @@ One optional source link per message, carrying a frozen summary and revision. Op
 **Not recorded**:
 No structured record is available. This is not evidence of non-adherence or a skipped meal.
 
+**Attachment**:
+An uploaded file or an external link used in coaching content or a client record. It can be an image, video, audio recording, or document.
+_Avoid_: Media as a separate name for the same asset
+
 ### Workouts
 
 **Exercise**:
-A named movement, activity, sport, or practice. Its goals and places describe its use; equipment and muscles are tags. Its ordered metrics describe the values a coach can prescribe. Built-in exercises are available to every business; a coach's own exercises belong to that business.
+A named movement, activity, sport, or practice with optional written instructions. Its goals and places describe its use; equipment is described in free text and muscles are listed by name. Its ordered metrics describe the values a coach can prescribe. Built-in exercises are available to every business; a coach's own exercises belong to that business.
+
+**Exercise media**:
+An item in an exercise's ordered demonstration gallery, with an optional caption. It describes how an attachment is used to explain the exercise.
+
+**Exercise metric**:
+A measurement selected from the shared catalogue for an exercise, in the order the coach wants it shown. Each metric can have its own label without changing its meaning or units.
+
+**Archived exercise**:
+An exercise hidden from new selection while its existing workouts, demonstrations, and recorded activity remain available. Restoring it makes it selectable again.
 
 **Workout**:
 Instructions for one training occasion. A prescribed workout contains exercise groups and targets; a video workout supplies a video; an open session leaves the activity to the coach who leads. Timing, place, meeting link, and the coach who leads belong to the schedule.
@@ -38,17 +51,23 @@ An independent workout owned by one client. It can be used on several days and c
 _Avoid_: Client Plan, assigned plan
 
 **Exercise group**:
-Exercises performed for a number of rounds. One exercise means straight sets; two mean a superset; more mean a circuit. The UI uses its name or letter and never says group.
+One or more ordered exercises performed for a number of rounds. One exercise means straight sets; two mean a superset; more mean a circuit. The UI uses its name or letter and never says group.
 
 **Workout exercise**:
-An exercise within a prescribed workout, with targets and rest shared by every round or specified per round. A unilateral exercise's target applies to each side.
+An exercise within a prescribed workout, with targets and rest shared by every round or specified per round. The coach chooses whether repetitions and duration cover the whole round or apply to each side separately.
 _Avoid_: Prescribed Set, content item
+
+**Side mode**:
+The coach's choice to record one combined result for a round or separate left and right results. For separate results, each side receives the activity targets, rest follows both sides, and the number of rounds stays the same.
 
 **Target**:
 An exact value, a range, as much as possible, or no prescribed value. No target means the client chooses. Targets use only the exercise's metrics.
 
+**Round targets**:
+The metric instructions and rest for one exercise in one round. A selected metric can have no prescribed target, and rest does not depend on the selected metrics.
+
 **Rest**:
-The rest after an exercise. Rest after the last exercise in a card is rest between rounds.
+The rest after completing an exercise, including both sides when performed separately. Rest after the last exercise in a card is rest between rounds. An unspecified duration is chosen by the client; "no rest" is an explicit instruction.
 
 **Workout schedule**:
 The repeating weekdays and optional live-session details for a client workout. Several weekdays with the same details share one schedule. Changes apply from today and keep earlier prescriptions.
@@ -56,6 +75,24 @@ _Avoid_: Workout calendar, plan revision
 
 **Expected workout occurrence**:
 One workout expected on one date under a schedule. It is calculated from the schedule.
+
+**Workout log**:
+A record of one client's workout session. It can follow a scheduled workout, use a saved workout outside its schedule, or record training without a saved workout. The actual training date can differ from the planned date.
+
+**Exercise log**:
+A record of one selected exercise or activity as it is recorded within a workout session. It holds the activity's session instructions and reported overall result, with optional details for individual sets or intervals. Beginning a record does not mean the activity was performed. Overall measurements and their interval breakdown describe the same work. Recorded intervals can cover only part of the activity; their presence does not establish its whole result. An unfinished activity can remain in a finished workout without being treated as completed or skipped.
+
+**Exercise set**:
+One detailed outcome for a set or interval within an exercise log. It records performed work, with or without measurements, or an explicit skip. Missing records do not establish that work was skipped. A prescribed round keeps its identity when the exercise changes; separate left and right outcomes can belong to different selected exercises.
+
+**Workout recorder**:
+The client or coach who originally created a workout log. Later edits and reopening do not change its recorder. A recording coach can differ from the coach assigned to lead the session.
+
+**Workout feedback**:
+The client's account of how a session felt, used by the coach to decide what to prescribe next. It can include whole-session effort, reported pain or discomfort, and a note. A coach may enter the client's answers. Feedback is optional; a missing answer remains unknown.
+
+**Exercise swap**:
+A replacement selected for the remaining unrecorded sets of one prescribed workout entry in a session. The person recording can adjust its targets, remaining set count, and rest for that session. It leaves the coach's prescription, other workout entries, and previously recorded work intact. The same prescribed exercise can have a different replacement in another entry or session.
 
 **Prescription history**:
 The workout instructions and schedule that applied on a past date. Later edits preserve those instructions and change future uses. A date before today is a fact even when no workout has been recorded.

@@ -29,6 +29,7 @@
   --page-gutter: 1.25rem;
   --page-width: 68rem;
   --surface-radius: 1rem;
+  --app-header-height: calc(4rem + env(safe-area-inset-top, 0px));
   --foreground: oklch(0.2 0 0);
   --primary: oklch(0.25 0 0);
   --primary-foreground: oklch(0.99 0 0);
@@ -42,6 +43,7 @@
 @media (min-width: 48rem) {
   :root {
     --page-gutter: 2rem;
+    --app-header-height: calc(4.5rem + env(safe-area-inset-top, 0px));
   }
 }
 

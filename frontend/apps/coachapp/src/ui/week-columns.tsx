@@ -10,8 +10,14 @@ const subscribe = (notify: () => void) => {
 };
 const columnClass = 'flex min-w-0 flex-col gap-2 rounded-2xl bg-muted p-2';
 
-export function WeekColumns({children}: {children: (day: Day) => ReactNode}) {
-  const [shown, setShown] = useState<number>(weekdays[0].bit);
+export function WeekColumns({
+  children,
+  defaultDay = weekdays[0].bit,
+}: {
+  children: (day: Day) => ReactNode;
+  defaultDay?: number;
+}) {
+  const [shown, setShown] = useState<number>(defaultDay);
   const isWide = useSyncExternalStore(subscribe, () => window.matchMedia(wide).matches);
   return isWide ? (
     <ol className="grid grid-cols-7 gap-2">

@@ -205,7 +205,7 @@ function WeekScreen({clientId}: {clientId: string}) {
         )}
         {!state && query.isPending && <p role="status">Loading training week…</p>}
         {state && (
-          <WeekColumns>
+          <WeekColumns defaultDay={todayBit}>
             {(day) => {
               const items = state.schedules.filter((row) => row.weekdays_mask & day.bit).sort(byTime);
               return (

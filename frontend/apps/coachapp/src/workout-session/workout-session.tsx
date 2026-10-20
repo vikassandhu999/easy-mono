@@ -34,6 +34,7 @@ import {
 } from '../api/workout-logs';
 import {useWorkout, type Workout, type WorkoutExercise} from '../api/workouts';
 import {Button} from '../ui/button';
+import {cn} from '../ui/cn';
 import {Dialog, DialogHeader, DialogTitle} from '../ui/dialog';
 import {FormError} from '../ui/form-error';
 import {InfiniteList} from '../ui/infinite-list';
@@ -232,6 +233,7 @@ function Confirm({
 }
 function Field({
   label,
+  labelContext,
   value,
   onChange,
   isDisabled = false,
@@ -241,6 +243,7 @@ function Field({
   multiline = false,
 }: {
   label: string;
+  labelContext?: string;
   value: string;
   onChange: (value: string) => void;
   isDisabled?: boolean;
@@ -252,7 +255,10 @@ function Field({
   const id = useId();
   return (
     <div className="grid min-w-0 gap-1">
-      <Label htmlFor={id}>{label}</Label>
+      <Label htmlFor={id}>
+        {labelContext && <span className="sr-only">{labelContext} </span>}
+        {label}
+      </Label>
       {multiline ? (
         <Textarea
           id={id}
@@ -346,6 +352,42 @@ function RecordingView(props: Props & {viewerCoachId?: string}) {
         back={{to: props.back, label: 'Training week'}}
         description={`${props.date} · ${log.state === 'completed' ? 'Completed' : log.state === 'discarded' ? 'Discarded' : 'In progress'}`}
       />
+      {(editable || pending || props.error || blocked) && (
+        <div
+          role="region"
+          aria-label="Workout save status"
+          className="sticky top-[var(--app-header-height)] z-30 grid gap-2 border-b border-border bg-background py-3"
+        >
+          {pending ? <p role="status">Saving…</p> : props.draftStatus}
+          {props.error && (
+            <p
+              role="alert"
+              className="font-medium text-destructive"
+            >
+              {props.error}
+            </p>
+          )}
+          {blocked && (
+            <>
+              {!props.error && (
+                <p
+                  role="status"
+                  className="font-medium"
+                >
+                  An action is kept on this device. Retry saving before another change.
+                </p>
+              )}
+              <Button
+                variant="outline"
+                isPending={pending}
+                onPress={props.session.retry}
+              >
+                Retry saving
+              </Button>
+            </>
+          )}
+        </div>
+      )}
       {workout.description && (
         <p className="mb-5 rounded-2xl bg-[var(--coach)] p-4 font-medium">{workout.description}</p>
       )}
@@ -547,33 +589,7 @@ function RecordingView(props: Props & {viewerCoachId?: string}) {
           Add activity
         </Button>
       )}
-      {props.draftStatus}
       <footer className="mt-6 grid gap-3 rounded-2xl border-t border-border bg-background py-4">
-        {props.error && (
-          <p
-            role="alert"
-            className="font-medium text-destructive"
-          >
-            {props.error}
-          </p>
-        )}
-        {blocked && (
-          <>
-            <p
-              role="status"
-              className="font-medium"
-            >
-              An action is kept on this device. Retry saving before another change.
-            </p>
-            <Button
-              variant="outline"
-              isPending={pending}
-              onPress={props.session.retry}
-            >
-              Retry saving
-            </Button>
-          </>
-        )}
         {editable && (
           <div className="grid grid-cols-[auto_1fr] gap-2">
             <Button
@@ -827,7 +843,12 @@ function MeasurementInputs({
 }) {
   const fieldId = useId();
   return (
-    <div className="grid min-w-0 grid-cols-1 gap-3 min-[360px]:grid-cols-2 lg:col-start-2 lg:row-span-2 lg:row-start-1">
+    <div
+      className={cn(
+        'grid min-w-0 grid-cols-1 items-end gap-3 min-[360px]:grid-cols-2',
+        scope === 'detail' && 'lg:col-start-2 lg:row-span-2 lg:row-start-1',
+      )}
+    >
       {exercise.metrics.map((metric) => {
         const definition = measurementFields[metric.key];
         if (!definition || (scope === 'overall' && definition.scope === 'detail')) {
@@ -835,7 +856,6 @@ function MeasurementInputs({
         }
         const value = inputs[metric.key] ?? savedInput(row, metric.key);
         const parsed = parseMeasurement(metric.key, value);
-        const label = `${prefix} ${inputLabel(metric)}`;
         return metric.key === 'result' ? (
           <div
             key={metric.key}
@@ -845,7 +865,8 @@ function MeasurementInputs({
               id={`${fieldId}-${metric.key}-label`}
               htmlFor={`${fieldId}-${metric.key}`}
             >
-              {label}
+              <span className="sr-only">{prefix} </span>
+              {inputLabel(metric)}
             </Label>
             <SelectField
               key={metric.key}
@@ -863,7 +884,8 @@ function MeasurementInputs({
         ) : (
           <Field
             key={metric.key}
-            label={label}
+            label={inputLabel(metric)}
+            labelContext={prefix}
             value={value}
             isDisabled={disabled}
             inputMode={metric.key === 'duration' ? 'text' : 'decimal'}

@@ -48,7 +48,9 @@ async function login(page, email) {
 }
 async function dayScope(page, width, day) {
   if (width === 375) {
-    await page.getByRole('tab', {name: day, exact: true}).click();
+    const tab = page.getByRole('tab', {name: day, exact: true});
+    await expect(tab).toBeVisible();
+    await tab.click();
     return page.getByRole('tabpanel', {name: day, exact: true});
   }
   return page.getByRole('listitem', {name: day, exact: true});
@@ -189,6 +191,7 @@ async function journey(width) {
   await editor.getByLabel(/^Value/).fill('6');
   await editor.getByRole('button', {name: 'Done', exact: true}).click();
   const table = page.getByRole('table', {name: 'Targets for Pull-up by round', exact: true});
+  await expect(table.getByRole('button', {name: 'Pull-up round 1 Reps: 6', exact: true})).toBeVisible();
   await setExact(page, table.getByRole('row').nth(2).getByRole('button').first(), '7');
   await table.getByRole('row').nth(3).getByRole('button').first().click();
   editor = page.locator('[id^="target-editor-"]').filter({has: page.getByRole('button', {name: 'Done', exact: true})});
@@ -299,11 +302,16 @@ async function journey(width) {
   const historicalBefore = historicalPrescription(await week(on));
   await page.goto(`/clients/${fixture.clientId}/training`);
   await expect(page.getByRole('heading', {name: 'Training week', exact: true})).toBeVisible();
-  await expect(page.getByRole('button', {name: 'Add to Monday', exact: true})).toBeVisible();
   if (width === 375) {
+    const today = new Date(`${fixture.today}T12:00:00Z`).toLocaleDateString('en', {weekday: 'long', timeZone: 'UTC'});
+    await expect(page.getByRole('tablist', {name: 'Day', exact: true})).toBeVisible();
+    await expect(page.getByRole('tab', {name: today, exact: true})).toHaveAttribute('aria-selected', 'true');
+    await expect(page.getByRole('tabpanel')).toHaveCount(1);
     await page.getByRole('tab', {name: 'Monday', exact: true}).focus();
     await page.keyboard.press('ArrowRight');
     await expect(page.getByRole('tab', {name: 'Tuesday', exact: true})).toHaveAttribute('aria-selected', 'true');
+  } else {
+    await expect(page.getByRole('button', {name: 'Add to Monday', exact: true})).toBeVisible();
   }
   await shot(page, `week-initial-${width}`);
   let tuesday = await dayScope(page, width, 'Tuesday');
@@ -410,7 +418,8 @@ async function journey(width) {
   expect(historicalPrescription(await week(on))).toEqual(historicalBefore);
   await page.goto(`/clients/${fixture.clientId}/training`);
   await expect(page.getByRole('heading', {name: 'Training week', exact: true})).toBeVisible();
-  await expect(page.getByRole('button', {name: 'Add to Monday', exact: true})).toBeVisible();
+  const verifiedMonday = await dayScope(page, width, 'Monday');
+  await expect(verifiedMonday.getByRole('button', {name: 'Add to Monday', exact: true})).toBeVisible();
   await shot(page, `week-verified-${width}`);
   results.push({
     width,

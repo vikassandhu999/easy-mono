@@ -6,7 +6,9 @@ import {chromium, expect, request} from '@playwright/test';
 const artifacts = fileURLToPath(new URL('./artifacts/', import.meta.url));
 await mkdir(artifacts, {recursive: true});
 await Promise.all(
-  ['results.json', 'failure.txt', 'failure.png'].map((name) => rm(`${artifacts}/${name}`, {force: true})),
+  ['results.json', 'failure.txt', 'failure.png', 'failure-client.png'].map((name) =>
+    rm(`${artifacts}/${name}`, {force: true}),
+  ),
 );
 const api = await request.newContext({baseURL: process.env.API_URL ?? 'http://localhost:4000'});
 const browser = process.env.PLAYWRIGHT_CDP_URL

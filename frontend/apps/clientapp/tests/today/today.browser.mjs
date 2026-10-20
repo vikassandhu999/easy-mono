@@ -73,6 +73,7 @@ async function write(method, path, action) {
   return result.response.json();
 }
 async function shot(name) {
+  await expect(page.getByText('Saving…', {exact: true})).toHaveCount(0);
   expect(
     await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
     `${name}: horizontal overflow`,

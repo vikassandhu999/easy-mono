@@ -13,6 +13,7 @@ import {type Food, totalOf, valuesLine} from './model';
 // A controlled text field built from the app's own Label, Input and error text.
 export function Field({
   label,
+  labelContext,
   value,
   onChange,
   error,
@@ -23,6 +24,7 @@ export function Field({
   ...input
 }: {
   label: string;
+  labelContext?: string;
   value: string;
   onChange: (value: string) => void;
   error?: string | null;
@@ -46,7 +48,12 @@ export function Field({
       {...(input.autoFocus ? {autoFocus: true} : {})}
       {...(hideLabel ? {'aria-label': label} : {})}
     >
-      {!hideLabel && <Label>{label}</Label>}
+      {!hideLabel && (
+        <Label>
+          {labelContext && <span className="sr-only">{labelContext} </span>}
+          {label}
+        </Label>
+      )}
       <Input
         {...(input.type ? {type: input.type} : {})}
         {...(input.inputMode ? {inputMode: input.inputMode} : {})}

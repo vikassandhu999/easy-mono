@@ -217,7 +217,7 @@ function Editor({
   const back = clientId ? `/clients/${clientId}/training` : '/workouts';
   return (
     <Page className="editor-page min-w-0 grid-cols-1 max-w-5xl pb-24">
-      <div className="sticky top-0 z-30 -mx-4 flex flex-wrap items-center justify-between gap-2 border-b border-border bg-background px-4 py-2 sm:mx-0 sm:px-0">
+      <div className="sticky top-[var(--app-header-height)] z-30 -mx-4 flex flex-wrap items-center justify-between gap-2 border-b border-border bg-background px-4 py-2 sm:mx-0 sm:px-0">
         <Link
           to={back}
           className="flex min-h-11 items-center gap-2 font-medium text-muted-foreground"

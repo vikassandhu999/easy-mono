@@ -88,6 +88,42 @@ export function WorkoutLogger(props: Props) {
         onBack={props.onClose}
         subtitle={`${dayLabel(props.date)}${props.time ? ` · planned ${props.time}` : ''} · ${!log ? 'Not started' : log.state === 'completed' ? 'Completed' : log.state === 'discarded' ? 'Discarded' : 'In progress'}`}
       />
+      {(editable || pending || props.error || blocked) && (
+        <div
+          role="region"
+          aria-label="Workout save status"
+          className="sticky top-[env(safe-area-inset-top)] z-30 grid gap-2 border-b border-border bg-background py-3"
+        >
+          {pending ? <p role="status">Saving…</p> : props.draftStatus}
+          {props.error && (
+            <p
+              role="alert"
+              className="font-medium text-destructive"
+            >
+              {props.error}
+            </p>
+          )}
+          {blocked && (
+            <>
+              {!props.error && (
+                <p
+                  role="status"
+                  className="font-medium"
+                >
+                  An action is kept on this device. Retry saving before another change.
+                </p>
+              )}
+              <Button
+                variant="outline"
+                isPending={pending}
+                onPress={props.onRetry}
+              >
+                Retry saving
+              </Button>
+            </>
+          )}
+        </div>
+      )}
       {workout.description && (
         <p className="mb-5 rounded-2xl bg-[var(--coach)] p-4 font-medium">{workout.description}</p>
       )}
@@ -305,33 +341,7 @@ export function WorkoutLogger(props: Props) {
           Add activity
         </Button>
       )}
-      {props.draftStatus}
       <footer className="mt-6 grid gap-3 rounded-2xl border-t border-border bg-background py-4">
-        {props.error && (
-          <p
-            role="alert"
-            className="font-medium text-destructive"
-          >
-            {props.error}
-          </p>
-        )}
-        {blocked && (
-          <>
-            <p
-              role="status"
-              className="font-medium"
-            >
-              An action is kept on this device. Retry saving before another change.
-            </p>
-            <Button
-              variant="outline"
-              isPending={pending}
-              onPress={props.onRetry}
-            >
-              Retry saving
-            </Button>
-          </>
-        )}
         {!log &&
           (props.canStart ? (
             <Button
@@ -592,7 +602,7 @@ function MeasurementInputs({
 }) {
   const fieldId = useId();
   return (
-    <div className="grid grid-cols-1 gap-3 min-[360px]:grid-cols-2">
+    <div className="grid grid-cols-1 items-end gap-3 min-[360px]:grid-cols-2">
       {exercise.metrics.map((metric) => {
         const definition = measurementFields[metric.key];
         if (!definition || (scope === 'overall' && definition.scope === 'detail')) {
@@ -600,7 +610,6 @@ function MeasurementInputs({
         }
         const value = inputs[metric.key] ?? savedInput(row, metric.key);
         const parsed = parseMeasurement(metric.key, value);
-        const label = `${prefix} ${inputLabel(metric)}`;
         return metric.key === 'result' ? (
           <div
             key={metric.key}
@@ -610,7 +619,8 @@ function MeasurementInputs({
               id={`${fieldId}-${metric.key}-label`}
               htmlFor={`${fieldId}-${metric.key}`}
             >
-              {label}
+              <span className="sr-only">{prefix} </span>
+              {inputLabel(metric)}
             </Label>
             <SelectField
               key={metric.key}
@@ -628,7 +638,8 @@ function MeasurementInputs({
         ) : (
           <Field
             key={metric.key}
-            label={label}
+            label={inputLabel(metric)}
+            labelContext={prefix}
             value={value}
             isDisabled={disabled}
             inputMode={metric.key === 'duration' ? 'text' : 'decimal'}

@@ -296,41 +296,41 @@ function Editor({initial}: {initial?: Exercise}) {
             />
           </section>
         </fieldset>
+        {initial && !readOnly && (
+          <div className="flex flex-wrap gap-2 border-t border-border pt-5">
+            <Button
+              variant="outline"
+              isDisabled={pending || form.formState.isDirty}
+              isPending={archive.isPending || restore.isPending}
+              onPress={async () => {
+                try {
+                  if (initial.archived_at) {
+                    await restore.mutateAsync(initial.id);
+                  } else {
+                    await archive.mutateAsync(initial.id);
+                  }
+                  setNotice(initial.archived_at ? 'Exercise restored.' : 'Exercise archived.');
+                  setError(undefined);
+                } catch (cause) {
+                  setError(errorMessage(cause, 'Could not change the archive state. Try again.'));
+                }
+              }}
+            >
+              {initial.archived_at ? 'Restore exercise' : 'Archive exercise'}
+            </Button>
+            <Button
+              variant="ghost"
+              isDisabled={pending}
+              onPress={() => setDeleting(true)}
+            >
+              Delete exercise
+            </Button>
+          </div>
+        )}
         <FormError message={error} />
         <p role="status">{notice}</p>
         {!readOnly && (
           <FormActions>
-            {initial && (
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  variant="outline"
-                  isDisabled={pending || form.formState.isDirty}
-                  isPending={archive.isPending || restore.isPending}
-                  onPress={async () => {
-                    try {
-                      if (initial.archived_at) {
-                        await restore.mutateAsync(initial.id);
-                      } else {
-                        await archive.mutateAsync(initial.id);
-                      }
-                      setNotice(initial.archived_at ? 'Exercise restored.' : 'Exercise archived.');
-                      setError(undefined);
-                    } catch (cause) {
-                      setError(errorMessage(cause, 'Could not change the archive state. Try again.'));
-                    }
-                  }}
-                >
-                  {initial.archived_at ? 'Restore exercise' : 'Archive exercise'}
-                </Button>
-                <Button
-                  variant="ghost"
-                  isDisabled={pending}
-                  onPress={() => setDeleting(true)}
-                >
-                  Delete exercise
-                </Button>
-              </div>
-            )}
             <Button
               type="submit"
               isPending={save.isPending}

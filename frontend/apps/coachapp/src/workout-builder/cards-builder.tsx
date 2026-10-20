@@ -238,6 +238,7 @@ export function CardsBuilder({
                                             <Button
                                               size="sm"
                                               variant="outline"
+                                              aria-label={`${exercise.source.name} round ${ri + 1} ${labelFor(key, exercise.source)}: ${targetLabel(key, targets[key])}`}
                                               aria-expanded={same(where)}
                                               {...(same(where) && {'aria-controls': editorId(gi, ei)})}
                                               className={cn(

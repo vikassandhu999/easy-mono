@@ -1,17 +1,18 @@
 import {ArrowDown, ArrowUp, ArrowUpDown, Minus, Plus, Trash2, X} from 'lucide-react';
 import {useEffect, useState} from 'react';
-import {labelOf} from '../exercises/exercise';
 import {Button} from '../ui/button';
+import {Checkbox} from '../ui/checkbox';
 import {cn} from '../ui/cn';
 import {
   actions,
-  formatTarget,
   groupLabel,
   groupSummary,
   groupTitle,
   keysOf,
+  labelFor,
   letterOf,
   restoreRemoval,
+  targetLabel,
   type Where,
   type Workout,
 } from './model';
@@ -171,12 +172,21 @@ export function CardsBuilder({
                         </span>
                         <p className="min-w-0 flex-1 pt-2 font-semibold md:w-52 md:flex-none">
                           {exercise.source.name}
-                          {exercise.source.unilateral && (
-                            <span className="ml-2 rounded-md bg-muted px-1.5 py-0.5 text-xs font-medium text-muted-foreground">
+                          {exercise.sideMode === 'per_side' && (
+                            <span className="ml-2 inline-flex whitespace-nowrap rounded-md bg-muted px-1.5 py-0.5 text-xs font-medium text-muted-foreground">
                               each side
                             </span>
                           )}
                         </p>
+                        <Checkbox
+                          aria-label={`Each side for ${exercise.source.name}`}
+                          isSelected={exercise.sideMode === 'per_side'}
+                          onChange={(selected) =>
+                            setWorkout(actions.setSideMode(workout, gi, ei, selected ? 'per_side' : 'combined'))
+                          }
+                        >
+                          Each side
+                        </Checkbox>
                         <Button
                           size="icon-sm"
                           variant="ghost"
@@ -207,7 +217,7 @@ export function CardsBuilder({
                                         scope="col"
                                         className="px-1 font-medium"
                                       >
-                                        {labelOf(key, exercise.source)}
+                                        {labelFor(key, exercise.source)}
                                       </th>
                                     ))}
                                   </tr>
@@ -232,13 +242,14 @@ export function CardsBuilder({
                                               {...(same(where) && {'aria-controls': editorId(gi, ei)})}
                                               className={cn(
                                                 'min-w-16 justify-start tabular-nums sm:min-w-20',
-                                                ['choose', 'none'].includes(targets[key]?.mode ?? 'choose') &&
-                                                  'font-sans font-medium text-muted-foreground',
+                                                ['client_chooses', 'none'].includes(
+                                                  targets[key]?.mode ?? 'client_chooses',
+                                                ) && 'font-sans font-medium text-muted-foreground',
                                                 same(where) && 'border-primary bg-primary/5',
                                               )}
                                               onPress={() => toggle(where)}
                                             >
-                                              {formatTarget(key, targets[key], exercise.source.unilateral)}
+                                              {targetLabel(key, targets[key])}
                                             </Button>
                                           </td>
                                         );
@@ -253,7 +264,7 @@ export function CardsBuilder({
                               {keys.map((key) => {
                                 const where = {group: gi, exercise: ei, key, round: null};
                                 const target = exercise.targets[key];
-                                const soft = !target || target.mode === 'choose' || target.mode === 'none';
+                                const soft = !target || target.mode === 'client_chooses' || target.mode === 'none';
                                 return (
                                   <Button
                                     key={key}
@@ -265,10 +276,10 @@ export function CardsBuilder({
                                     onPress={() => toggle(where)}
                                   >
                                     <span className="font-medium text-muted-foreground">
-                                      {labelOf(key, exercise.source)}
+                                      {labelFor(key, exercise.source)}
                                     </span>
                                     <span className={cn(soft ? 'font-medium text-muted-foreground' : 'tabular-nums')}>
-                                      {formatTarget(key, target, exercise.source.unilateral)}
+                                      {targetLabel(key, target)}
                                     </span>
                                   </Button>
                                 );

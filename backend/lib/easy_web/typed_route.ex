@@ -55,8 +55,21 @@ defmodule EasyWeb.TypedRoute do
   end
 
   @spec ok(Plug.Conn.t(), term()) :: Plug.Conn.t()
+  def ok(conn, {:replay, payload}) do
+    route = route!(conn)
+
+    case route[:replay_status] do
+      nil -> raise ArgumentError, "action does not declare a replay response"
+      status -> respond(conn, payload, status, elem(route.ok, 1))
+    end
+  end
+
   def ok(conn, payload) do
     {status, ir} = route!(conn).ok
+    respond(conn, payload, status, ir)
+  end
+
+  defp respond(conn, payload, status, ir) do
     formatted = Dump.dump(payload, ir)
     if Application.get_env(:easy, :check_typed_responses, false), do: Check.assert!(formatted, ir)
 
@@ -66,7 +79,7 @@ defmodule EasyWeb.TypedRoute do
   end
 
   defp compile_route(action, opts, env) when is_atom(action) and is_list(opts) do
-    extras = Keyword.keys(opts) -- [:body, :query, :path, :ok]
+    extras = Keyword.keys(opts) -- [:body, :query, :path, :ok, :replay_status]
 
     if extras != [] do
       raise ArgumentError, "unknown typed keys #{inspect(extras)} on #{action}"
@@ -78,8 +91,14 @@ defmodule EasyWeb.TypedRoute do
       raise ArgumentError, "typed #{action} ok status must be an integer, got #{inspect(status)}"
     end
 
+    replay_status = Keyword.get(opts, :replay_status)
+
+    unless is_nil(replay_status) or (status == 201 and replay_status == 200),
+      do: raise(ArgumentError, "replay_status supports 200 for a 201 create response")
+
     %{
       action: action,
+      replay_status: replay_status,
       body: expand_opt(Keyword.get(opts, :body), env),
       query: expand_opt(Keyword.get(opts, :query), env),
       path: expand_opt(Keyword.get(opts, :path), env),

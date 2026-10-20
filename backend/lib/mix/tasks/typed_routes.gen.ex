@@ -164,6 +164,8 @@ defmodule Mix.Tasks.TypedRoutes.Gen do
   defp method_entry({route, typed, headers}, named) do
     method = method_name(route.verb)
     {status, ok_ir} = typed.ok
+    statuses = [status | List.wrap(Map.get(typed, :replay_status))]
+    responses = Enum.map_join(statuses, "\n", &"#{&1}: #{response_ts(&1, ok_ir, named)};")
 
     """
     #{method}: {
@@ -174,7 +176,7 @@ defmodule Mix.Tasks.TypedRoutes.Gen do
         cookie?: never;
       };
       #{body_ts(typed.body, named)}responses: {
-        #{status}: #{response_ts(status, ok_ir, named)};
+        #{responses}
       };
     }
     """

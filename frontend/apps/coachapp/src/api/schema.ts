@@ -4,7 +4,7 @@
  */
 
 /* typed-routes:types */
-/* typed-routes:hash dc7b726f2eefd3c29b0f3132b32ace31805b0e1900fd8521d2d91c3bb8f5af23 */
+/* typed-routes:hash 05bd2b6f0db153c248211c5a8382470dbc7b114026183468ec9c67ca301ba000 */
 export type Attachment = {
   id: string;
   content_type:
@@ -201,30 +201,27 @@ export type ConversationMarkReadQuery = {through?: string};
 export type Exercise = {
   id: string;
   name: string;
+  instructions: string | null;
   kind: 'movement' | 'activity' | 'sport' | 'practice';
   goals: Array<string>;
   places: Array<string>;
-  metrics: Array<string>;
-  count_label: string | null;
-  grade_scale: Array<string>;
-  unilateral: boolean;
-  equipment: Array<string>;
+  metrics: Array<ExerciseMetric>;
+  equipment: string | null;
   muscles: Array<string>;
-  media: string | null;
+  media: Array<ExerciseMedia>;
+  archived_at: string | null;
   is_builtin: boolean;
 };
 export type ExerciseCreate = {
   name: string;
   kind: 'movement' | 'activity' | 'sport' | 'practice';
-  goals: Array<string>;
-  places: Array<string>;
-  metrics?: Array<string>;
-  count_label?: string | null;
-  grade_scale?: Array<string>;
-  unilateral?: boolean;
-  equipment?: Array<string>;
+  instructions?: string | null;
+  goals?: Array<string>;
+  places?: Array<string>;
+  metrics?: Array<ExerciseMetricInput>;
+  equipment?: string | null;
   muscles?: Array<string>;
-  media?: string | null;
+  media?: Array<ExerciseMediaInput>;
 };
 export type ExerciseGroup = {id: string; name: string | null; rounds: number; exercises: Array<WorkoutExercise>};
 export type ExerciseGroupCreate = {
@@ -241,21 +238,188 @@ export type ExerciseListQuery = {
   place?: string;
   equipment?: string;
   muscle?: string;
+  archived?: boolean;
   cursor?: string;
   limit?: number;
+};
+export type ExerciseLog = {
+  id: string;
+  exercise_id: string;
+  exercise: Exercise;
+  workout_exercise_id: string | null;
+  state: 'active' | 'completed' | 'skipped';
+  position: number;
+  side_mode: 'combined' | 'per_side';
+  rounds: number;
+  targets_mode: 'same_for_all' | 'per_round';
+  targets: Array<WorkoutRoundTargets>;
+  reps: number | null;
+  weight_kg: number | null;
+  duration_s: number | null;
+  distance_m: number | null;
+  elevation_gain_m: number | null;
+  height_cm: number | null;
+  calories_kcal: number | null;
+  avg_speed_m_s: number | null;
+  incline_pct: number | null;
+  level: number | null;
+  avg_power_w: number | null;
+  avg_cadence_per_min: number | null;
+  avg_heart_rate_bpm: number | null;
+  effort: number | null;
+  successes: number | null;
+  attempts: number | null;
+  score: number | null;
+  result: 'win' | 'draw' | 'loss' | null;
+  entered_units: ResultUnits | null;
+  sets: Array<ExerciseSet>;
+};
+export type ExerciseLogReplace = {id: string; exercise_id: string};
+export type ExerciseLogStart = {
+  id: string;
+  exercise_id: string;
+  workout_exercise_id?: string | null;
+  side_mode?: 'combined' | 'per_side';
+};
+export type ExerciseLogUpdate = {
+  rounds?: number;
+  targets_mode?: 'same_for_all' | 'per_round';
+  targets?: Array<WorkoutRoundTargetsCreate>;
+  reps?: number | null;
+  weight_kg?: number | null;
+  duration_s?: number | null;
+  distance_m?: number | null;
+  elevation_gain_m?: number | null;
+  height_cm?: number | null;
+  calories_kcal?: number | null;
+  avg_speed_m_s?: number | null;
+  incline_pct?: number | null;
+  level?: number | null;
+  avg_power_w?: number | null;
+  avg_cadence_per_min?: number | null;
+  avg_heart_rate_bpm?: number | null;
+  effort?: number | null;
+  successes?: number | null;
+  attempts?: number | null;
+  score?: number | null;
+  result?: 'win' | 'draw' | 'loss' | null;
+  entered_units?: ResultUnits | null;
+};
+export type ExerciseMedia = {id: string; url: string; caption: string | null};
+export type ExerciseMediaInput = {id?: string; url: string; caption?: string | null};
+export type ExerciseMetric = {key: ExerciseMetricKey; label: string | null};
+export type ExerciseMetricInput = {key: ExerciseMetricKey; label?: string | null};
+export type ExerciseMetricKey =
+  | 'reps'
+  | 'weight'
+  | 'duration'
+  | 'distance'
+  | 'elevation_gain'
+  | 'height'
+  | 'calories'
+  | 'speed'
+  | 'incline'
+  | 'level'
+  | 'power'
+  | 'cadence'
+  | 'heart_rate'
+  | 'effort'
+  | 'reserve'
+  | 'successes'
+  | 'attempts'
+  | 'score'
+  | 'result'
+  | 'tempo';
+export type ExerciseSet = {
+  id: string;
+  state: 'completed' | 'skipped';
+  round: number;
+  side: 'left' | 'right' | null;
+  reps: number | null;
+  weight_kg: number | null;
+  duration_s: number | null;
+  distance_m: number | null;
+  elevation_gain_m: number | null;
+  height_cm: number | null;
+  calories_kcal: number | null;
+  avg_speed_m_s: number | null;
+  incline_pct: number | null;
+  level: number | null;
+  avg_power_w: number | null;
+  avg_cadence_per_min: number | null;
+  avg_heart_rate_bpm: number | null;
+  effort: number | null;
+  reserve: number | null;
+  successes: number | null;
+  attempts: number | null;
+  score: number | null;
+  result: 'win' | 'draw' | 'loss' | null;
+  entered_units: ResultUnits | null;
+  speed_m_s: number | null;
+  power_w: number | null;
+  cadence_rpm: number | null;
+  heart_rate_bpm: number | null;
+  grade: string | null;
+};
+export type ExerciseSetCorrect = {
+  state?: 'completed' | 'skipped';
+  reps?: number | null;
+  weight_kg?: number | null;
+  duration_s?: number | null;
+  distance_m?: number | null;
+  elevation_gain_m?: number | null;
+  height_cm?: number | null;
+  calories_kcal?: number | null;
+  avg_speed_m_s?: number | null;
+  incline_pct?: number | null;
+  level?: number | null;
+  avg_power_w?: number | null;
+  avg_cadence_per_min?: number | null;
+  avg_heart_rate_bpm?: number | null;
+  effort?: number | null;
+  reserve?: number | null;
+  successes?: number | null;
+  attempts?: number | null;
+  score?: number | null;
+  result?: 'win' | 'draw' | 'loss' | null;
+  entered_units?: ResultUnits | null;
+};
+export type ExerciseSetRecord = {
+  id: string;
+  state: 'completed' | 'skipped';
+  round: number;
+  side?: 'left' | 'right' | null;
+  reps?: number | null;
+  weight_kg?: number | null;
+  duration_s?: number | null;
+  distance_m?: number | null;
+  elevation_gain_m?: number | null;
+  height_cm?: number | null;
+  calories_kcal?: number | null;
+  avg_speed_m_s?: number | null;
+  incline_pct?: number | null;
+  level?: number | null;
+  avg_power_w?: number | null;
+  avg_cadence_per_min?: number | null;
+  avg_heart_rate_bpm?: number | null;
+  effort?: number | null;
+  reserve?: number | null;
+  successes?: number | null;
+  attempts?: number | null;
+  score?: number | null;
+  result?: 'win' | 'draw' | 'loss' | null;
+  entered_units?: ResultUnits | null;
 };
 export type ExerciseUpdate = {
   name?: string;
   kind?: 'movement' | 'activity' | 'sport' | 'practice';
+  instructions?: string | null;
   goals?: Array<string>;
   places?: Array<string>;
-  metrics?: Array<string>;
-  count_label?: string | null;
-  grade_scale?: Array<string>;
-  unilateral?: boolean;
-  equipment?: Array<string>;
+  metrics?: Array<ExerciseMetricInput>;
+  equipment?: string | null;
   muscles?: Array<string>;
-  media?: string | null;
+  media?: Array<ExerciseMediaInput>;
 };
 export type Food = {
   id: string;
@@ -321,6 +485,27 @@ export type MealOption = {
   totals: NutrientTotals;
 };
 export type MealOptionCreate = {name?: string | null; items: Array<MealItemCreate>};
+export type Measurements = {
+  reps?: number | null;
+  weight_kg?: number | null;
+  duration_s?: number | null;
+  distance_m?: number | null;
+  elevation_gain_m?: number | null;
+  height_cm?: number | null;
+  calories_kcal?: number | null;
+  avg_speed_m_s?: number | null;
+  incline_pct?: number | null;
+  level?: number | null;
+  avg_power_w?: number | null;
+  avg_cadence_per_min?: number | null;
+  avg_heart_rate_bpm?: number | null;
+  effort?: number | null;
+  successes?: number | null;
+  attempts?: number | null;
+  score?: number | null;
+  result?: 'win' | 'draw' | 'loss' | null;
+  entered_units?: ResultUnits | null;
+};
 export type Nutrient = {code: string; name: string; unit: string};
 export type NutrientIndex = {data: Array<Nutrient>};
 export type NutrientMap = {[key: string]: number};
@@ -419,6 +604,26 @@ export type PendingBillingCheckout = {
   target_quantity: number;
   status: 'pending' | 'unknown';
   kind: 'create' | 'update';
+};
+export type ResultUnits = {
+  reps?: 'count' | 'reps' | null;
+  weight?: 'kg' | 'lb' | null;
+  duration?: 's' | 'min' | 'h:mm:ss' | null;
+  distance?: 'm' | 'km' | 'mi' | 'yd' | null;
+  elevation_gain?: 'm' | 'ft' | null;
+  height?: 'cm' | 'in' | null;
+  calories?: 'kcal' | null;
+  speed?: 'm/s' | 'km/h' | 'mph' | 'min/km' | 'min/mi' | 'min/100m' | null;
+  incline?: '%' | null;
+  level?: 'level' | null;
+  power?: 'W' | null;
+  cadence?: 'rpm' | 'spm' | null;
+  heart_rate?: 'bpm' | null;
+  effort?: 'RPE' | null;
+  reserve?: 'RIR' | null;
+  successes?: 'count' | null;
+  attempts?: 'count' | null;
+  score?: 'points' | null;
 };
 export type Review = {
   id: string;
@@ -753,7 +958,7 @@ export type Workout = {
   name: string;
   description: string | null;
   type: 'prescribed' | 'video' | 'open';
-  video: string | null;
+  video: {id: string; url: string} | null;
   groups: Array<ExerciseGroup>;
 };
 export type WorkoutCoach = {id: string; name: string};
@@ -761,23 +966,23 @@ export type WorkoutCreate = {
   name: string;
   description?: string | null;
   type?: 'prescribed' | 'video' | 'open';
-  video?: string | null;
+  video_url?: string | null;
   groups?: Array<ExerciseGroupCreate>;
 };
 export type WorkoutExercise = {
   id: string;
   exercise_id: string;
   exercise: Exercise;
+  side_mode: 'combined' | 'per_side';
   targets_mode: 'same_for_all' | 'per_round';
-  targets: Array<WorkoutTargets>;
-  rest: Array<WorkoutTarget | null>;
+  targets: Array<WorkoutRoundTargets>;
 };
 export type WorkoutExerciseCreate = {
   id?: string;
   exercise_id: string;
+  side_mode?: 'combined' | 'per_side';
   targets_mode?: 'same_for_all' | 'per_round';
-  targets?: Array<WorkoutTargets>;
-  rest?: Array<WorkoutTarget | null>;
+  targets?: Array<WorkoutRoundTargetsCreate>;
 };
 export type WorkoutIndex = {data: Array<Workout>; count: number; next_cursor: string | null};
 export type WorkoutListQuery = {
@@ -786,7 +991,104 @@ export type WorkoutListQuery = {
   cursor?: string;
   limit?: number;
 };
+export type WorkoutLog = {
+  id: string;
+  client_id: string;
+  date: string;
+  time: string | null;
+  state: 'active' | 'completed' | 'discarded';
+  recorded_by: 'client' | 'coach';
+  coach_id: string | null;
+  recorder_name: string;
+  effort: number | null;
+  pain: boolean | null;
+  text: string | null;
+  workout_id: string | null;
+  schedule_id: string | null;
+  scheduled_date: string | null;
+  exercise_logs: Array<ExerciseLog>;
+  inserted_at: string;
+  updated_at: string;
+};
+export type WorkoutLogFeedback = {effort?: number | null; pain?: boolean | null; text?: string | null};
+export type WorkoutLogIndex = {count: number; workout_logs: Array<WorkoutLog>};
+export type WorkoutLogListQuery = {
+  date?: string;
+  scheduled_date?: string;
+  state?: 'active' | 'completed' | 'discarded';
+  offset?: number;
+  limit?: number;
+};
+export type WorkoutLogStart = {
+  id?: string;
+  date?: string;
+  time?: string | null;
+  workout_id?: string | null;
+  schedule_id?: string | null;
+  scheduled_date?: string | null;
+};
+export type WorkoutLogUpdate = {
+  date?: string;
+  time?: string | null;
+  effort?: number | null;
+  pain?: boolean | null;
+  text?: string | null;
+};
 export type WorkoutMutation = {data: Workout; undo_token: string};
+export type WorkoutRestTarget = {
+  mode: 'client_chooses' | 'none' | 'exact' | 'range';
+  value_s?: number;
+  min_s?: number;
+  max_s?: number;
+};
+export type WorkoutRoundTargets = {
+  reps?: WorkoutTarget | null;
+  weight?: WorkoutTarget | null;
+  duration?: WorkoutTarget | null;
+  distance?: WorkoutTarget | null;
+  elevation_gain?: WorkoutTarget | null;
+  height?: WorkoutTarget | null;
+  calories?: WorkoutTarget | null;
+  speed?: WorkoutTarget | null;
+  incline?: WorkoutTarget | null;
+  level?: WorkoutTarget | null;
+  power?: WorkoutTarget | null;
+  cadence?: WorkoutTarget | null;
+  heart_rate?: WorkoutTarget | null;
+  effort?: WorkoutTarget | null;
+  reserve?: WorkoutTarget | null;
+  successes?: WorkoutTarget | null;
+  attempts?: WorkoutTarget | null;
+  score?: WorkoutTarget | null;
+  result?: WorkoutTarget | null;
+  grade?: WorkoutTarget | null;
+  tempo?: WorkoutTarget | null;
+  rest: WorkoutRestTarget;
+};
+export type WorkoutRoundTargetsCreate = {
+  reps?: WorkoutTarget | null;
+  weight?: WorkoutTarget | null;
+  duration?: WorkoutTarget | null;
+  distance?: WorkoutTarget | null;
+  elevation_gain?: WorkoutTarget | null;
+  height?: WorkoutTarget | null;
+  calories?: WorkoutTarget | null;
+  speed?: WorkoutTarget | null;
+  incline?: WorkoutTarget | null;
+  level?: WorkoutTarget | null;
+  power?: WorkoutTarget | null;
+  cadence?: WorkoutTarget | null;
+  heart_rate?: WorkoutTarget | null;
+  effort?: WorkoutTarget | null;
+  reserve?: WorkoutTarget | null;
+  successes?: WorkoutTarget | null;
+  attempts?: WorkoutTarget | null;
+  score?: WorkoutTarget | null;
+  result?: WorkoutTarget | null;
+  grade?: WorkoutTarget | null;
+  tempo?: WorkoutTarget | null;
+  rest?: WorkoutRestTarget | null;
+};
 export type WorkoutSchedule = {
   id: string;
   workout_id: string;
@@ -800,6 +1102,7 @@ export type WorkoutSchedule = {
   coach_id: string | null;
 };
 export type WorkoutScheduleCreate = {
+  from_date?: string;
   workout_id?: string;
   library_workout_id?: string;
   weekdays_mask: number;
@@ -817,16 +1120,17 @@ export type WorkoutScheduleUpdate = {
   meeting_url?: string | null;
   coach_id?: string | null;
 };
-export type WorkoutTarget =
-  | {mode: 'exact'; value: number | string}
-  | {mode: 'range'; min: number; max: number}
-  | {mode: 'max'};
-export type WorkoutTargets = {[key: string]: WorkoutTarget};
+export type WorkoutTarget = {
+  mode: 'client_chooses' | 'exact' | 'range' | 'max';
+  value?: number | string;
+  min?: number;
+  max?: number;
+};
 export type WorkoutUpdate = {
   name?: string;
   description?: string | null;
   type?: 'prescribed' | 'video' | 'open';
-  video?: string | null;
+  video_url?: string | null;
   groups?: Array<ExerciseGroupCreate>;
 };
 export type WorkoutWeek = {
@@ -842,7 +1146,7 @@ export type WorkoutWeekUndo = {token: string};
 
 export interface paths {
   /* typed-routes:paths */
-  /* typed-routes:hash 45eb40d3f2af0b92c9be1dc1870aea1bb04259e5ea6e697c32bb82e13f6ae85c */
+  /* typed-routes:hash 06efbd3d74dc3d0ca6909d6f0287e5de26fee9fb7d76728edf08e1b49f12e454 */
   '/api/health': {
     get: {
       parameters: {
@@ -1441,6 +1745,220 @@ export interface paths {
       };
     };
   };
+  '/v1/coach/clients/{client_id}/workout-logs': {
+    get: {
+      parameters: {
+        query?: WorkoutLogListQuery;
+        header?: {Authorization?: string};
+        path: {client_id: string};
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': WorkoutLogIndex}};
+      };
+    };
+    post: {
+      parameters: {
+        query?: never;
+        header?: {Authorization?: string};
+        path: {client_id: string};
+        cookie?: never;
+      };
+      requestBody: {content: {'application/json': WorkoutLogStart}};
+      responses: {
+        201: {content: {'application/json': {data: WorkoutLog}}};
+        200: {content: {'application/json': {data: WorkoutLog}}};
+      };
+    };
+  };
+  '/v1/coach/clients/{client_id}/workout-logs/{id}': {
+    get: {
+      parameters: {
+        query?: never;
+        header?: {Authorization?: string};
+        path: {client_id: string; id: string};
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': {data: WorkoutLog}}};
+      };
+    };
+    patch: {
+      parameters: {
+        query?: never;
+        header?: {Authorization?: string};
+        path: {client_id: string; id: string};
+        cookie?: never;
+      };
+      requestBody: {content: {'application/json': WorkoutLogUpdate}};
+      responses: {
+        200: {content: {'application/json': {data: WorkoutLog}}};
+      };
+    };
+  };
+  '/v1/coach/clients/{client_id}/workout-logs/{id}/discard': {
+    post: {
+      parameters: {
+        query?: never;
+        header?: {Authorization?: string};
+        path: {client_id: string; id: string};
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': {data: WorkoutLog}}};
+      };
+    };
+  };
+  '/v1/coach/clients/{client_id}/workout-logs/{id}/exercise-logs': {
+    post: {
+      parameters: {
+        query?: never;
+        header?: {Authorization?: string};
+        path: {client_id: string; id: string};
+        cookie?: never;
+      };
+      requestBody: {content: {'application/json': ExerciseLogStart}};
+      responses: {
+        201: {content: {'application/json': {data: WorkoutLog}}};
+        200: {content: {'application/json': {data: WorkoutLog}}};
+      };
+    };
+  };
+  '/v1/coach/clients/{client_id}/workout-logs/{id}/exercise-logs/{activity_id}': {
+    patch: {
+      parameters: {
+        query?: never;
+        header?: {Authorization?: string};
+        path: {client_id: string; id: string; activity_id: string};
+        cookie?: never;
+      };
+      requestBody: {content: {'application/json': ExerciseLogUpdate}};
+      responses: {
+        200: {content: {'application/json': {data: WorkoutLog}}};
+      };
+    };
+  };
+  '/v1/coach/clients/{client_id}/workout-logs/{id}/exercise-logs/{activity_id}/complete': {
+    post: {
+      parameters: {
+        query?: never;
+        header?: {Authorization?: string};
+        path: {client_id: string; id: string; activity_id: string};
+        cookie?: never;
+      };
+      requestBody: {content: {'application/json': Measurements}};
+      responses: {
+        200: {content: {'application/json': {data: WorkoutLog}}};
+      };
+    };
+  };
+  '/v1/coach/clients/{client_id}/workout-logs/{id}/exercise-logs/{activity_id}/reopen': {
+    post: {
+      parameters: {
+        query?: never;
+        header?: {Authorization?: string};
+        path: {client_id: string; id: string; activity_id: string};
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': {data: WorkoutLog}}};
+      };
+    };
+  };
+  '/v1/coach/clients/{client_id}/workout-logs/{id}/exercise-logs/{activity_id}/replace': {
+    post: {
+      parameters: {
+        query?: never;
+        header?: {Authorization?: string};
+        path: {client_id: string; id: string; activity_id: string};
+        cookie?: never;
+      };
+      requestBody: {content: {'application/json': ExerciseLogReplace}};
+      responses: {
+        200: {content: {'application/json': {data: WorkoutLog}}};
+      };
+    };
+  };
+  '/v1/coach/clients/{client_id}/workout-logs/{id}/exercise-logs/{activity_id}/sets': {
+    post: {
+      parameters: {
+        query?: never;
+        header?: {Authorization?: string};
+        path: {client_id: string; id: string; activity_id: string};
+        cookie?: never;
+      };
+      requestBody: {content: {'application/json': ExerciseSetRecord}};
+      responses: {
+        201: {content: {'application/json': {data: WorkoutLog}}};
+        200: {content: {'application/json': {data: WorkoutLog}}};
+      };
+    };
+  };
+  '/v1/coach/clients/{client_id}/workout-logs/{id}/exercise-logs/{activity_id}/sets/{set_id}': {
+    delete: {
+      parameters: {
+        query?: never;
+        header?: {Authorization?: string};
+        path: {client_id: string; id: string; activity_id: string; set_id: string};
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': {data: WorkoutLog}}};
+      };
+    };
+    patch: {
+      parameters: {
+        query?: never;
+        header?: {Authorization?: string};
+        path: {client_id: string; id: string; activity_id: string; set_id: string};
+        cookie?: never;
+      };
+      requestBody: {content: {'application/json': ExerciseSetCorrect}};
+      responses: {
+        200: {content: {'application/json': {data: WorkoutLog}}};
+      };
+    };
+  };
+  '/v1/coach/clients/{client_id}/workout-logs/{id}/exercise-logs/{activity_id}/skip': {
+    post: {
+      parameters: {
+        query?: never;
+        header?: {Authorization?: string};
+        path: {client_id: string; id: string; activity_id: string};
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': {data: WorkoutLog}}};
+      };
+    };
+  };
+  '/v1/coach/clients/{client_id}/workout-logs/{id}/finish': {
+    post: {
+      parameters: {
+        query?: never;
+        header?: {Authorization?: string};
+        path: {client_id: string; id: string};
+        cookie?: never;
+      };
+      requestBody: {content: {'application/json': WorkoutLogFeedback}};
+      responses: {
+        200: {content: {'application/json': {data: WorkoutLog}}};
+      };
+    };
+  };
+  '/v1/coach/clients/{client_id}/workout-logs/{id}/reopen': {
+    post: {
+      parameters: {
+        query?: never;
+        header?: {Authorization?: string};
+        path: {client_id: string; id: string};
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': {data: WorkoutLog}}};
+      };
+    };
+  };
   '/v1/coach/clients/{client_id}/workout-schedules': {
     post: {
       parameters: {
@@ -1882,6 +2400,19 @@ export interface paths {
       };
     };
   };
+  '/v1/coach/exercises/{id}/archive': {
+    post: {
+      parameters: {
+        query?: never;
+        header?: {Authorization?: string};
+        path: {id: string};
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': {data: Exercise}}};
+      };
+    };
+  };
   '/v1/coach/exercises/{id}/copy': {
     post: {
       parameters: {
@@ -1892,6 +2423,19 @@ export interface paths {
       };
       responses: {
         201: {content: {'application/json': {data: Exercise}}};
+      };
+    };
+  };
+  '/v1/coach/exercises/{id}/restore': {
+    post: {
+      parameters: {
+        query?: never;
+        header?: {Authorization?: string};
+        path: {id: string};
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': {data: Exercise}}};
       };
     };
   };

@@ -1,781 +1,671 @@
-import {Check, Plus, Repeat} from 'lucide-react';
-import {useLayoutEffect, useRef, useState} from 'react';
-import {useExercises} from '../api/exercises';
+import {measurementFields, parseMeasurement} from '@easy/workouts/measurements';
+import {type MetricKey, metricKeys, metricLabel} from '@easy/workouts/metrics';
+import {mismatch, type RecordingRow, rowsFor, type Slot} from '@easy/workouts/recording';
+import {
+  effortLabel,
+  effortLabels,
+  feedbackBody,
+  hasRecordedWork,
+  inputLabel,
+  type MeasurementBody,
+  type MetricInputs,
+  measurementBody,
+  overallInputKey,
+  planDraft,
+  restModes,
+  roundsFor,
+  savedInput,
+  selectedActivity,
+  slotModel,
+  targetLine,
+  type WorkoutDraft,
+} from '@easy/workouts/session';
+import {type ReactNode, useEffect, useId, useRef, useState} from 'react';
+import {type Exercise, useExercises} from '../api/exercises';
+import type {ExerciseLog, ExerciseLogUpdate, ExerciseSet, WorkoutLog, WorkoutLogFeedback} from '../api/workout-logs';
+import type {Workout, WorkoutExercise} from '../api/workouts';
 import {BottomSheet} from '../ui/bottom-sheet';
 import {Button} from '../ui/button';
-import {cn} from '../ui/cn';
 import {Confirm} from '../ui/confirm';
+import {Label} from '../ui/label';
 import {ReadState} from '../ui/read-state';
 import {SelectItem} from '../ui/select';
 import {SelectField} from '../ui/select-field';
-import {
-  actions,
-  type DoneExercise,
-  dayLabel,
-  difficultyLabel,
-  type Metric,
-  metricLabel,
-  metricValue,
-  rowKey,
-  type SetLog,
-  type Target,
-  targetText,
-  type Workout,
-  type WorkoutExercise,
-  type WorkoutLog,
-  workoutInput,
-} from './model';
+import {dayLabel} from './model';
 import {Choice, Field, ScreenHeader, useFocusOnMount} from './parts';
 
-type Row = {
-  exercise: WorkoutExercise;
-  done: DoneExercise;
-  round: number;
-  side: SetLog['side'];
-  extra: boolean;
-  target: Target;
-  rest: string;
-};
+type WorkoutRow = RecordingRow<WorkoutExercise, ExerciseLog>;
 
-// Every row of an exercise: planned rounds, rounds the client added, and any recorded beyond them.
-function rowsOf(log: WorkoutLog | null, exercise: WorkoutExercise, rounds: number): Row[] {
-  const done = log?.swaps[exercise.id] ?? exercise.original;
-  const recorded = Math.max(
-    0,
-    ...(log?.sets ?? []).filter((set) => set.exerciseId === exercise.id).map((set) => set.round),
-  );
-  const total = Math.max(rounds + (log?.extraRounds[exercise.id] ?? 0), recorded);
-  const rows: Row[] = [];
-  for (let round = 1; round <= total; round++) {
-    const target = exercise.targets[Math.min(round, exercise.targets.length) - 1] ?? {};
-    for (const side of done.unilateral ? (['L', 'R'] as const) : [null]) {
-      rows.push({
-        exercise,
-        done,
-        round,
-        side,
-        extra: round > rounds,
-        target,
-        rest: exercise.restByRound[Math.min(round, exercise.restByRound.length) - 1] ?? '',
-      });
-    }
-  }
-  return rows;
-}
-
-const targetLine = (target: Target, metrics: Metric[]) =>
-  metrics
-    .map((metric) => targetText(target, metric))
-    .filter((text) => text !== 'any')
-    .join(' · ') || 'your choice';
-
-const inputOf = (log: WorkoutLog, row: Row, metric: Metric) =>
-  workoutInput(log, row.exercise.id, row.round, row.side, row.target, metric);
-
-const numbersOf = (log: WorkoutLog, row: Row): SetLog['values'] =>
-  Object.fromEntries(
-    row.done.metrics.flatMap<[string, number | string]>((metric) => {
-      const value = metricValue(inputOf(log, row, metric), metric, row.done);
-      return value === null ? [] : [[metric, value]];
-    }),
-  );
-const invalidRow = (log: WorkoutLog, row: Row) =>
-  row.done.metrics.some(
-    (metric) =>
-      inputOf(log, row, metric).trim() !== '' && metricValue(inputOf(log, row, metric), metric, row.done) === null,
-  );
-
-export function WorkoutLogger({
-  workout,
-  log,
-  date,
-  time,
-  coach,
-  back,
-  canStart,
-  readOnly,
-  startBlockedReason,
-  pending,
-  locked,
-  blocked,
-  error,
-  draftStatus,
-  onRetry,
-  onStart,
-  onChange,
-  onFinish,
-  onDiscard,
-  onDelete,
-  onClose,
-}: {
+type Props = {
   workout: Workout;
-  log: WorkoutLog | null; // null = preview before Start
+  log: WorkoutLog | null;
   date: string;
   time: string | null;
-  coach: string | undefined;
   back: string;
-  canStart: boolean;
   readOnly: boolean;
+  canStart: boolean;
   startBlockedReason: string;
   pending: boolean;
-  locked: boolean;
   blocked: boolean;
+  draft: WorkoutDraft;
   error: string;
-  draftStatus: React.ReactNode;
+  draftStatus: ReactNode;
+  onClose: () => void;
+  onInput: (key: string, metric: MetricKey, value: string) => void;
   onRetry: () => void;
   onStart: () => void;
-  onChange: (log: WorkoutLog) => void;
-  onFinish: (log: WorkoutLog) => void;
-  onDiscard: (log: WorkoutLog) => void;
-  onDelete: (log: WorkoutLog) => void;
-  onClose: () => void;
-}) {
+  onSaveSlot: (row: WorkoutRow, slot: Slot, state: 'completed' | 'skipped', body: MeasurementBody, key: string) => void;
+  onSaveOverall: (row: WorkoutRow, body: MeasurementBody, key: string) => void;
+  onSavePlan: (row: WorkoutRow, body: ExerciseLogUpdate) => void;
+  onCopyTargets: (row: WorkoutRow) => void;
+  onSwap: (row: WorkoutRow, exerciseId: string) => void;
+  onAddActivity: (exerciseId: string) => void;
+  onRemoveSet: (activityId: string, setId: string) => void;
+  onActivityOutcome: (row: WorkoutRow, action: 'completeActivity' | 'skipActivity' | 'reopenActivity') => void;
+  onFinish: (body: WorkoutLogFeedback) => void;
+  onReopen: () => void;
+  onDiscard: () => void;
+};
+
+export function WorkoutLogger(props: Props) {
+  const {workout, log, pending, blocked} = props;
+  const draft = log?.state === 'active' ? props.draft : {...props.draft, inputs: {}};
   const heading = useFocusOnMount();
-  const footer = useRef<HTMLElement>(null);
-  const [footerHeight, setFooterHeight] = useState(0);
-  useLayoutEffect(() => {
-    const element = footer.current;
-    if (!element) {
-      return;
-    }
-    const measure = () => setFooterHeight(element.getBoundingClientRect().height);
-    measure();
-    const observer = new ResizeObserver(measure);
-    observer.observe(element);
-    return () => observer.disconnect();
-  }, []);
-  const [swapping, setSwapping] = useState<{exercise: WorkoutExercise; to?: DoneExercise} | null>(null);
-  const [finishing, setFinishing] = useState(false);
-  const [confirm, setConfirm] = useState<'discard' | 'delete' | null>(null);
-  const editable = log?.state === 'active' && !readOnly;
-  const allRows = workout.groups.flatMap((group) =>
-    group.exercises.flatMap((exercise) => rowsOf(log, exercise, group.rounds)),
-  );
-  const plannedRows = allRows.filter((row) => !row.extra);
-  const isRecorded = (row: Row) =>
-    Boolean(log?.sets.some((s) => s.exerciseId === row.exercise.id && s.round === row.round && s.side === row.side));
-  const unticked = log ? plannedRows.filter((row) => !isRecorded(row)) : [];
-  const invalid = Boolean(log && allRows.some((row) => invalidRow(log, row)));
-  const state = !log ? 'Not started' : log.state === 'completed' ? 'Done' : 'In progress · sets save as you tick them';
-
-  const closeSwap = (exerciseId: string) => {
-    setSwapping(null);
-    requestAnimationFrame(() => {
-      document.getElementById(`swap-${exerciseId}`)?.focus({preventScroll: true});
-    });
-  };
-  const swap = (exercise: WorkoutExercise, to: DoneExercise) => {
-    if (!log) {
-      return;
-    }
-    const swaps = {...log.swaps};
-    if (to.id === exercise.exerciseId) {
-      delete swaps[exercise.id];
-    } else {
-      swaps[exercise.id] = to;
-    }
-    // Recorded values belong to the old exercise's metrics.
-    const sets = log.sets.filter((set) => set.exerciseId !== exercise.id);
-    onChange({
-      ...log,
-      swaps,
-      sets,
-      inputs: Object.fromEntries(Object.entries(log.inputs).filter(([key]) => !key.startsWith(`${exercise.id}:`))),
-    });
-    closeSwap(exercise.id);
-  };
-
+  const [swap, setSwap] = useState<WorkoutRow | 'add' | null>(null);
+  const [plan, setPlan] = useState<WorkoutRow | null>(null);
+  const [finish, setFinish] = useState(false);
+  const [discard, setDiscard] = useState(false);
+  const [remove, setRemove] = useState<{activityId: string; setId: string} | null>(null);
+  const editable = log?.state === 'active' && !props.readOnly;
+  const locked = pending || blocked;
+  const rows = rowsFor(workout, log ?? {exercise_logs: []});
   return (
-    <main
-      className="page"
-      style={{paddingBottom: footerHeight + 24}}
-    >
+    <main className="page pb-36">
       <ScreenHeader
         title={workout.name}
-        subtitle={`${dayLabel(date)}${time ? ` · planned ${time}` : ''} · ${state}`}
-        back={back}
-        onBack={onClose}
         headingRef={heading}
+        back={props.back}
+        onBack={props.onClose}
+        subtitle={`${dayLabel(props.date)}${props.time ? ` · planned ${props.time}` : ''} · ${!log ? 'Not started' : log.state === 'completed' ? 'Completed' : log.state === 'discarded' ? 'Discarded' : 'In progress'}`}
       />
-
-      {workout.instructions && (
-        <p className="mb-5 rounded-2xl bg-[var(--coach)] px-4 py-3 leading-relaxed">{workout.instructions}</p>
+      {workout.description && (
+        <p className="mb-5 rounded-2xl bg-[var(--coach)] p-4 font-medium">{workout.description}</p>
       )}
-      {workout.type === 'video' && (
-        <div className="mb-5">
-          {workout.video && /\.(mp4|webm|mov)(?:\?|$)/i.test(workout.video) ? (
-            <video
-              className="aspect-video w-full rounded-2xl bg-foreground"
-              src={workout.video}
-              controls
-              aria-label={workout.name}
-            >
-              <track kind="captions" />
-            </video>
-          ) : workout.video ? (
-            <a
-              className="inline-flex min-h-12 items-center font-semibold underline"
-              href={workout.video}
-              target="_blank"
-              rel="noreferrer"
-            >
-              Open workout video (opens a new tab)
-            </a>
-          ) : (
-            <p className="text-muted-foreground">No video is available.</p>
-          )}
-        </div>
+      {workout.video && (
+        <a
+          className="mb-4 inline-flex min-h-12 items-center font-semibold underline"
+          href={workout.video.url}
+          target="_blank"
+          rel="noreferrer"
+        >
+          Open workout video (opens a new tab)
+        </a>
       )}
-
-      {log?.state === 'completed' && log.difficulty && (
-        <p className="mb-5 rounded-2xl bg-[var(--progress)] px-4 py-3 font-semibold">
-          {difficultyLabel[log.difficulty]}
-          {log.pain ? ` · Pain: ${log.painNote || 'yes'}` : ' · No pain'} · {log.sets.length} sets
+      {log?.recorded_by === 'coach' && (
+        <p
+          role="status"
+          className="mb-4 rounded-2xl bg-muted p-4 font-semibold"
+        >
+          {log.state === 'active'
+            ? `${log.recorder_name} is recording this session`
+            : `Recorded by ${log.recorder_name}`}
         </p>
       )}
-
-      {workout.groups.map((group) => (
-        <section
-          key={group.id}
-          aria-label={group.label}
-          className="mb-6"
-        >
-          <h2 className="mb-2 text-sm font-bold text-muted-foreground">
-            {group.label} · {group.rounds} rounds
-          </h2>
-          <div className="grid gap-3">
-            {group.exercises.map((exercise, index) => {
-              const rows = rowsOf(log, exercise, group.rounds);
-              const done = rows[0]?.done ?? exercise.original;
-              const swapped = done.id !== exercise.exerciseId;
-              const repeated = workout.groups
-                .flatMap((group) => group.exercises)
-                .some(
-                  (other) => other.id !== exercise.id && (log?.swaps[other.id] ?? other.original).name === done.name,
-                );
-              const accessibleName = repeated ? `${done.name} (${exercise.code})` : done.name;
-              return (
-                <div
-                  key={exercise.id}
-                  className="rounded-2xl border border-border bg-surface p-4"
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0">
-                      <p className="font-bold">
-                        <span className="mr-2 text-muted-foreground tabular-nums">
-                          {group.label.charAt(0)}
-                          {index + 1}
-                        </span>
-                        {done.name}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        {swapped ? `Instead of ${exercise.name} · ` : ''}
-                        {done.unilateral ? 'Each side · ' : ''}
-                        {exercise.rest}
-                      </p>
-                    </div>
-                    {editable && (
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        id={`swap-${exercise.id}`}
-                        aria-label={`Swap ${accessibleName}`}
-                        isDisabled={locked}
-                        onPress={() => setSwapping({exercise})}
-                      >
-                        <Repeat />
-                        Swap
-                      </Button>
-                    )}
+      {log?.state === 'completed' && (
+        <p className="mb-4 font-semibold">
+          {effortLabel(log.effort)}
+          {log.pain === null ? '' : log.pain ? ' · Pain or discomfort reported' : ' · No pain or discomfort'}
+          {log.text && <span className="mt-2 block whitespace-pre-wrap font-medium">{log.text}</span>}
+        </p>
+      )}
+      <div className="grid gap-5">
+        {rows.map((row) => {
+          const selected = selectedActivity(row);
+          const exercise = selected?.exercise ?? row.entry?.exercise;
+          if (!exercise) {
+            return null;
+          }
+          const sourceId = row.entry?.id ?? selected?.id ?? '';
+          const targets = selected?.targets ?? row.entry?.targets ?? [];
+          const targetMode = selected?.targets_mode ?? row.entry?.targets_mode ?? 'same_for_all';
+          const overallKey = overallInputKey(sourceId, exercise.id);
+          const overallInputs = draft.inputs[overallKey] ?? {};
+          const overall = measurementBody(exercise, overallInputs, 'overall', true);
+          const warning = selected ? mismatch(selected) : null;
+          const activitySkipped = selected?.state === 'skipped';
+          return (
+            <section
+              key={sourceId}
+              aria-label={`Activity ${exercise.name}`}
+              className="rounded-2xl border border-border bg-surface p-4"
+            >
+              <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
+                <div>
+                  <h2 className="text-lg font-bold">{exercise.name}</h2>
+                  <p className="text-sm font-medium text-muted-foreground">
+                    {row.entry && exercise.id !== row.entry.exercise_id
+                      ? `Instead of ${row.entry.exercise.name} · `
+                      : ''}
+                    {row.slots.some((slot) => slot.side !== null) ? 'Each side · ' : ''}
+                    {roundsFor(workout, row)} rounds
+                    {activitySkipped
+                      ? ' · Activity skipped'
+                      : selected?.state === 'completed'
+                        ? ' · Activity completed'
+                        : ''}
+                  </p>
+                </div>
+                {editable && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    aria-label={`Swap ${exercise.name}`}
+                    isDisabled={locked}
+                    onPress={() => setSwap(row)}
+                  >
+                    Swap
+                  </Button>
+                )}
+              </div>
+              {!log ? (
+                <ul className="grid gap-2 text-sm font-medium">
+                  {row.slots.map((slot) => (
+                    <li key={`${slot.round}.${slot.side}`}>
+                      Set {slot.round}
+                      {slot.side ? ` ${slot.side}` : ''}:{' '}
+                      {targetLine(exercise, targets[targetMode === 'same_for_all' ? 0 : slot.round - 1])}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <>
+                  <div className="grid gap-3">
+                    {row.slots.map((slot) => (
+                      <SlotRow
+                        key={`${slot.round}.${slot.side}`}
+                        row={row}
+                        slot={slot}
+                        log={log}
+                        fallback={exercise}
+                        draft={draft}
+                        editable={editable && !activitySkipped}
+                        locked={locked}
+                        onInput={props.onInput}
+                        onSave={props.onSaveSlot}
+                        onRemove={(activityId, setId) => setRemove({activityId, setId})}
+                      />
+                    ))}
                   </div>
-                  {log ? (
-                    <div
-                      role="group"
-                      aria-label={`Sets for ${accessibleName}`}
-                      className="mt-3 grid gap-2"
+                  <details
+                    open={exercise.kind === 'activity'}
+                    className="mt-4 border-t border-border pt-3"
+                  >
+                    <summary className="min-h-11 cursor-pointer py-2 font-bold">Overall result</summary>
+                    <fieldset
+                      aria-label={`Overall result for ${exercise.name}`}
+                      className="mt-2 grid gap-3"
                     >
-                      <div
-                        aria-hidden="true"
-                        className="grid grid-cols-[4.5rem_1fr_3rem] gap-2 text-sm font-semibold text-muted-foreground"
-                      >
-                        <span>Set</span>
-                        <span
-                          className="grid gap-2"
-                          style={{
-                            gridTemplateColumns: `repeat(${done.metrics.length > 3 ? 2 : done.metrics.length}, minmax(0, 1fr))`,
+                      <MeasurementInputs
+                        exercise={exercise}
+                        scope="overall"
+                        row={selected ?? null}
+                        inputs={overallInputs}
+                        prefix={`${exercise.name} overall`}
+                        disabled={!editable || activitySkipped || locked}
+                        onInput={(metric, value) => props.onInput(overallKey, metric, value)}
+                      />
+                      {warning && (
+                        <p
+                          role="status"
+                          className="text-sm font-medium text-muted-foreground"
+                        >
+                          {warning}
+                        </p>
+                      )}
+                      {editable && !activitySkipped && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          isDisabled={locked || !overall.ok || !Object.keys(overallInputs).length}
+                          onPress={() => {
+                            if (overall.ok) {
+                              props.onSaveOverall(row, overall.body, overallKey);
+                            }
                           }}
                         >
-                          {done.metrics.map((metric) => (
-                            <span key={metric}>{metricLabel[metric]}</span>
-                          ))}
-                        </span>
-                      </div>
-                      {rows.map((row) => (
-                        <SetRow
-                          key={`${exercise.id}-${done.id}-${row.round}-${row.side}`}
-                          row={row}
-                          accessibleName={accessibleName}
-                          log={log}
-                          editable={editable && !locked}
-                          pending={pending}
-                          recorded={isRecorded(row)}
-                          onChange={onChange}
-                        />
-                      ))}
-                      {editable && (
+                          Save overall result
+                        </Button>
+                      )}
+                    </fieldset>
+                  </details>
+                  {editable && (
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        isDisabled={locked}
+                        onPress={() => setPlan(row)}
+                      >
+                        Edit rounds and rest
+                      </Button>
+                      {selected && row.entry && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          isDisabled={locked || activitySkipped}
+                          onPress={() => props.onCopyTargets(row)}
+                        >
+                          Copy targets
+                        </Button>
+                      )}
+                      {selected?.state === 'completed' || activitySkipped ? (
                         <Button
                           size="sm"
                           variant="ghost"
-                          className="justify-self-start"
-                          aria-label={`Add set of ${accessibleName}`}
                           isDisabled={locked}
-                          onPress={() =>
-                            onChange({
-                              ...log,
-                              extraRounds: {...log.extraRounds, [exercise.id]: (log.extraRounds[exercise.id] ?? 0) + 1},
-                            })
-                          }
+                          onPress={() => props.onActivityOutcome(row, 'reopenActivity')}
                         >
-                          <Plus />
-                          Add set
+                          Reopen activity
                         </Button>
+                      ) : (
+                        <>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            isDisabled={locked}
+                            onPress={() => props.onActivityOutcome(row, 'completeActivity')}
+                          >
+                            Complete activity
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            isDisabled={locked || hasRecordedWork(selected)}
+                            onPress={() => props.onActivityOutcome(row, 'skipActivity')}
+                          >
+                            Skip activity
+                          </Button>
+                        </>
                       )}
                     </div>
-                  ) : (
-                    <ul className="mt-2 grid gap-1 text-sm tabular-nums">
-                      {rows.map((row) => (
-                        <li key={`${row.round}-${row.side}`}>
-                          Set {row.round}
-                          {row.side ? ` ${row.side}` : ''}: {targetLine(row.target, exercise.metrics)}
-                          {row.rest ? ` · ${row.rest}` : ''}
-                        </li>
-                      ))}
-                    </ul>
                   )}
-                </div>
-              );
-            })}
-          </div>
-        </section>
-      ))}
-
-      {draftStatus}
-      <footer
-        ref={footer}
-        className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-background px-5 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))]"
-      >
-        <div className="mx-auto grid max-w-[30rem] gap-2">
-          {(error || blocked) && (
-            <div className="grid gap-2">
-              {error && (
-                <p
-                  role="alert"
-                  className="text-sm font-medium text-destructive"
-                >
-                  {error}
-                </p>
+                </>
               )}
-              {blocked && (
-                <Button
-                  variant="outline"
-                  isPending={pending}
-                  isDisabled={invalid}
-                  onPress={onRetry}
-                >
-                  Retry saving sets
-                </Button>
-              )}
-            </div>
-          )}
-          {!log &&
-            (coach ? (
-              <p className="font-semibold">{coach} records this session.</p>
-            ) : canStart ? (
-              <Button
-                isPending={pending}
-                onPress={onStart}
-              >
-                Start {workout.name}
-              </Button>
-            ) : (
-              <p className="font-semibold">{startBlockedReason}</p>
-            ))}
-          {invalid && <p className="text-sm font-medium text-destructive">Correct set values before finishing.</p>}
-          {log && editable && (
-            <>
-              {workout.type === 'prescribed' && (
-                <p className="text-sm font-semibold tabular-nums">
-                  {plannedRows.length - unticked.length} of {plannedRows.length} planned sets recorded
-                </p>
-              )}
-              <div className="grid grid-cols-[auto_1fr] gap-2">
-                <Button
-                  variant="ghost"
-                  isDisabled={locked}
-                  onPress={() => setConfirm('discard')}
-                >
-                  Discard
-                </Button>
-                <Button
-                  isDisabled={pending || blocked || invalid}
-                  onPress={() => setFinishing(true)}
-                >
-                  {workout.type === 'prescribed' ? 'Finish workout' : 'Mark as done'}
-                </Button>
-              </div>
-            </>
-          )}
-          {log?.state === 'completed' && !readOnly && (
-            <div className="grid grid-cols-2 gap-2">
-              <Button
-                variant="destructive"
-                isDisabled={locked}
-                onPress={() => setConfirm('delete')}
-              >
-                Delete workout
-              </Button>
-              <Button
-                variant="outline"
-                isDisabled={locked}
-                onPress={() => onChange({...log, state: 'active'})}
-              >
-                Edit
-              </Button>
-            </div>
-          )}
-        </div>
-      </footer>
-
-      {swapping && !swapping.to && log && (
-        <BottomSheet
-          title={`Swap ${(log.swaps[swapping.exercise.id] ?? swapping.exercise).name}`}
-          onClose={() => closeSwap(swapping.exercise.id)}
+            </section>
+          );
+        })}
+      </div>
+      {editable && (
+        <Button
+          className="mt-4"
+          variant="outline"
+          isDisabled={locked}
+          onPress={() => setSwap('add')}
         >
-          <p className="mb-3 text-muted-foreground">Your coach sees what you did instead.</p>
+          Add activity
+        </Button>
+      )}
+      {props.draftStatus}
+      <footer className="mt-6 grid gap-3 rounded-2xl border-t border-border bg-background py-4">
+        {props.error && (
+          <p
+            role="alert"
+            className="font-medium text-destructive"
+          >
+            {props.error}
+          </p>
+        )}
+        {blocked && (
+          <>
+            <p
+              role="status"
+              className="font-medium"
+            >
+              An action is kept on this device. Retry saving before another change.
+            </p>
+            <Button
+              variant="outline"
+              isPending={pending}
+              onPress={props.onRetry}
+            >
+              Retry saving
+            </Button>
+          </>
+        )}
+        {!log &&
+          (props.canStart ? (
+            <Button
+              isPending={pending}
+              isDisabled={blocked}
+              onPress={props.onStart}
+            >
+              Start {workout.name}
+            </Button>
+          ) : (
+            <p className="font-medium">{props.startBlockedReason}</p>
+          ))}
+        {editable && (
+          <div className="grid grid-cols-[auto_1fr] gap-2">
+            <Button
+              variant="ghost"
+              isDisabled={locked}
+              onPress={() => setDiscard(true)}
+            >
+              Discard
+            </Button>
+            <Button
+              isDisabled={locked}
+              onPress={() => setFinish(true)}
+            >
+              Finish workout
+            </Button>
+          </div>
+        )}
+        {log?.state === 'completed' && !props.readOnly && (
+          <Button
+            variant="outline"
+            isDisabled={locked}
+            onPress={props.onReopen}
+          >
+            Reopen
+          </Button>
+        )}
+      </footer>
+      {swap && (
+        <BottomSheet
+          title={
+            swap === 'add'
+              ? 'Add activity'
+              : `Swap ${selectedActivity(swap)?.exercise.name ?? swap.entry?.exercise.name ?? ''}`
+          }
+          onClose={() => setSwap(null)}
+        >
           <ExerciseChoices
-            original={swapping.exercise.original}
-            onPick={(choice) =>
-              log.sets.some((set) => set.exerciseId === swapping.exercise.id)
-                ? setSwapping({...swapping, to: choice})
-                : swap(swapping.exercise, choice)
-            }
+            onPick={(choice) => {
+              if (swap === 'add') {
+                props.onAddActivity(choice.id);
+              } else {
+                props.onSwap(swap, choice.id);
+              }
+              setSwap(null);
+            }}
           />
         </BottomSheet>
       )}
-      {swapping?.to && log && (
-        <Confirm
-          title={`Swap to ${swapping.to.name}?`}
-          action="Swap and clear sets"
-          cancel="Cancel"
-          destructive
-          pending={pending}
-          onConfirm={() => swapping.to && swap(swapping.exercise, swapping.to)}
-          onClose={() => closeSwap(swapping.exercise.id)}
-        >
-          The {log.sets.filter((set) => set.exerciseId === swapping.exercise.id).length} sets you recorded for{' '}
-          {swapping.exercise.name} are cleared, because {swapping.to.name} records different values.
-        </Confirm>
-      )}
-      {finishing && log && (
-        <FinishSheet
-          log={log}
-          unticked={unticked.length}
-          onClose={() => setFinishing(false)}
-          pending={pending}
-          error={error}
-          onSave={(feedback, recordRest) => {
-            // "Record them as planned" records each unticked planned set with its typed or target values.
-            const added = recordRest
-              ? unticked.flatMap((row) => {
-                  const values = numbersOf(log, row);
-                  return Object.keys(values).length > 0
-                    ? [actions.newSet(row.exercise, row.done, row.round, row.side, values)]
-                    : [];
-                })
-              : [];
-            onFinish({...log, ...feedback, sets: [...log.sets, ...added], inputs: {}, state: 'completed'});
+      {plan && (
+        <PlanEditor
+          row={plan}
+          onClose={() => setPlan(null)}
+          onSave={(body) => {
+            props.onSavePlan(plan, body);
+            setPlan(null);
           }}
         />
       )}
-      {confirm === 'discard' && log && (
+      {finish && log && (
+        <FinishSheet
+          log={log}
+          pending={pending || blocked}
+          error={props.error}
+          onClose={() => setFinish(false)}
+          onSave={props.onFinish}
+        />
+      )}
+      {discard && (
         <Confirm
           title={`Discard ${workout.name}?`}
           action="Discard workout"
           cancel="Keep going"
           destructive
           pending={pending}
-          onConfirm={() => onDiscard(log)}
-          onClose={() => setConfirm(null)}
+          onClose={() => setDiscard(false)}
+          onConfirm={props.onDiscard}
         >
-          The {log.sets.length} sets you recorded are removed. The workout stays on the plan.
+          The recorded results remain in your history. This workout will no longer be marked completed.
         </Confirm>
       )}
-      {confirm === 'delete' && log && (
+      {remove && (
         <Confirm
-          title={`Delete ${workout.name}?`}
-          action="Delete workout"
-          cancel="Cancel"
+          title="Remove this set?"
+          action="Remove set"
+          cancel="Keep set"
           destructive
           pending={pending}
-          onConfirm={() => onDelete(log)}
-          onClose={() => setConfirm(null)}
+          onClose={() => setRemove(null)}
+          onConfirm={() => {
+            props.onRemoveSet(remove.activityId, remove.setId);
+            setRemove(null);
+          }}
         >
-          Its {log.sets.length} sets and your feedback are removed. The day shows it as not recorded.
+          This removes only this set's outcome and measurements. Its slot becomes unrecorded.
         </Confirm>
       )}
     </main>
   );
 }
 
-function SetRow({
+function SlotRow({
   row,
-  accessibleName,
+  slot,
   log,
+  fallback,
+  draft,
   editable,
-  pending,
-  recorded,
-  onChange,
+  locked,
+  onInput,
+  onSave,
+  onRemove,
 }: {
-  row: Row;
-  accessibleName: string;
+  row: WorkoutRow;
+  slot: Slot;
   log: WorkoutLog;
+  fallback: Exercise;
+  draft: WorkoutDraft;
   editable: boolean;
-  pending: boolean;
-  recorded: boolean;
-  onChange: (log: WorkoutLog) => void;
+  locked: boolean;
+  onInput: Props['onInput'];
+  onSave: Props['onSaveSlot'];
+  onRemove: Props['onRemoveSet'];
 }) {
-  const key = rowKey(row.exercise.id, row.round, row.side);
-  const label = `${row.round}${row.side ? ` ${row.side}` : ''}`;
-  const values = numbersOf(log, row);
-  const ready = Object.keys(values).length > 0 && !invalidRow(log, row);
-  const others = log.sets.filter(
-    (s) => !(s.exerciseId === row.exercise.id && s.round === row.round && s.side === row.side),
-  );
-
-  const type = (metric: Metric, input: string) => {
-    const inputs = {...log.inputs, [key]: {...log.inputs[key], [metric]: input}};
-    const next = {...log, inputs};
-    if (recorded && !invalidRow(next, row)) {
-      const typed = numbersOf(next, row);
-      // A recorded set follows its edits; clearing every value unticks it.
-      next.sets =
-        Object.keys(typed).length > 0
-          ? [
-              ...others,
-              {
-                ...(log.sets.find(
-                  (set) => set.exerciseId === row.exercise.id && set.round === row.round && set.side === row.side,
-                ) ?? actions.newSet(row.exercise, row.done, row.round, row.side, typed)),
-                values: typed,
-              },
-            ]
-          : others;
+  const legend = useRef<HTMLLegendElement>(null);
+  const restoreFocus = useRef(false);
+  useEffect(() => {
+    if (restoreFocus.current && !locked) {
+      restoreFocus.current = false;
+      legend.current?.focus({preventScroll: true});
     }
-    onChange(next);
+  }, [locked]);
+  const model = slotModel(log, row, slot, draft, fallback);
+  if (!model) {
+    return null;
+  }
+  const {view, exercise, key, inputs, body, label, name, target} = model;
+  const save = (state: 'completed' | 'skipped', values: MeasurementBody) => {
+    if (!editable || locked) {
+      return;
+    }
+    restoreFocus.current = true;
+    legend.current?.focus({preventScroll: true});
+    onSave(row, slot, state, values, key);
   };
-
   return (
-    <div
-      role="group"
-      aria-label={`${accessibleName} set ${label}`}
-      className={cn(
-        'grid grid-cols-[4.5rem_1fr_3rem] items-start gap-2 rounded-xl px-1 py-1',
-        recorded && 'bg-[var(--progress)]',
-      )}
+    <fieldset
+      aria-label={name}
+      className="min-w-0 rounded-xl bg-background p-3"
     >
-      <span className="pt-1">
-        <span className="block font-semibold tabular-nums">
-          {label}
-          {row.extra ? ' · extra' : ''}
-        </span>
-        {/* The target stays visible while the client types (it is never only a placeholder). */}
-        <span className="block text-sm text-muted-foreground tabular-nums">
-          {targetLine(row.target, row.done.metrics)}
-          {row.rest ? ` · ${row.rest}` : ''}
-        </span>
-      </span>
-      <span
-        className="grid gap-2"
-        style={{
-          gridTemplateColumns: `repeat(${row.done.metrics.length > 3 ? 2 : row.done.metrics.length}, minmax(0, 1fr))`,
-        }}
+      <legend
+        ref={legend}
+        tabIndex={-1}
+        className="max-w-full break-words rounded-sm font-bold outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
       >
-        {row.done.metrics.map((metric) =>
-          metric === 'result' || metric === 'grade' ? (
-            <SelectField
-              key={metric}
-              aria-label={`${accessibleName} set ${label} ${metricLabel[metric]}`}
-              value={inputOf(log, row, metric)}
-              isDisabled={!editable}
-              onChange={(input) => type(metric, input)}
-            >
-              <SelectItem id="">Choose</SelectItem>
-              {(metric === 'result' ? ['win', 'draw', 'loss'] : row.done.grade_scale).map((value) => (
-                <SelectItem
-                  key={value}
-                  id={value}
-                >
-                  {value}
-                </SelectItem>
-              ))}
-            </SelectField>
-          ) : (
-            <Field
-              key={metric}
-              label={`${accessibleName} set ${label} ${metricLabel[metric] ?? metric}`}
-              hideLabel
-              inputMode="decimal"
-              error={
-                inputOf(log, row, metric).trim() !== '' &&
-                metricValue(inputOf(log, row, metric), metric, row.done) === null
-                  ? `Enter a valid ${metricLabel[metric] ?? metric} value.`
-                  : null
+        {name}
+      </legend>
+      <p className="mb-2 text-sm font-medium text-muted-foreground">Target: {targetLine(exercise, target)}</p>
+      <p
+        className="mb-2 font-semibold"
+        role="status"
+      >
+        {view.kind === 'completed' ? 'Done' : view.kind === 'skipped' ? 'Skipped' : 'Unrecorded'}
+      </p>
+      <MeasurementInputs
+        exercise={exercise}
+        scope="detail"
+        row={view.set}
+        inputs={inputs}
+        prefix={name}
+        disabled={!editable || locked}
+        onInput={(metric, value) => onInput(key, metric, value)}
+      />
+      {view.set && (
+        <SavedExtraValues
+          exercise={exercise}
+          set={view.set}
+        />
+      )}
+      {editable && (
+        <div className="mt-3 flex flex-wrap gap-2">
+          <Button
+            size="sm"
+            variant={view.kind === 'completed' ? 'outline' : 'default'}
+            isDisabled={locked || !body.ok}
+            aria-label={
+              view.kind === 'completed'
+                ? `Save changes to set ${label} of ${exercise.name}`
+                : `Done set ${label} of ${exercise.name}`
+            }
+            onPress={() => {
+              if (body.ok) {
+                save('completed', body.body);
               }
-              value={inputOf(log, row, metric)}
-              onChange={(input) => type(metric, input)}
-              isDisabled={!editable}
-              inputClassName="text-center tabular-nums"
-            />
-          ),
-        )}
-      </span>
-      <Button
-        size="icon"
-        variant={recorded ? 'default' : 'outline'}
-        aria-label={
-          recorded ? `Set ${label} of ${accessibleName} recorded. Untick` : `Record set ${label} of ${accessibleName}`
+            }}
+          >
+            {view.kind === 'completed' ? 'Save changes' : 'Done'}
+          </Button>
+          {view.kind === 'unrecorded' && (
+            <Button
+              size="sm"
+              variant="outline"
+              isDisabled={locked}
+              aria-label={`Skip set ${label} of ${exercise.name}`}
+              onPress={() => save('skipped', {})}
+            >
+              Skip
+            </Button>
+          )}
+          {view.set && view.activity && (
+            <Button
+              size="sm"
+              variant="ghost"
+              isDisabled={locked}
+              aria-label={`Remove set ${label} of ${exercise.name}`}
+              onPress={() => {
+                if (view.activity && view.set) {
+                  onRemove(view.activity.id, view.set.id);
+                }
+              }}
+            >
+              Remove
+            </Button>
+          )}
+        </div>
+      )}
+    </fieldset>
+  );
+}
+
+function MeasurementInputs({
+  exercise,
+  scope,
+  row,
+  inputs,
+  prefix,
+  disabled,
+  onInput,
+}: {
+  exercise: Exercise;
+  scope: 'overall' | 'detail';
+  row: Parameters<typeof savedInput>[0];
+  inputs: MetricInputs;
+  prefix: string;
+  disabled: boolean;
+  onInput: (metric: MetricKey, value: string) => void;
+}) {
+  const fieldId = useId();
+  return (
+    <div className="grid grid-cols-1 gap-3 min-[360px]:grid-cols-2">
+      {exercise.metrics.map((metric) => {
+        const definition = measurementFields[metric.key];
+        if (!definition || (scope === 'overall' && definition.scope === 'detail')) {
+          return null;
         }
-        aria-pressed={recorded}
-        isDisabled={!editable || pending || (!recorded && !ready)}
-        onPress={() =>
-          onChange({
-            ...log,
-            sets: recorded ? others : [...others, actions.newSet(row.exercise, row.done, row.round, row.side, values)],
-          })
-        }
-      >
-        <Check />
-      </Button>
+        const value = inputs[metric.key] ?? savedInput(row, metric.key);
+        const parsed = parseMeasurement(metric.key, value);
+        const label = `${prefix} ${inputLabel(metric)}`;
+        return metric.key === 'result' ? (
+          <div
+            key={metric.key}
+            className="grid gap-2"
+          >
+            <Label
+              id={`${fieldId}-${metric.key}-label`}
+              htmlFor={`${fieldId}-${metric.key}`}
+            >
+              {label}
+            </Label>
+            <SelectField
+              key={metric.key}
+              id={`${fieldId}-${metric.key}`}
+              value={value}
+              isDisabled={disabled}
+              onChange={(next) => onInput(metric.key, next)}
+            >
+              <SelectItem id="">Unanswered</SelectItem>
+              <SelectItem id="win">Win</SelectItem>
+              <SelectItem id="draw">Draw</SelectItem>
+              <SelectItem id="loss">Loss</SelectItem>
+            </SelectField>
+          </div>
+        ) : (
+          <Field
+            key={metric.key}
+            label={label}
+            value={value}
+            isDisabled={disabled}
+            inputMode={metric.key === 'duration' ? 'text' : 'decimal'}
+            onChange={(next) => onInput(metric.key, next)}
+            error={parsed.ok ? null : parsed.message}
+          />
+        );
+      })}
     </div>
   );
 }
 
-function FinishSheet({
-  log,
-  unticked,
-  onSave,
-  onClose,
-  pending,
-  error,
-}: {
-  pending: boolean;
-  error: string;
-  log: WorkoutLog;
-  unticked: number;
-  onSave: (feedback: Pick<WorkoutLog, 'difficulty' | 'pain' | 'painNote'>, recordRest: boolean) => void;
-  onClose: () => void;
-}) {
-  const [rest, setRest] = useState<'record' | 'skip'>();
-  const [difficulty, setDifficulty] = useState<WorkoutLog['difficulty']>(log.difficulty);
-  const [pain, setPain] = useState<'no' | 'yes' | undefined>(log.pain === null ? undefined : log.pain ? 'yes' : 'no');
-  const [note, setNote] = useState(log.painNote ?? '');
-  const missing = [
-    unticked > 0 && !rest ? 'the unticked sets' : null,
-    !difficulty ? 'how hard it was' : null,
-    !pain ? 'whether anything hurt' : null,
-  ].filter(Boolean);
-  return (
-    <BottomSheet
-      title="Finish workout"
-      pending={pending}
-      onClose={() => {
-        if (!pending) {
-          onClose();
-        }
-      }}
-    >
-      <fieldset
-        disabled={pending}
-        className="grid gap-5"
-      >
-        {unticked > 0 && (
-          <fieldset className="grid gap-2">
-            <legend className="mb-2 font-semibold">
-              {unticked} planned {unticked === 1 ? 'set is' : 'sets are'} not ticked
-            </legend>
-            <Choice
-              label="Unticked sets"
-              value={rest}
-              options={[
-                {value: 'record', label: 'Record them as planned'},
-                {value: 'skip', label: 'Finish without them'},
-              ]}
-              onChange={setRest}
-            />
-          </fieldset>
-        )}
-        <fieldset className="grid gap-2">
-          <legend className="mb-2 font-semibold">How hard was it?</legend>
-          <Choice
-            label="How hard was it?"
-            value={difficulty ?? undefined}
-            options={(['too_easy', 'just_right', 'too_hard'] as const).map((value) => ({
-              value,
-              label: difficultyLabel[value],
-            }))}
-            onChange={setDifficulty}
-          />
-        </fieldset>
-        <fieldset className="grid gap-2">
-          <legend className="mb-2 font-semibold">Did anything hurt?</legend>
-          <Choice
-            label="Did anything hurt?"
-            value={pain}
-            options={[
-              {value: 'no', label: 'No'},
-              {value: 'yes', label: 'Yes'},
-            ]}
-            onChange={setPain}
-          />
-        </fieldset>
-        {pain === 'yes' && (
-          <Field
-            label="Where, and when? (optional)"
-            value={note}
-            onChange={setNote}
-          />
-        )}
-        {missing.length > 0 && <p className="text-sm text-muted-foreground">Answer {missing.join(', ')} to save.</p>}
-        {error && (
-          <p
-            role="alert"
-            className="text-sm text-destructive"
-          >
-            {error} Try Save workout again.
-          </p>
-        )}
-        <Button
-          isPending={pending}
-          isDisabled={missing.length > 0 || pending}
-          onPress={() => {
-            if (!pending && difficulty && pain) {
-              onSave(
-                {difficulty, pain: pain === 'yes', painNote: pain === 'yes' ? note.trim() : ''},
-                rest === 'record',
-              );
-            }
-          }}
-        >
-          Save workout
-        </Button>
-      </fieldset>
-    </BottomSheet>
-  );
+function SavedExtraValues({exercise, set}: {exercise: Exercise; set: ExerciseSet}) {
+  const selected = new Set(exercise.metrics.map((metric) => metric.key));
+  const extra = metricKeys
+    .filter((key) => !selected.has(key))
+    .flatMap((key) => {
+      const value = savedInput(set, key);
+      return value === '' ? [] : [`${metricLabel(key)}: ${value}`];
+    });
+  for (const [label, value] of [
+    ['Speed (m/s)', set.speed_m_s],
+    ['Power (W)', set.power_w],
+    ['Cadence', set.cadence_rpm],
+    ['Heart rate (bpm)', set.heart_rate_bpm],
+    ['Grade', set.grade],
+  ]) {
+    if (value !== null) {
+      extra.push(`${label}: ${value}`);
+    }
+  }
+  return extra.length ? <p className="mt-2 text-sm font-medium text-muted-foreground">{extra.join(' · ')}</p> : null;
 }
-function ExerciseChoices({original, onPick}: {original: DoneExercise; onPick: (choice: DoneExercise) => void}) {
+
+function ExerciseChoices({onPick}: {onPick: (exercise: Exercise) => void}) {
   const [search, setSearch] = useState('');
   const query = useExercises(search);
-  const choices = [original, ...(query.data?.data ?? []).filter((row) => row.id !== original.id)];
   return (
     <>
       <Field
@@ -783,7 +673,6 @@ function ExerciseChoices({original, onPick}: {original: DoneExercise; onPick: (c
         type="search"
         value={search}
         onChange={setSearch}
-        autoFocus
       />
       {!query.data ? (
         <ReadState
@@ -795,37 +684,185 @@ function ExerciseChoices({original, onPick}: {original: DoneExercise; onPick: (c
         />
       ) : (
         <ul className="mt-3 grid gap-1">
-          {choices.map((choice, index) => {
-            const duplicates = choices.filter((row) => row.name === choice.name);
-            const source = choice.is_builtin ? 'Built-in' : "Coach's exercise";
-            const repeatedSource = duplicates.filter((row) => row.is_builtin === choice.is_builtin).length > 1;
-            const suffix =
-              choice.id === original.id
-                ? ' (as planned)'
-                : duplicates.length > 1
-                  ? ` · ${source}${repeatedSource ? ` (choice ${index + 1})` : ''}`
-                  : '';
-            return (
-              <li key={choice.id}>
-                <Button
-                  variant="ghost"
-                  className="h-auto min-h-12 w-full flex-col items-start whitespace-normal text-left"
-                  onPress={() => onPick(choice)}
-                >
-                  <span>
-                    {choice.name}
-                    {suffix}
-                  </span>
-                  <span className="text-sm font-medium text-muted-foreground">
-                    {choice.unilateral ? 'Each side · ' : ''}
-                    {choice.metrics.map((metric) => metricLabel[metric] ?? metric).join(' · ')}
-                  </span>
-                </Button>
-              </li>
-            );
-          })}
+          {query.data.data.map((exercise) => (
+            <li key={exercise.id}>
+              <Button
+                variant="ghost"
+                className="h-auto min-h-12 w-full flex-col items-start whitespace-normal text-left"
+                onPress={() => onPick(exercise)}
+              >
+                <span>{exercise.name}</span>
+                <span className="text-sm font-medium text-muted-foreground">
+                  {exercise.metrics.map((metric) => metricLabel(metric.key, metric)).join(' · ')}
+                </span>
+              </Button>
+            </li>
+          ))}
+          {query.data.data.length === 0 && <li>No exercises match this search.</li>}
         </ul>
       )}
     </>
+  );
+}
+
+function FinishSheet({
+  log,
+  pending,
+  error,
+  onSave,
+  onClose,
+}: {
+  log: WorkoutLog;
+  pending: boolean;
+  error: string;
+  onSave: Props['onFinish'];
+  onClose: () => void;
+}) {
+  const [effort, setEffort] = useState(log.effort === null ? '' : String(log.effort));
+  const [pain, setPain] = useState(log.pain === null ? '' : log.pain ? 'yes' : 'no');
+  const [text, setText] = useState(log.text ?? '');
+  return (
+    <BottomSheet
+      title="Finish workout"
+      pending={pending}
+      onClose={onClose}
+    >
+      <fieldset
+        disabled={pending}
+        className="grid gap-5"
+      >
+        <fieldset>
+          <legend className="mb-2 font-semibold">How hard was this session? (optional)</legend>
+          <Choice
+            label="How hard was this session?"
+            value={effort || undefined}
+            options={effortLabels.map((label, index) => ({value: String(index + 1), label}))}
+            onChange={setEffort}
+          />
+        </fieldset>
+        <fieldset>
+          <legend className="mb-2 font-semibold">Any pain or discomfort? (optional)</legend>
+          <Choice
+            label="Any pain or discomfort?"
+            value={pain || undefined}
+            options={[
+              {value: 'yes', label: 'Yes'},
+              {value: 'no', label: 'No'},
+            ]}
+            onChange={setPain}
+          />
+        </fieldset>
+        <Field
+          label="Note (optional)"
+          value={text}
+          onChange={setText}
+        />
+        {error && (
+          <p
+            role="alert"
+            className="font-medium text-destructive"
+          >
+            {error}
+          </p>
+        )}
+        <Button
+          isPending={pending}
+          onPress={() => {
+            onSave(feedbackBody(log, {effort, pain, text}));
+          }}
+        >
+          Save workout
+        </Button>
+      </fieldset>
+    </BottomSheet>
+  );
+}
+
+function PlanEditor({
+  row,
+  onClose,
+  onSave,
+}: {
+  row: WorkoutRow;
+  onClose: () => void;
+  onSave: (body: ExerciseLogUpdate) => void;
+}) {
+  const [initial] = useState(() => planDraft(row, '', []));
+  const [rounds, setRounds] = useState(String(initial.initialRounds));
+  const [rests, setRests] = useState(initial.rests);
+  const {mode, minimum, rests: draftRests, valid, body} = planDraft(row, rounds, rests);
+  return (
+    <BottomSheet
+      title="Edit rounds and rest"
+      onClose={onClose}
+    >
+      <div className="grid gap-4">
+        <Field
+          label="Planned rounds"
+          inputMode="numeric"
+          value={rounds}
+          onChange={setRounds}
+        />
+        {draftRests.map((rest, index) => (
+          <fieldset
+            key={index}
+            className="grid gap-3"
+          >
+            <legend className="mb-2 font-semibold">
+              {mode === 'same_for_all' ? 'Rest after each round' : `Rest after round ${index + 1}`}
+            </legend>
+            <SelectField
+              aria-label={`Rest mode after round ${index + 1}`}
+              value={rest.mode}
+              onChange={(value) => {
+                const mode = restModes.find((mode) => mode === value);
+                if (mode) {
+                  setRests(draftRests.map((item, position) => (position === index ? {...item, mode} : item)));
+                }
+              }}
+            >
+              <SelectItem id="client_chooses">Client chooses</SelectItem>
+              <SelectItem id="none">None</SelectItem>
+              <SelectItem id="exact">Exact</SelectItem>
+              <SelectItem id="range">Range</SelectItem>
+            </SelectField>
+            {(rest.mode === 'exact'
+              ? (['value'] as const)
+              : rest.mode === 'range'
+                ? (['min', 'max'] as const)
+                : []
+            ).map((field) => (
+              <Field
+                key={field}
+                label={`${field === 'value' ? 'Rest' : field === 'min' ? 'Minimum rest' : 'Maximum rest'} in seconds`}
+                inputMode="decimal"
+                value={rest[field]}
+                onChange={(value) =>
+                  setRests(draftRests.map((item, position) => (position === index ? {...item, [field]: value} : item)))
+                }
+              />
+            ))}
+          </fieldset>
+        ))}
+        {!valid && (
+          <p
+            role="alert"
+            className="font-medium text-destructive"
+          >
+            Use {minimum} to 10,000 rounds and a valid rest duration or range. Recorded rounds must stay included.
+          </p>
+        )}
+        <Button
+          isDisabled={!valid}
+          onPress={() => {
+            if (body) {
+              onSave(body);
+            }
+          }}
+        >
+          Save plan changes
+        </Button>
+      </div>
+    </BottomSheet>
   );
 }

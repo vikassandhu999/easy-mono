@@ -1,31 +1,41 @@
 defmodule Easy.Workouts.WorkoutExercise do
   use Ecto.Schema
   import Ecto.Changeset
+
+  alias Easy.Workouts.{Exercise, RoundTargets}
+
   @primary_key {:id, :binary_id, autogenerate: true}
-  @foreign_key_type :binary_id
   @type t :: %__MODULE__{}
-  schema "workout_exercises" do
-    field :position, :integer
-    field :targets_mode, Ecto.Enum, values: [:same_for_all, :per_round], default: :same_for_all
-    field :targets, {:array, :map}, default: [%{}]
-    field :rest, {:array, :map}, default: []
-    field :exercise_snapshot, :map
-    belongs_to :business, Easy.Orgs.Business
-    belongs_to :exercise_group, Easy.Workouts.ExerciseGroup
-    belongs_to :exercise, Easy.Workouts.Exercise
-    timestamps(type: :utc_datetime)
+
+  embedded_schema do
+    field(:exercise_id, :binary_id)
+    field(:exercise, :map, virtual: true)
+
+    field(:side_mode, Ecto.Enum,
+      values: [:combined, :per_side],
+      default: :combined
+    )
+
+    field(:targets_mode, Ecto.Enum,
+      values: [:same_for_all, :per_round],
+      default: :same_for_all
+    )
+
+    embeds_many(:targets, Easy.Workouts.RoundTargets, on_replace: :delete)
   end
 
-  @spec insert_changeset(String.t(), String.t(), map()) :: Ecto.Changeset.t()
-  def insert_changeset(business_id, group_id, attrs),
-    do: %__MODULE__{} |> change(business_id: business_id, exercise_group_id: group_id) |> update_changeset(attrs)
+  @spec changeset(t(), map(), Exercise.t(), pos_integer()) :: Ecto.Changeset.t()
+  def changeset(workout_exercise, attrs, %Exercise{} = exercise, rounds) do
+    workout_exercise
+    |> cast(attrs, [:exercise_id, :side_mode, :targets_mode], empty_values: [])
+    |> validate_required([:exercise_id, :side_mode, :targets_mode])
+    |> validate_exercise_reference(exercise)
+    |> RoundTargets.cast_many(exercise, rounds)
+  end
 
-  @spec update_changeset(t(), map()) :: Ecto.Changeset.t()
-  def update_changeset(row, attrs),
-    do:
-      row
-      |> cast(attrs, [:exercise_id, :position, :targets_mode, :targets, :rest])
-      |> validate_required([:exercise_id, :position, :targets_mode])
-      |> validate_number(:position, greater_than_or_equal_to: 0)
-      |> foreign_key_constraint(:exercise_id)
+  defp validate_exercise_reference(changeset, exercise) do
+    if not is_nil(exercise.id) and get_field(changeset, :exercise_id) == exercise.id,
+      do: changeset,
+      else: add_error(changeset, :exercise_id, "must match the resolved exercise")
+  end
 end

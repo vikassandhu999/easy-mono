@@ -7,6 +7,8 @@ defmodule EasyWeb.Coaches.ExerciseController do
   typed(:create, body: Exercise.create(), ok: {201, data(Exercise.t())})
   typed(:update, body: Exercise.update(), ok: {200, data(Exercise.t())})
   typed(:copy, ok: {201, data(Exercise.t())})
+  typed(:archive, ok: {200, data(Exercise.t())})
+  typed(:restore, ok: {200, data(Exercise.t())})
   typed(:delete, ok: {204, nil})
   @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def index(conn, _params), do: with({:ok, result} <- Workouts.list_exercises(conn.assigns.ctx, opts(conn.query_params)), do: ok(conn, result))
@@ -26,5 +28,13 @@ defmodule EasyWeb.Coaches.ExerciseController do
   @spec delete(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def delete(conn, _params), do: with({:ok, _result} <- Workouts.delete_exercise(conn.assigns.ctx, conn.path_params["id"]), do: ok(conn))
 
-  defp opts(q), do: Enum.map([:search, :kind, :goal, :place, :equipment, :muscle, :type, :cursor, :limit], &{&1, q[to_string(&1)]})
+  @spec archive(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def archive(conn, _params), do: with({:ok, result} <- Workouts.archive_exercise(conn.assigns.ctx, conn.path_params["id"]), do: ok(conn, %{data: result}))
+
+  @spec restore(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def restore(conn, _params), do: with({:ok, result} <- Workouts.restore_exercise(conn.assigns.ctx, conn.path_params["id"]), do: ok(conn, %{data: result}))
+
+  defp opts(q), do: Enum.map([:search, :archived, :kind, :goal, :place, :equipment, :muscle, :type, :cursor, :limit], &{&1, query_value(q, &1)})
+  defp query_value(q, :archived), do: q["archived"] in [true, "true"]
+  defp query_value(q, key), do: q[to_string(key)]
 end

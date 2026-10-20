@@ -1,5 +1,6 @@
 defmodule Easy.WorkoutsTest do
   use Easy.DataCase, async: true
+  alias Easy.Attachments.Attachment
   alias Easy.Clients.Client
   alias Easy.{Ctx, Workouts}
   alias Easy.Workouts.{Exercise, Timing, Undo, Workout, WorkoutSchedule}
@@ -24,8 +25,7 @@ defmodule Easy.WorkoutsTest do
               %{
                 exercise_id: f.exercise.id,
                 targets_mode: "same_for_all",
-                targets: [%{"reps" => %{"mode" => "exact", "value" => 8}}],
-                rest: [%{"mode" => "range", "min" => 60, "max" => 90}]
+                targets: [%{reps: %{mode: "exact", value: 8}, rest: %{mode: "range", min_s: 60, max_s: 90}}]
               }
             ]
           }
@@ -56,12 +56,58 @@ defmodule Easy.WorkoutsTest do
     Repo.update!(change(schedule, from_date: Date.add(f.today, -30)))
   end
 
+  defp entry_attrs(entry) do
+    entry
+    |> Ecto.embedded_dump(:json)
+    |> Map.take([:id, :exercise_id, :side_mode, :targets_mode, :targets])
+  end
+
+  defp content_attrs(workout) do
+    %{
+      name: workout.name,
+      description: workout.description,
+      type: workout.type,
+      groups: Enum.map(workout.groups, &Ecto.embedded_dump(&1, :json))
+    }
+  end
+
+  defp reference_ids(workout) do
+    Repo.all(
+      from r in "workout_exercises",
+        where: r.workout_id == type(^workout.id, :binary_id),
+        select: type(r.exercise_id, :binary_id),
+        order_by: r.exercise_id
+    )
+  end
+
+  # Insert directly while the recording writer is retired until Task 5.
+  defp insert_workout_log(f, workout) do
+    now = DateTime.utc_now(:second)
+
+    {1, nil} =
+      Repo.insert_all("workout_logs", [
+        %{
+          id: Ecto.UUID.dump!(Ecto.UUID.generate()),
+          business_id: Ecto.UUID.dump!(f.ctx.business_id),
+          client_id: Ecto.UUID.dump!(f.client.id),
+          workout_id: Ecto.UUID.dump!(workout.id),
+          recorded_by: "client",
+          state: "active",
+          date: f.today,
+          inserted_at: now,
+          updated_at: now
+        }
+      ])
+  end
+
   test "every exercise read/write is scoped and built-ins are shared read-only", f do
     foreign = insert(:exercise)
     assert {:error, :not_found} = Workouts.get_exercise(f.ctx, foreign.id)
     assert {:error, :not_found} = Workouts.update_exercise(f.ctx, foreign.id, %{name: "No"})
     assert {:error, :not_found} = Workouts.delete_exercise(f.ctx, foreign.id)
     assert {:error, :not_found} = Workouts.copy_exercise(f.ctx, foreign.id)
+    assert {:error, :not_found} = Workouts.archive_exercise(f.ctx, foreign.id)
+    assert {:error, :not_found} = Workouts.restore_exercise(f.ctx, foreign.id)
     assert {:ok, %{count: 1, data: [mine]}} = Workouts.list_exercises(f.ctx, search: f.exercise.name)
     assert mine.id == f.exercise.id
 
@@ -75,16 +121,15 @@ defmodule Easy.WorkoutsTest do
              })
 
     assert new.business_id == f.ctx.business_id
-    assert new.metrics == ["duration"]
+    assert Enum.map(new.metrics, & &1.key) == [:duration]
 
     assert {:ok, edited} =
              Workouts.update_exercise(f.ctx, new.id, %{
                kind: "activity",
-               metrics: ["distance", "duration"],
-               unilateral: true
+               metrics: [%{key: "distance"}, %{key: "duration", label: "Time"}]
              })
 
-    assert edited.unilateral and edited.metrics == ["distance", "duration"]
+    assert Enum.map(edited.metrics, &{&1.key, &1.label}) == [{:distance, nil}, {:duration, "Time"}]
     assert {:ok, copy} = Workouts.copy_exercise(f.ctx, new.id)
     assert copy.id != new.id and copy.business_id == f.ctx.business_id
     assert {:ok, _} = Workouts.delete_exercise(f.ctx, copy.id)
@@ -98,7 +143,7 @@ defmodule Easy.WorkoutsTest do
 
   test "taxonomy and full metric catalogue validate values and order", f do
     metrics =
-      ~w(reps weight duration distance elevation_gain height calories speed incline level power cadence heart_rate effort reserve successes attempts score result grade tempo)
+      ~w(reps weight duration distance elevation_gain height calories speed incline level power cadence heart_rate effort reserve successes attempts score result tempo)
 
     assert {:ok, exercise} =
              Workouts.create_exercise(f.ctx, %{
@@ -106,19 +151,17 @@ defmodule Easy.WorkoutsTest do
                kind: "sport",
                goals: ["skill"],
                places: ["court/field"],
-               metrics: metrics,
-               grade_scale: ["V0", "V1"]
+               metrics: Enum.map(metrics, &%{key: &1})
              })
 
-    assert exercise.metrics == metrics
+    assert Enum.map(exercise.metrics, &to_string(&1.key)) == metrics
 
     for patch <- [
-          %{goals: []},
           %{goals: ["unknown"]},
           %{places: ["court_field"]},
-          %{metrics: ["custom"]},
-          %{metrics: ["reps", "reps"]},
-          %{metrics: ["grade"], grade_scale: []},
+          %{metrics: [%{key: "custom"}]},
+          %{metrics: [%{key: "reps"}, %{key: "reps"}]},
+          %{metrics: [%{key: "grade"}]},
           %{goals: ["skill", "skill"]}
         ] do
       assert {:error, %Ecto.Changeset{}} = Workouts.update_exercise(f.ctx, exercise.id, patch)
@@ -145,7 +188,7 @@ defmodule Easy.WorkoutsTest do
   test "all client reads and writes deny foreign clients and foreign row ids", f do
     foreign_client = insert(:client)
     foreign_ctx = trainer_ctx(foreign_client.coach)
-    {:ok, %{data: foreign}} = Workouts.create_workout_for_client(foreign_ctx, foreign_client.id, %{name: "Foreign"})
+    {:ok, %{data: foreign}} = Workouts.create_workout_for_client(foreign_ctx, foreign_client.id, %{name: "Foreign", type: "open"})
 
     {:ok, %{data: schedule, undo_token: token}} =
       Workouts.add_schedule_for_client(foreign_ctx, foreign_client.id, %{workout_id: foreign.id, weekdays_mask: 127})
@@ -239,6 +282,82 @@ defmodule Easy.WorkoutsTest do
     assert current.id == copy.id and length(current_schedules) == 2
   end
 
+  test "an identical save changes nothing", f do
+    row = client_workout(f)
+    row = Repo.update!(change(row, updated_at: DateTime.add(row.updated_at, -60)))
+    old = past(f, row)
+    future = scheduled(f, row, %{time: "18:30:00"})
+    equivalent = attrs(f, %{name: "  Lower A  "})
+    equivalent = put_in(equivalent, [:groups, Access.at(0), :rounds], "3")
+    equivalent = put_in(equivalent, [:groups, Access.at(0), :exercises, Access.at(0), :targets, Access.at(0), :reps, :value], "8")
+
+    for input <- [%{}, %{name: row.name}, equivalent, content_attrs(row)] do
+      assert {:ok, %{data: saved}} = Workouts.update_workout_for_client(f.ctx, f.client.id, row.id, input)
+      assert saved.id == row.id
+      assert saved.groups == row.groups
+      assert saved.updated_at == row.updated_at
+      assert saved.archived_at == nil
+      assert Repo.get!(WorkoutSchedule, old.id) == old
+      assert Repo.get!(WorkoutSchedule, future.id) == future
+      assert Repo.aggregate(Workout, :count) == 1
+    end
+  end
+
+  test "unchanged library and future-only workouts retain their nested identities", f do
+    assert {:ok, library} = Workouts.create_workout(f.ctx, attrs(f))
+    assert {:ok, saved} = Workouts.update_workout(f.ctx, library.id, attrs(f))
+    assert saved.groups == library.groups
+
+    row = client_workout(f)
+    schedule = scheduled(f, row)
+    assert {:ok, %{data: saved}} = Workouts.update_workout_for_client(f.ctx, f.client.id, row.id, attrs(f))
+    assert {saved.id, saved.groups, saved.archived_at} == {row.id, row.groups, nil}
+    assert Repo.get!(WorkoutSchedule, schedule.id) == schedule
+  end
+
+  test "changes to rounds, targets, or rest still preserve the earlier prescription", f do
+    inputs = [
+      put_in(attrs(f), [:groups, Access.at(0), :rounds], 4),
+      put_in(attrs(f), [:groups, Access.at(0), :exercises, Access.at(0), :targets, Access.at(0), :reps, :value], 10),
+      put_in(attrs(f), [:groups, Access.at(0), :exercises, Access.at(0), :targets, Access.at(0), :rest], %{mode: "exact", value_s: 120})
+    ]
+
+    for input <- inputs do
+      row = client_workout(f)
+      schedule = past(f, row)
+      assert {:ok, %{data: copy}} = Workouts.update_workout_for_client(f.ctx, f.client.id, row.id, input)
+      assert copy.id != row.id
+      assert Repo.get!(Workout, row.id).archived_at
+      assert Repo.get!(WorkoutSchedule, schedule.id).workout_id == row.id
+      assert {:ok, retained} = Workouts.get_workout_for_client(f.ctx, f.client.id, row.id)
+
+      assert hd(retained.groups).rounds == 3
+      target = hd(hd(hd(retained.groups).exercises).targets)
+      assert {target.reps.mode, target.reps.value} == {:exact, 8}
+      assert {target.rest.mode, target.rest.min_s, target.rest.max_s} == {:range, Decimal.new(60), Decimal.new(90)}
+    end
+  end
+
+  test "an otherwise unchanged historical workout still rejects invalid content", f do
+    row = client_workout(f)
+    schedule = past(f, row)
+
+    invalid_inputs = [
+      %{name: "   "},
+      %{name: nil},
+      put_in(attrs(f), [:groups, Access.at(0), :rounds], 0),
+      put_in(attrs(f), [:groups, Access.at(0), :exercises], []),
+      put_in(attrs(f), [:groups, Access.at(0), :exercises, Access.at(0), :targets, Access.at(0), :reps, :value], 1.5)
+    ]
+
+    for input <- invalid_inputs do
+      assert {:error, _} = Workouts.update_workout_for_client(f.ctx, f.client.id, row.id, input)
+      assert Repo.get!(Workout, row.id).archived_at == nil
+      assert Repo.get!(WorkoutSchedule, schedule.id) == schedule
+      assert Repo.aggregate(Workout, :count) == 1
+    end
+  end
+
   test "a past range without an applicable weekday does not freeze content", f do
     row = client_workout(f)
     next_day = Date.add(f.today, 1)
@@ -269,15 +388,14 @@ defmodule Easy.WorkoutsTest do
     assert restored.id == row.id and length(restored_rows) == 2
   end
 
-  test "catalogue edits never rewrite exercise names metrics or sides in prescriptions", f do
+  test "catalogue edits appear through current exercise references while targets and side mode stay fixed", f do
     row = client_workout(f)
     past(f, row)
 
     assert {:ok, _} =
              Workouts.update_exercise(f.ctx, f.exercise.id, %{
                name: "New movement",
-               metrics: ["duration"],
-               unilateral: true
+               metrics: [%{key: "reps", label: "Count"}, %{key: "weight"}]
              })
 
     assert {:ok, %{data: copy}} =
@@ -286,9 +404,10 @@ defmodule Easy.WorkoutsTest do
     for id <- [row.id, copy.id] do
       {:ok, saved} = Workouts.get_workout_for_client(f.ctx, f.client.id, id)
       item = hd(hd(saved.groups).exercises)
-      assert item.exercise_snapshot["name"] == f.exercise.name
-      assert item.exercise_snapshot["metrics"] == ["reps", "weight"]
-      refute item.exercise_snapshot["unilateral"]
+      assert item.exercise.name == "New movement"
+      assert Enum.map(item.exercise.metrics, &{&1.key, &1.label}) == [{:reps, "Count"}, {:weight, nil}]
+      assert item.side_mode == :combined
+      assert hd(item.targets).reps.value == 8
     end
   end
 
@@ -364,43 +483,252 @@ defmodule Easy.WorkoutsTest do
   end
 
   test "per-round targets and rest match rounds and use only selected metrics", f do
-    valid = [%{"reps" => %{"mode" => "exact", "value" => 5}}, %{"weight" => %{"mode" => "exact", "value" => -10}}, %{}]
+    valid = [
+      %{reps: %{mode: "exact", value: 5}, rest: %{mode: "none"}},
+      %{weight: %{mode: "exact", value: -10}, rest: %{mode: "exact", value_s: 60}},
+      %{rest: %{mode: "client_chooses"}}
+    ]
 
-    group = %{
-      rounds: 3,
-      exercises: [
-        %{
-          exercise_id: f.exercise.id,
-          targets_mode: "per_round",
-          targets: valid,
-          rest: [nil, %{"mode" => "exact", "value" => 60}, nil]
-        }
-      ]
-    }
-
+    group = %{rounds: 3, exercises: [%{exercise_id: f.exercise.id, targets_mode: "per_round", targets: valid}]}
     assert {:ok, row} = Workouts.create_workout(f.ctx, attrs(f, %{groups: [group]}))
-    assert hd(hd(row.groups).exercises).targets == valid
+    targets = hd(hd(row.groups).exercises).targets
+    assert Enum.map(targets, & &1.rest.mode) == [:none, :exact, :client_chooses]
+    assert hd(targets).reps.value == 5
+    assert Decimal.equal?(Enum.at(targets, 1).weight.value, -10)
 
     for target <- [
-          %{"unknown" => %{"mode" => "exact", "value" => 5}},
-          %{"reps" => %{"mode" => "exact", "value" => 1.5}},
-          %{"weight" => %{"mode" => "percent", "value" => 75}},
-          %{"reps" => %{"mode" => "range", "min" => 10, "max" => 5}}
+          %{unknown: %{mode: "exact", value: 5}},
+          %{reps: %{mode: "exact", value: 1.5}},
+          %{weight: %{mode: "percent", value: 75}},
+          %{reps: %{mode: "range", min: 10, max: 5}},
+          %{duration: %{mode: "exact", value: 30}}
         ] do
       invalid = put_in(group, [:exercises], [%{exercise_id: f.exercise.id, targets: [target]}])
-      assert {:error, :invalid_prescription} = Workouts.create_workout(f.ctx, attrs(f, %{groups: [invalid]}))
+      assert {:error, %Ecto.Changeset{}} = Workouts.create_workout(f.ctx, attrs(f, %{groups: [invalid]}))
     end
 
-    assert {:error, :invalid_prescription} =
+    assert {:error, %Ecto.Changeset{}} =
              Workouts.create_workout(f.ctx, attrs(f, %{groups: [%{rounds: 3, exercises: []}]}))
 
     assert {:ok, _} = Workouts.create_workout(f.ctx, %{name: "Empty draft", groups: []})
     assert {:error, %Ecto.Changeset{}} = Workouts.create_workout(f.ctx, %{name: "Video", type: "video"})
 
     assert {:error, %Ecto.Changeset{}} =
-             Workouts.create_workout(f.ctx, %{name: "Open", type: "open", video: "https://example.com"})
+             Workouts.create_workout(f.ctx, %{name: "Open", type: "open", video_url: "https://example.com/v.mp4"})
 
-    assert {:ok, _} = Workouts.create_workout(f.ctx, %{name: "Video", type: "video", video: "https://example.com"})
+    assert {:ok, _} =
+             Workouts.create_workout(f.ctx, %{name: "Video", type: "video", video_url: "https://example.com/v.mp4"})
+  end
+
+  test "an identical save after logging starts creates no copy", f do
+    row = client_workout(f)
+    row = Repo.update!(change(row, updated_at: DateTime.add(row.updated_at, -60)))
+    schedule = scheduled(f, row)
+    insert_workout_log(f, row)
+
+    for input <- [attrs(f), content_attrs(row)] do
+      assert {:ok, %{data: saved}} = Workouts.update_workout_for_client(f.ctx, f.client.id, row.id, input)
+
+      assert {saved.id, saved.groups, saved.updated_at, saved.archived_at} ==
+               {row.id, row.groups, row.updated_at, nil}
+
+      assert Repo.get!(WorkoutSchedule, schedule.id) == schedule
+      assert Repo.aggregate(Workout, :count) == 1
+      assert reference_ids(saved) == [f.exercise.id]
+    end
+  end
+
+  test "an edit after a log references the workout copies it", f do
+    row = client_workout(f)
+    schedule = scheduled(f, row)
+    insert_workout_log(f, row)
+    input = put_in(attrs(f), [:groups, Access.at(0), :exercises, Access.at(0), :targets, Access.at(0), :reps, :value], 12)
+
+    assert {:ok, %{data: copy}} = Workouts.update_workout_for_client(f.ctx, f.client.id, row.id, input)
+    assert copy.id != row.id
+    assert hd(hd(hd(copy.groups).exercises).targets).reps.value == 12
+    original = Repo.get!(Workout, row.id)
+    assert original.archived_at
+    assert content_attrs(original).groups == content_attrs(row).groups
+    assert Repo.get!(WorkoutSchedule, schedule.id).workout_id == copy.id
+    assert reference_ids(copy) == [f.exercise.id]
+    assert reference_ids(original) == [f.exercise.id]
+  end
+
+  test "editing after an unlogged past occurrence keeps the old content for that date", f do
+    row = client_workout(f)
+    past_date = Date.add(f.today, -7)
+    schedule = scheduled(f, row, %{weekdays_mask: Timing.bit(Date.day_of_week(past_date))})
+    Repo.update!(change(schedule, from_date: past_date))
+    input = put_in(attrs(f), [:groups, Access.at(0), :exercises, Access.at(0), :targets, Access.at(0), :reps, :value], 12)
+
+    assert {:ok, %{data: copy}} = Workouts.update_workout_for_client(f.ctx, f.client.id, row.id, input)
+    assert copy.id != row.id
+    assert Repo.get!(Workout, row.id).archived_at
+    assert Repo.get!(WorkoutSchedule, schedule.id).until_date == past_date
+    assert {:ok, %{workouts: [historical]}} = Workouts.read_week_for_client(f.ctx, f.client.id, on: past_date)
+    assert historical.id == row.id
+    assert hd(hd(hd(historical.groups).exercises).targets).reps.value == 8
+    assert {:ok, %{workouts: [current]}} = Workouts.read_week_for_client(f.ctx, f.client.id)
+    assert current.id == copy.id
+    assert hd(hd(hd(current.groups).exercises).targets).reps.value == 12
+  end
+
+  test "a future-only workout is edited in place", f do
+    row = client_workout(f)
+    schedule = scheduled(f, row, %{from_date: Date.add(f.today, 7)})
+    assert {:ok, %{data: saved}} = Workouts.update_workout_for_client(f.ctx, f.client.id, row.id, %{name: "Next week"})
+    assert {saved.id, saved.name, saved.archived_at} == {row.id, "Next week", nil}
+    assert hd(saved.groups).id == hd(row.groups).id
+    assert Repo.get!(WorkoutSchedule, schedule.id) == schedule
+  end
+
+  test "copying a workout generates fresh embedded ids", f do
+    assert {:ok, row} = Workouts.create_workout(f.ctx, attrs(f))
+    assert {:ok, copy} = Workouts.copy_workout(f.ctx, row.id)
+    assert copy.id != row.id
+    assert hd(copy.groups).id != hd(row.groups).id
+    original = hd(hd(row.groups).exercises)
+    copied = hd(hd(copy.groups).exercises)
+    assert copied.id != original.id
+
+    assert {copied.exercise_id, copied.side_mode, copied.targets} ==
+             {original.exercise_id, original.side_mode, original.targets}
+
+    assert reference_ids(copy) == [f.exercise.id]
+  end
+
+  test "membership rows follow content and block exercise deletion", f do
+    second = insert(:exercise, business: f.client.business)
+
+    group = %{
+      rounds: 3,
+      exercises: [
+        %{exercise_id: f.exercise.id, targets: [%{}]},
+        %{exercise_id: f.exercise.id, targets: [%{}]},
+        %{exercise_id: second.id, targets: [%{}]}
+      ]
+    }
+
+    assert {:ok, row} = Workouts.create_workout(f.ctx, attrs(f, %{groups: [group]}))
+    assert reference_ids(row) == Enum.sort([f.exercise.id, second.id])
+    assert {:error, :in_use} = Workouts.delete_exercise(f.ctx, f.exercise.id)
+    assert {:error, :in_use} = Workouts.delete_exercise(f.ctx, second.id)
+    assert {:ok, saved} = Workouts.update_workout(f.ctx, row.id, attrs(f))
+    assert reference_ids(saved) == [f.exercise.id]
+    assert {:ok, _} = Workouts.delete_exercise(f.ctx, second.id)
+    assert {:ok, saved} = Workouts.update_workout(f.ctx, row.id, %{groups: []})
+    assert reference_ids(saved) == []
+    assert {:ok, _} = Workouts.delete_exercise(f.ctx, f.exercise.id)
+  end
+
+  test "a scheduled workout cannot lose its last group", f do
+    row = client_workout(f)
+    schedule = scheduled(f, row)
+    assert {:error, changeset} = Workouts.update_workout_for_client(f.ctx, f.client.id, row.id, %{groups: []})
+    assert errors_on(changeset).groups == ["must contain exercises before scheduling"]
+    assert content_attrs(Repo.get!(Workout, row.id)).groups == content_attrs(row).groups
+    assert Repo.get!(WorkoutSchedule, schedule.id) == schedule
+
+    assert {:ok, %{data: draft}} = Workouts.create_workout_for_client(f.ctx, f.client.id, %{name: "Draft"})
+    assert {:error, changeset} = Workouts.add_schedule_for_client(f.ctx, f.client.id, %{workout_id: draft.id, weekdays_mask: 127})
+    assert errors_on(changeset).groups == ["must contain exercises before scheduling"]
+    assert {:ok, %{data: filled}} = Workouts.update_workout_for_client(f.ctx, f.client.id, draft.id, attrs(f))
+    assert scheduled(f, filled).workout_id == filled.id
+  end
+
+  test "a new archived exercise is rejected but a retained one saves", f do
+    row = client_workout(f)
+    assert {:ok, _} = Workouts.archive_exercise(f.ctx, f.exercise.id)
+    assert {:ok, %{data: saved}} = Workouts.update_workout_for_client(f.ctx, f.client.id, row.id, %{name: "Retained"})
+    assert hd(hd(saved.groups).exercises).exercise.archived_at
+    assert reference_ids(saved) == [f.exercise.id]
+    assert {:error, changeset} = Workouts.create_workout(f.ctx, attrs(f))
+    assert %Ecto.Changeset{} = changeset
+    assert Map.has_key?(errors_on(changeset), :groups)
+
+    second = insert(:exercise, business: f.client.business)
+    assert {:ok, _} = Workouts.archive_exercise(f.ctx, second.id)
+    input = put_in(attrs(f), [:groups, Access.at(0), :exercises, Access.at(0), :exercise_id], second.id)
+    assert {:error, changeset} = Workouts.update_workout_for_client(f.ctx, f.client.id, row.id, input)
+    assert Map.has_key?(errors_on(changeset), :groups)
+    assert reference_ids(row) == [f.exercise.id]
+  end
+
+  test "per_side keeps one target entry per round", f do
+    input = attrs(f)
+    input = put_in(input, [:groups, Access.at(0), :exercises, Access.at(0), :side_mode], "per_side")
+    input = put_in(input, [:groups, Access.at(0), :exercises, Access.at(0), :targets_mode], "per_round")
+    targets = for count <- [5, 6, 7], do: %{reps: %{mode: "exact", value: count}, rest: %{mode: "none"}}
+    input = put_in(input, [:groups, Access.at(0), :exercises, Access.at(0), :targets], targets)
+    assert {:ok, row} = Workouts.create_workout(f.ctx, input)
+    entry = hd(hd(row.groups).exercises)
+    assert {entry.side_mode, length(entry.targets)} == {:per_side, 3}
+    assert Enum.map(entry.targets, & &1.reps.value) == [5, 6, 7]
+    doubled = put_in(input, [:groups, Access.at(0), :exercises, Access.at(0), :targets], targets ++ targets)
+    assert {:error, %Ecto.Changeset{}} = Workouts.update_workout(f.ctx, row.id, doubled)
+  end
+
+  test "a blank name returns a changeset error", f do
+    row = client_workout(f)
+    past(f, row)
+    assert {:error, changeset} = Workouts.update_workout_for_client(f.ctx, f.client.id, row.id, %{name: "   "})
+    assert [_ | _] = errors_on(changeset).name
+    assert Repo.get!(Workout, row.id).archived_at == nil
+    assert Repo.aggregate(Workout, :count) == 1
+  end
+
+  test "undo restores content, schedules and membership", f do
+    row = client_workout(f)
+    schedule = past(f, row)
+    second = insert(:exercise, business: f.client.business)
+    input = put_in(attrs(f), [:groups, Access.at(0), :exercises, Access.at(0), :exercise_id], second.id)
+    assert {:ok, %{data: copy, undo_token: token}} = Workouts.update_workout_for_client(f.ctx, f.client.id, row.id, input)
+    assert reference_ids(copy) == [second.id]
+    assert {:ok, %{workouts: [restored], schedules: [restored_schedule]}} = Workouts.undo_for_client(f.ctx, f.client.id, token)
+    assert {restored.id, restored.groups, restored.archived_at} == {row.id, row.groups, nil}
+    assert restored_schedule.id == schedule.id
+    assert Repo.get!(WorkoutSchedule, schedule.id) == schedule
+    assert reference_ids(restored) == [f.exercise.id]
+    refute Repo.get(Workout, copy.id)
+    assert reference_ids(copy) == []
+    assert {:ok, _} = Workouts.delete_exercise(f.ctx, second.id)
+    assert {:error, :in_use} = Workouts.delete_exercise(f.ctx, f.exercise.id)
+  end
+
+  test "video_url creates one attachment and an unchanged url keeps it", f do
+    url = "https://example.com/v.mp4"
+    assert {:ok, row} = Workouts.create_workout(f.ctx, %{name: "Video", type: "video", video_url: url})
+    attachment = Repo.get!(Attachment, row.video_id)
+    assert {attachment.source, attachment.external_url, attachment.client_id} == {:external_link, url, nil}
+    assert attachment.business_id == f.ctx.business_id
+    assert {:ok, saved} = Workouts.update_workout(f.ctx, row.id, %{video_url: url})
+    assert {saved.video_id, saved.updated_at} == {row.video_id, row.updated_at}
+    assert Repo.aggregate(from(a in Attachment, where: a.business_id == ^f.ctx.business_id), :count) == 1
+    assert {:ok, copy} = Workouts.copy_workout(f.ctx, row.id)
+    assert copy.video_id != row.video_id
+    assert Repo.get!(Attachment, copy.video_id).external_url == url
+    assert {:ok, cleared} = Workouts.update_workout(f.ctx, copy.id, %{type: "open", video_url: nil})
+    assert cleared.video_id == nil
+    assert Repo.get!(Attachment, copy.video_id).external_url == url
+  end
+
+  test "a chosen future start date is kept and a past one is rejected", f do
+    row = client_workout(f)
+    future = Date.add(f.today, 7)
+    schedule = scheduled(f, row, %{from_date: future})
+    assert schedule.from_date == future
+
+    assert {:error, changeset} =
+             Workouts.add_schedule_for_client(f.ctx, f.client.id, %{
+               workout_id: row.id,
+               weekdays_mask: 127,
+               from_date: Date.add(f.today, -1)
+             })
+
+    assert %Ecto.Changeset{} = changeset
+    assert Map.has_key?(errors_on(changeset), :from_date)
+    assert Repo.get!(WorkoutSchedule, schedule.id) == schedule
   end
 
   test "exercise and workout cursors retain literal searches timestamp ties and deleted anchors", f do
@@ -454,12 +782,12 @@ defmodule Easy.WorkoutsTest do
     assert live.id == merged.id
   end
 
-  test "moving an existing exercise between cards retains its frozen catalogue values", f do
+  test "moving an entry between groups keeps its id", f do
     second = insert(:exercise, business: f.client.business)
 
     groups = [
-      %{rounds: 3, exercises: [%{exercise_id: f.exercise.id}]},
-      %{rounds: 3, exercises: [%{exercise_id: second.id}]}
+      %{rounds: 3, exercises: [%{exercise_id: f.exercise.id, targets: [%{rest: %{mode: "none"}}]}]},
+      %{rounds: 3, exercises: [%{exercise_id: second.id, targets: [%{rest: %{mode: "none"}}]}]}
     ]
 
     {:ok, row} = Workouts.create_workout(f.ctx, attrs(f, %{groups: groups}))
@@ -467,8 +795,7 @@ defmodule Easy.WorkoutsTest do
     {:ok, _} =
       Workouts.update_exercise(f.ctx, f.exercise.id, %{
         name: "Changed catalogue",
-        metrics: ["duration"],
-        unilateral: true
+        metrics: [%{key: "reps", label: "Count"}, %{key: "weight"}]
       })
 
     first = hd(row.groups)
@@ -482,8 +809,8 @@ defmodule Easy.WorkoutsTest do
           id: last.id,
           rounds: 3,
           exercises: [
-            Map.take(other, [:id, :exercise_id, :targets_mode, :targets, :rest]),
-            Map.take(item, [:id, :exercise_id, :targets_mode, :targets, :rest])
+            entry_attrs(other),
+            entry_attrs(item)
           ]
         }
       ]
@@ -492,17 +819,17 @@ defmodule Easy.WorkoutsTest do
     assert {:ok, saved} = Workouts.update_workout(f.ctx, row.id, body)
     moved = List.last(hd(saved.groups).exercises)
     assert moved.id == item.id
-    assert moved.exercise_snapshot["name"] == f.exercise.name
-    assert moved.exercise_snapshot["metrics"] == ["reps", "weight"]
-    refute moved.exercise_snapshot["unilateral"]
+    assert moved.exercise.name == "Changed catalogue"
+    assert Enum.map(moved.exercise.metrics, & &1.key) == [:reps, :weight]
+    assert moved.side_mode == :combined
   end
 
   test "group and exercise order follows the saved arrays after a reorder", f do
     second = insert(:exercise, business: f.client.business)
 
     groups = [
-      %{name: "Second", rounds: 2, exercises: [%{exercise_id: second.id}, %{exercise_id: f.exercise.id}]},
-      %{name: "First", rounds: 3, exercises: [%{exercise_id: f.exercise.id}]}
+      %{name: "Second", rounds: 2, exercises: [%{exercise_id: second.id, targets: [%{rest: %{mode: "none"}}]}, %{exercise_id: f.exercise.id, targets: [%{rest: %{mode: "none"}}]}]},
+      %{name: "First", rounds: 3, exercises: [%{exercise_id: f.exercise.id, targets: [%{rest: %{mode: "none"}}]}]}
     ]
 
     assert {:ok, row} = Workouts.create_workout(f.ctx, attrs(f, %{groups: groups}))
@@ -541,6 +868,8 @@ defmodule Easy.WorkoutsTest do
       fn -> Workouts.update_exercise(client_ctx, id, %{}) end,
       fn -> Workouts.copy_exercise(client_ctx, id) end,
       fn -> Workouts.delete_exercise(client_ctx, id) end,
+      fn -> Workouts.archive_exercise(client_ctx, id) end,
+      fn -> Workouts.restore_exercise(client_ctx, id) end,
       fn -> Workouts.list_workouts(client_ctx) end,
       fn -> Workouts.get_workout(client_ctx, id) end,
       fn -> Workouts.create_workout(client_ctx, %{}) end,

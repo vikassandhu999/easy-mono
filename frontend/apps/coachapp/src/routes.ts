@@ -28,6 +28,7 @@ export const routes = {
   createWorkout: '/workouts/new',
   workout: '/workouts/:id',
   clientTraining: '/clients/:id/training',
+  clientWorkoutSession: '/clients/:id/training/sessions/:logId',
   createClientWorkout: '/clients/:id/training/workouts/new',
   clientWorkout: '/clients/:id/training/workouts/:workoutId',
   exercises: '/exercises',

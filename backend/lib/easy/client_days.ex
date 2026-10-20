@@ -8,7 +8,7 @@ defmodule Easy.ClientDays do
   alias Easy.Nutrition.{NutritionLog, NutritionPreset, NutritionSchedule, NutritionTargets, TargetSchedule, Timing}
   alias Easy.Orgs.Coach
   alias Easy.Repo
-  alias Easy.Workouts.{Exercise, Workout, WorkoutLog, WorkoutSchedule}
+  alias Easy.Workouts.{Content, Exercise, Workout, WorkoutLog, WorkoutSchedule}
 
   @spec read_client_day(Ctx.t(), Date.t()) :: {:ok, map()} | {:error, atom()}
   def read_client_day(ctx, %Date{} = date) do
@@ -56,7 +56,7 @@ defmodule Easy.ClientDays do
   @spec list_client_exercises(Ctx.t(), keyword()) :: {:ok, map()} | {:error, atom()}
   def list_client_exercises(ctx, opts \\ []) do
     with {:ok, _} <- client(ctx) do
-      query = Exercise.visible(ctx.business_id)
+      query = Exercise.visible(ctx.business_id) |> Exercise.selectable() |> Exercise.include_media(ctx.business_id)
       query = search_exercises(query, opts[:search])
       limit = CursorPage.limit(opts)
 
@@ -81,7 +81,7 @@ defmodule Easy.ClientDays do
   defp day(ctx, client, date) do
     nutrition_logs = nutrition_records(ctx, client.id, date)
     workout_logs = workout_records(ctx, client.id, date)
-    active = WorkoutLog.for_client(ctx.business_id, client.id) |> where([l], l.state == :active) |> WorkoutLog.include_content(ctx.business_id) |> Repo.one()
+    active = active_workout(ctx, client.id)
     nutrition_schedules = nutrition_schedules(ctx, client.id, date)
     workout_schedules = workout_schedules(ctx, client.id, date)
     preset_ids = Enum.map(nutrition_schedules, & &1.nutrition_preset_id) ++ Enum.map(nutrition_logs, & &1.nutrition_preset_id)
@@ -118,6 +118,18 @@ defmodule Easy.ClientDays do
     |> order_by([l], asc_nulls_last: l.time, asc: l.id)
     |> WorkoutLog.include_content(ctx.business_id)
     |> Repo.all()
+    |> Enum.map(&WorkoutLog.put_recorder_name/1)
+  end
+
+  defp active_workout(ctx, client_id) do
+    WorkoutLog.for_client(ctx.business_id, client_id)
+    |> where([l], l.state == :active)
+    |> WorkoutLog.include_content(ctx.business_id)
+    |> Repo.one()
+    |> case do
+      nil -> nil
+      row -> WorkoutLog.put_recorder_name(row)
+    end
   end
 
   defp presets(ctx, client_id, ids),
@@ -135,6 +147,7 @@ defmodule Easy.ClientDays do
       |> order_by([w], asc: w.name, asc: w.id)
       |> Workout.include_content(ctx.business_id)
       |> Repo.all()
+      |> Content.load_exercises(ctx.business_id)
 
   defp coaches(ctx, workout_schedules) do
     coach_ids = workout_schedules |> Enum.map(& &1.coach_id) |> Enum.reject(&is_nil/1)

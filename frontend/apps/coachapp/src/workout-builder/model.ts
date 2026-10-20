@@ -1,15 +1,17 @@
+import {historicalMetrics, type MetricInfo, type MetricKey, metricCatalogue, metricLabel} from '@easy/workouts/metrics';
+import {formatRest, formatTarget, type RestTarget, type Target as SavedTarget} from '@easy/workouts/targets';
 import type {Exercise as CatalogueExercise} from '../api/exercises';
 import type {Workout as SavedWorkout, WorkoutBody} from '../api/workouts';
-import {metricInfo, move} from '../exercises/exercise.ts';
+import {move} from '../exercises/exercise.ts';
 
-export {metricInfo};
-export type Mode = 'exact' | 'range' | 'max' | 'choose' | 'none';
+export type Mode = SavedTarget['mode'] | 'none';
 export type Target = {mode: Mode; v?: string; min?: string; max?: string};
 export type Targets = Record<string, Target>;
 export type Exercise = {
   id: string;
   uiId: string;
   source: CatalogueExercise;
+  sideMode: 'combined' | 'per_side';
   perRound: boolean;
   targets: Targets;
   roundTargets: Targets[];
@@ -27,12 +29,27 @@ export const modeLabels: Record<Mode, string> = {
   exact: 'Exact',
   range: 'Range',
   max: 'As much as possible',
-  choose: 'Client chooses',
-  none: 'No rest',
+  client_chooses: 'Client chooses',
+  none: 'None',
 };
 export const typeLabels = {prescribed: 'Exercises', video: 'Video', open: 'Open session'};
 export const letterOf = (index: number) => (index < 26 ? String.fromCharCode(65 + index) : String(index + 1));
-export const keysOf = (exercise: Exercise) => [...exercise.source.metrics, 'rest'];
+export const keysOf = (exercise: Exercise) => [...exercise.source.metrics.map((metric) => metric.key), 'rest'];
+export function infoFor(key: string): MetricInfo | undefined {
+  return key === 'rest'
+    ? {label: 'Rest', unit: 'seconds or m:ss'}
+    : key === 'grade'
+      ? historicalMetrics.grade
+      : metricCatalogue[key as MetricKey];
+}
+export function labelFor(key: string, exercise?: CatalogueExercise) {
+  return key === 'rest'
+    ? 'Rest'
+    : metricLabel(
+        key as MetricKey | 'grade',
+        exercise?.metrics.find((metric) => metric.key === key),
+      );
+}
 export const groupLabel = (group: Group, index: number) =>
   `${letterOf(index)} · ${group.exercises.length === 1 ? 'Straight sets' : group.exercises.length === 2 ? 'Superset' : 'Circuit'}`;
 export const groupTitle = (group: Group, index: number) => group.name || letterOf(index);
@@ -42,39 +59,17 @@ export function parseNumber(text: string) {
   }
   return text.includes(':') ? text.split(':').reduce((seconds, part) => seconds * 60 + Number(part), 0) : Number(text);
 }
-export function formatValue(key: string, value?: string) {
-  if (!value) {
-    return '–';
-  }
-  if (key === 'duration' || key === 'rest') {
-    const seconds = parseNumber(value);
-    return seconds < 60 ? `${seconds} s` : `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
-  }
-  const unit = metricInfo[key]?.unit ?? '';
-  return `${value}${unit && !['reps', 'count', 'points', 'RPE 1–10', 'RIR 0–10'].includes(unit) ? ` ${unit}` : ''}`;
-}
-export function formatTarget(key: string, target?: Target, unilateral = false) {
-  if (!target || target.mode === 'choose') {
-    return key === 'rest' ? 'None' : 'Any';
-  }
-  if (target.mode === 'none') {
-    return 'None';
-  }
-  if (target.mode === 'max') {
-    return 'Max';
-  }
-  const value =
-    target.mode === 'range'
-      ? `${formatValue(key, target.min)}–${formatValue(key, target.max)}`
-      : formatValue(key, target.v);
-  return unilateral && ['reps', 'duration'].includes(key) ? `${value} each side` : value;
+export function targetLabel(key: string, target?: Target) {
+  return key === 'rest'
+    ? formatRest(restBody(target))
+    : formatTarget(key as MetricKey | 'grade', target ? metricBody(key, target) : null);
 }
 export function groupSummary(group: Group, index: number) {
   const last = group.exercises.at(-1);
   if (!last) {
     return '';
   }
-  const rest = last.perRound ? 'rest varies by round' : `rest ${formatTarget('rest', last.targets.rest)}`;
+  const rest = last.perRound ? 'rest varies by round' : `rest ${targetLabel('rest', last.targets.rest)}`;
   return group.exercises.length === 1
     ? `${rest[0]?.toUpperCase()}${rest.slice(1)} between rounds`
     : `${group.exercises.map((_, i) => `${letterOf(index)}${i + 1}`).join(' → ')}, then ${rest}`;
@@ -82,17 +77,26 @@ export function groupSummary(group: Group, index: number) {
 export function getTarget(exercise: Exercise, key: string, round: number | null) {
   return exercise.perRound && round !== null ? exercise.roundTargets[round]?.[key] : exercise.targets[key];
 }
-const decode = (target: SavedWorkout['groups'][number]['exercises'][number]['rest'][number] | undefined): Target => {
+const decode = (target: SavedTarget | null | undefined): Target => {
   if (!target) {
-    return {mode: 'none'};
+    return {mode: 'client_chooses'};
   }
-  if (target.mode === 'max') {
-    return {mode: 'max'};
+  if (target.mode === 'client_chooses' || target.mode === 'max') {
+    return {mode: target.mode};
   }
   if (target.mode === 'range') {
     return {mode: 'range', min: String(target.min), max: String(target.max)};
   }
   return {mode: 'exact', v: String(target.value)};
+};
+const decodeRest = (target: RestTarget): Target => {
+  if (target.mode === 'exact') {
+    return {mode: 'exact', v: String(target.value_s)};
+  }
+  if (target.mode === 'range') {
+    return {mode: 'range', min: String(target.min_s), max: String(target.max_s)};
+  }
+  return {mode: target.mode};
 };
 export function draftOf(workout: SavedWorkout): Workout {
   return {
@@ -100,41 +104,52 @@ export function draftOf(workout: SavedWorkout): Workout {
     name: workout.name,
     description: workout.description ?? '',
     type: workout.type,
-    video: workout.video ?? '',
+    video: workout.video?.url ?? '',
     groups: workout.groups.map((group) => ({
       id: group.id,
       uiId: group.id,
       name: group.name ?? '',
       rounds: group.rounds,
       exercises: group.exercises.map((exercise) => {
-        const rows = exercise.targets.map((targets, i) => ({
-          ...Object.fromEntries(Object.entries(targets).map(([key, value]) => [key, decode(value)])),
-          rest: decode(exercise.rest[i]),
+        const rows = exercise.targets.map(({rest, ...targets}) => ({
+          ...Object.fromEntries(
+            Object.entries(targets)
+              .filter(([, value]) => value)
+              .map(([key, value]) => [key, decode(value)]),
+          ),
+          rest: decodeRest(rest),
         }));
         return {
           id: exercise.id,
           uiId: exercise.id,
           source: exercise.exercise,
+          sideMode: exercise.side_mode,
           perRound: exercise.targets_mode === 'per_round',
-          targets: rows[0] ?? {rest: {mode: 'none'}},
+          targets: rows[0] ?? {rest: {mode: 'client_chooses'}},
           roundTargets: exercise.targets_mode === 'per_round' ? rows : [],
         };
       }),
     })),
   };
 }
-const encode = (key: string, target: Target) =>
-  target.mode === 'max'
-    ? {mode: 'max' as const}
+const metricBody = (key: string, target: Target): SavedTarget =>
+  target.mode === 'max' || target.mode === 'client_chooses'
+    ? {mode: target.mode}
     : target.mode === 'range'
       ? {mode: 'range' as const, min: parseNumber(target.min ?? ''), max: parseNumber(target.max ?? '')}
-      : {mode: 'exact' as const, value: metricInfo[key]?.text ? (target.v ?? '') : parseNumber(target.v ?? '')};
+      : {mode: 'exact' as const, value: infoFor(key)?.text ? (target.v ?? '') : parseNumber(target.v ?? '')};
+const restBody = (target?: Target): RestTarget =>
+  target?.mode === 'exact'
+    ? {mode: 'exact', value_s: parseNumber(target.v ?? '')}
+    : target?.mode === 'range'
+      ? {mode: 'range', min_s: parseNumber(target.min ?? ''), max_s: parseNumber(target.max ?? '')}
+      : {mode: target?.mode === 'none' ? 'none' : 'client_chooses'};
 export function bodyOf(workout: Workout): WorkoutBody {
   return {
     name: workout.name.trim(),
     description: workout.description || null,
     type: workout.type,
-    video: workout.type === 'video' ? workout.video || null : null,
+    video_url: workout.type === 'video' ? workout.video || null : null,
     groups:
       workout.type !== 'prescribed'
         ? []
@@ -147,17 +162,16 @@ export function bodyOf(workout: Workout): WorkoutBody {
               return {
                 id: exercise.id,
                 exercise_id: exercise.source.id,
+                side_mode: exercise.sideMode,
                 targets_mode: exercise.perRound ? 'per_round' : 'same_for_all',
-                targets: rows.map((row) =>
-                  Object.fromEntries(
+                targets: rows.map((row) => ({
+                  ...Object.fromEntries(
                     Object.entries(row)
-                      .filter(([key, target]) => key !== 'rest' && !['choose', 'none'].includes(target.mode))
-                      .map(([key, target]) => [key, encode(key, target)]),
+                      .filter(([key, target]) => key !== 'rest' && target.mode !== 'client_chooses')
+                      .map(([key, target]) => [key, metricBody(key, target)]),
                   ),
-                ),
-                rest: rows.map((row) =>
-                  row.rest && !['choose', 'none'].includes(row.rest.mode) ? encode('rest', row.rest) : null,
-                ),
+                  rest: restBody(row.rest),
+                })),
               };
             }),
           })),
@@ -176,9 +190,9 @@ export function problemsOf(workout: Workout) {
         for (const [key, target] of Object.entries(row)) {
           if (
             target.mode === 'exact' &&
-            (metricInfo[key]?.text ? !target.v?.trim() : !Number.isFinite(parseNumber(target.v ?? '')))
+            (infoFor(key)?.text ? !target.v?.trim() : !Number.isFinite(parseNumber(target.v ?? '')))
           ) {
-            return `Enter a valid ${metricInfo[key]?.label ?? key} value for ${exercise.source.name}.`;
+            return `Enter a valid ${labelFor(key, exercise.source)} value for ${exercise.source.name}.`;
           }
           if (
             target.mode === 'range' &&
@@ -186,7 +200,7 @@ export function problemsOf(workout: Workout) {
               !Number.isFinite(parseNumber(target.max ?? '')) ||
               parseNumber(target.min ?? '') > parseNumber(target.max ?? ''))
           ) {
-            return `Enter a valid ${metricInfo[key]?.label ?? key} range for ${exercise.source.name}.`;
+            return `Enter a valid ${labelFor(key, exercise.source)} range for ${exercise.source.name}.`;
           }
         }
       }
@@ -214,9 +228,19 @@ const fitted = (rows: Targets[], rounds: number, fallback: Targets) =>
   Array.from({length: rounds}, (_, i) => structuredClone(rows[i] ?? rows.at(-1) ?? fallback));
 export function newExercise(source: CatalogueExercise): Exercise {
   const id = crypto.randomUUID();
-  return {id, uiId: id, source, perRound: false, targets: {rest: {mode: 'none'}}, roundTargets: []};
+  return {
+    id,
+    uiId: id,
+    source,
+    sideMode: 'combined',
+    perRound: false,
+    targets: {rest: {mode: 'client_chooses'}},
+    roundTargets: [],
+  };
 }
 export const actions = {
+  setSideMode: (workout: Workout, group: number, index: number, sideMode: Exercise['sideMode']) =>
+    mapExercise(workout, group, index, (exercise) => ({...exercise, sideMode})),
   putTarget: (workout: Workout, where: Where, target: Target) =>
     mapExercise(workout, where.group, where.exercise, (exercise) =>
       exercise.perRound && where.round !== null

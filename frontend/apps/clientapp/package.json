@@ -19,7 +19,8 @@
     "test:account": "node tests/account/account.browser.mjs",
     "test:android": "node tests/auth/android.native.mjs",
     "test:today": "node tests/today/today.browser.mjs",
-    "test:startup": "node tests/auth/startup.browser.mjs"
+    "test:startup": "node tests/auth/startup.browser.mjs",
+    "test:nutrition": "node tests/today/nutrition.browser.mjs"
   },
   "dependencies": {
     "@aparajita/capacitor-secure-storage": "8.0.0",
@@ -30,6 +31,7 @@
     "@capacitor/network": "8.0.0",
     "@capacitor/preferences": "8.0.1",
     "@easy/utils": "workspace:^",
+    "@easy/workouts": "workspace:*",
     "@shadcn/react": "^0.3.1",
     "@tanstack/react-query": "5.101.4",
     "class-variance-authority": "^0.7.1",

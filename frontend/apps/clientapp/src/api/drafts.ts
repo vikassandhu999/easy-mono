@@ -14,13 +14,13 @@ export async function readDraft(owner: string, resource: string): Promise<unknow
     return null;
   }
   const raw = await readStored(key);
-  if (getSession()?.id !== owner || !raw) {
+  if (getSession()?.id !== owner || raw === null) {
     return null;
   }
   try {
     return JSON.parse(raw);
   } catch {
-    return null;
+    return raw;
   }
 }
 

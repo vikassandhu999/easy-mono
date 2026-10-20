@@ -1,16 +1,20 @@
+import {defaultMetrics, metricCatalogue, metricKeys, metricLabel} from '@easy/workouts/metrics';
 import {ArrowDown, ArrowUp, X} from 'lucide-react';
-import {useEffect, useId, useState} from 'react';
+import {useEffect, useId, useRef, useState} from 'react';
 import {type FieldPath, type FieldPathValue, useForm} from 'react-hook-form';
 import {useNavigate, useParams} from 'react-router-dom';
 import {errorMessage} from '../api/client';
 import {
   type Exercise,
   type ExerciseCreate,
+  useArchiveExercise,
   useCopyExercise,
   useDeleteExercise,
   useExercise,
+  useRestoreExercise,
   useSaveExercise,
 } from '../api/exercises';
+import {useUploadLibraryMedia} from '../api/library-media';
 import {Button} from '../ui/button';
 import {Dialog, DialogHeader, DialogTitle} from '../ui/dialog';
 import {FormError} from '../ui/form-error';
@@ -18,18 +22,11 @@ import {FormField} from '../ui/form-field';
 import {Input} from '../ui/input';
 import {useListLocation} from '../ui/list-location';
 import {FormActions, Page, PageHeader} from '../ui/page';
-import {
-  defaults,
-  exerciseBody,
-  goals,
-  kindLabels,
-  kinds,
-  labelOf,
-  metricKeys,
-  move,
-  placeLabels,
-  places,
-} from './exercise';
+import {exerciseBody, goals, kindLabels, kinds, move, placeLabels, places} from './exercise';
+
+const selectClass = 'h-12 w-full min-w-0 rounded-xl border border-input bg-surface px-3';
+type Metrics = NonNullable<ExerciseCreate['metrics']>;
+type Media = NonNullable<ExerciseCreate['media']>;
 
 export function ExerciseEditor() {
   const {id} = useParams();
@@ -68,21 +65,29 @@ export function ExerciseEditor() {
     />
   );
 }
+
 function Editor({initial}: {initial?: Exercise}) {
   const form = useForm<ExerciseCreate>({defaultValues: exerciseBody(initial)});
   const body = form.watch();
   const save = useSaveExercise();
   const copy = useCopyExercise();
   const remove = useDeleteExercise();
+  const archive = useArchiveExercise();
+  const restore = useRestoreExercise();
+  const upload = useUploadLibraryMedia();
+  const fileInput = useRef<HTMLInputElement>(null);
+  const activeUpload = useRef<AbortController | null>(null);
   const navigate = useNavigate();
   const {to, state} = useListLocation('/exercises');
   const [error, setError] = useState<string>();
   const [notice, setNotice] = useState('');
   const [deleting, setDeleting] = useState(false);
   const readOnly = Boolean(initial?.is_builtin);
-  const pending = save.isPending || copy.isPending || remove.isPending;
+  const pending =
+    save.isPending || copy.isPending || remove.isPending || archive.isPending || restore.isPending || upload.isPending;
   const set = <K extends FieldPath<ExerciseCreate>>(key: K, value: FieldPathValue<ExerciseCreate, K>) =>
     form.setValue(key, value, {shouldDirty: true});
+  useEffect(() => () => activeUpload.current?.abort(), []);
   useEffect(() => {
     const guard = (event: BeforeUnloadEvent) => {
       if (form.formState.isDirty) {
@@ -100,7 +105,7 @@ function Editor({initial}: {initial?: Exercise}) {
         description={
           readOnly
             ? 'Shared exercises are read-only. Copy this exercise to change it.'
-            : 'Changes apply from now on. Past prescriptions keep their exercise details.'
+            : 'Choose the metrics, instructions and demonstrations for this exercise.'
         }
         back={{to, label: 'Exercise library', state}}
         actions={
@@ -108,10 +113,10 @@ function Editor({initial}: {initial?: Exercise}) {
             <Button
               variant="outline"
               isPending={copy.isPending}
-              isDisabled={form.formState.isDirty}
+              isDisabled={pending || form.formState.isDirty}
               onPress={async () => {
                 try {
-                  const result = await copy.mutateAsync({id: initial.id, name: `${initial.name} copy`});
+                  const result = await copy.mutateAsync({id: initial.id});
                   navigate(`/exercises/${result.data.id}`, {state});
                 } catch (cause) {
                   setError(errorMessage(cause, 'Could not copy this exercise.'));
@@ -123,14 +128,18 @@ function Editor({initial}: {initial?: Exercise}) {
           )
         }
       />
+      {initial?.archived_at && (
+        <p
+          role="status"
+          className="font-medium"
+        >
+          Archived. Existing workouts and recorded activity still use this exercise.
+        </p>
+      )}
       <form
         className="has-mobile-actions space-y-6"
         onSubmit={form.handleSubmit(async (values) => {
           if (readOnly || pending) {
-            return;
-          }
-          if (!values.metrics?.length || !values.goals?.length || !values.places?.length) {
-            setError('Select at least one metric, goal and place.');
             return;
           }
           try {
@@ -159,20 +168,23 @@ function Editor({initial}: {initial?: Exercise}) {
             label="Exercise name"
             emphasis="title"
             isRequired
-            maxLength={255}
+            maxLength={200}
             rules={{validate: (value) => Boolean(String(value).trim()) || 'Enter an exercise name.'}}
           />
           <label className="grid gap-1">
             <span className="text-sm font-medium">Kind</span>
             <select
               value={body.kind}
-              className="h-12 rounded-xl border border-input bg-surface px-3"
+              className={selectClass}
               onChange={(event) => {
                 const kind = kinds.find((value) => value === event.target.value);
                 if (kind) {
                   set('kind', kind);
                   if (!initial) {
-                    set('metrics', defaults[kind]);
+                    set(
+                      'metrics',
+                      defaultMetrics[kind].map((key) => ({key, label: null})),
+                    );
                   }
                 }
               }}
@@ -187,6 +199,12 @@ function Editor({initial}: {initial?: Exercise}) {
               ))}
             </select>
           </label>
+          <FormField
+            control={form.control}
+            name="instructions"
+            label="Instructions (optional)"
+            multiline
+          />
           <Facet
             label="Goals"
             options={goals}
@@ -199,160 +217,139 @@ function Editor({initial}: {initial?: Exercise}) {
             value={body.places ?? []}
             onChange={(value) => set('places', value)}
           />
-          <label className="flex min-h-11 items-center gap-3">
-            <input
-              type="checkbox"
-              checked={body.unilateral ?? false}
-              onChange={(event) => set('unilateral', event.target.checked)}
-            />
-            Each side (unilateral)
-          </label>
-          <section className="space-y-3">
-            <h2 className="editor-section-title">Metrics in display order</h2>
-            <p className="text-sm font-medium text-muted-foreground">
-              The builder and client show only these metrics, in this order.
-            </p>
-            <ol className="space-y-2">
-              {(body.metrics ?? []).map((metric, index) => (
-                <li
-                  key={metric}
-                  className="flex items-center gap-2 rounded-xl bg-muted px-3 py-1"
-                >
-                  <span className="min-w-0 flex-1 font-medium">
-                    {labelOf(metric, {count_label: body.count_label ?? null})}
-                  </span>
-                  <Button
-                    size="icon-sm"
-                    variant="ghost"
-                    aria-label={`Move ${labelOf(metric)} up`}
-                    isDisabled={index === 0}
-                    onPress={() => set('metrics', move(body.metrics ?? [], index, index - 1))}
-                  >
-                    <ArrowUp />
-                  </Button>
-                  <Button
-                    size="icon-sm"
-                    variant="ghost"
-                    aria-label={`Move ${labelOf(metric)} down`}
-                    isDisabled={index === (body.metrics?.length ?? 0) - 1}
-                    onPress={() => set('metrics', move(body.metrics ?? [], index, index + 1))}
-                  >
-                    <ArrowDown />
-                  </Button>
-                  <Button
-                    size="icon-sm"
-                    variant="ghost"
-                    aria-label={`Remove ${labelOf(metric)}`}
-                    onPress={() => set('metrics', body.metrics?.filter((key) => key !== metric) ?? [])}
-                  >
-                    <X />
-                  </Button>
-                </li>
-              ))}
-            </ol>
-            <label className="grid gap-1">
-              <span className="text-sm font-medium">Add metric</span>
-              <select
-                value=""
-                className="h-12 rounded-xl border border-input bg-surface px-3"
-                onChange={(event) => {
-                  if (event.target.value) {
-                    set('metrics', [...(body.metrics ?? []), event.target.value]);
-                  }
-                }}
-              >
-                <option value="">Choose a metric</option>
-                {metricKeys
-                  .filter((key) => !body.metrics?.includes(key))
-                  .map((key) => (
-                    <option
-                      key={key}
-                      value={key}
-                    >
-                      {labelOf(key)}
-                    </option>
-                  ))}
-              </select>
-            </label>
-          </section>
-          {body.metrics?.some((metric) => ['reps', 'successes', 'attempts'].includes(metric)) && (
-            <FormField
-              control={form.control}
-              name="count_label"
-              label="Count label (optional)"
-              description="For example laps, waves or skips. Leave empty to use the metric names."
-              maxLength={80}
-            />
-          )}
-          {body.metrics?.includes('grade') && (
-            <Tags
-              label="Grade scale in order"
-              value={body.grade_scale ?? []}
-              onChange={(value) => set('grade_scale', value)}
-              description="Separate steps with commas, from lowest to highest: V0, V1, V2."
-            />
-          )}
-          <Tags
-            label="Equipment"
-            value={body.equipment ?? []}
-            onChange={(value) => set('equipment', value)}
-            description="Separate tags with commas."
+          <MetricRows
+            value={body.metrics ?? []}
+            onChange={(value) => set('metrics', value)}
+          />
+          <FormField
+            control={form.control}
+            name="equipment"
+            label="Equipment (optional)"
+            multiline
           />
           <Tags
             label="Muscles"
             value={body.muscles ?? []}
             onChange={(value) => set('muscles', value)}
-            description="Separate tags with commas."
           />
-          <FormField
-            control={form.control}
-            name="media"
-            label="Photo or video URL (optional)"
-            type="url"
-            description="Use a URL that starts with https:// or http://."
-          />
+          <section
+            className="space-y-3"
+            aria-labelledby="exercise-demonstrations"
+          >
+            <h2
+              id="exercise-demonstrations"
+              className="editor-section-title"
+            >
+              Demonstrations
+            </h2>
+            <p className="text-sm font-medium text-muted-foreground">
+              Add photo or video links in the order the client should see them.
+            </p>
+            <MediaRows
+              value={body.media ?? []}
+              onChange={(value) => set('media', value)}
+            />
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant="outline"
+                onPress={() => set('media', [...(body.media ?? []), {url: '', caption: null}])}
+              >
+                Add link
+              </Button>
+              <Button
+                variant="outline"
+                isPending={upload.isPending}
+                onPress={() => fileInput.current?.click()}
+              >
+                Upload photo or video
+              </Button>
+            </div>
+            <input
+              ref={fileInput}
+              type="file"
+              className="sr-only"
+              aria-label="Choose exercise photo or video"
+              tabIndex={-1}
+              accept="image/jpeg,image/png,image/webp,video/mp4,video/webm"
+              onChange={async (event) => {
+                const file = event.target.files?.[0];
+                event.target.value = '';
+                if (!file) {
+                  return;
+                }
+                activeUpload.current?.abort();
+                const controller = new AbortController();
+                activeUpload.current = controller;
+                setError(undefined);
+                try {
+                  const media = await upload.mutateAsync({file, signal: controller.signal});
+                  if (!media.url) {
+                    throw new Error('The uploaded file has no public URL.');
+                  }
+                  set('media', [...(form.getValues('media') ?? []), {url: media.url, caption: null}]);
+                } catch (cause) {
+                  if (!controller.signal.aborted) {
+                    setError(errorMessage(cause, 'Could not upload the file. Choose it again to retry.'));
+                  }
+                }
+              }}
+            />
+          </section>
         </fieldset>
         <FormError message={error} />
         <p role="status">{notice}</p>
         {!readOnly && (
           <FormActions>
             {initial && (
-              <Button
-                variant="ghost"
-                isDisabled={pending}
-                onPress={() => setDeleting(true)}
-              >
-                Delete exercise
-              </Button>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant="outline"
+                  isDisabled={pending || form.formState.isDirty}
+                  isPending={archive.isPending || restore.isPending}
+                  onPress={async () => {
+                    try {
+                      if (initial.archived_at) {
+                        await restore.mutateAsync(initial.id);
+                      } else {
+                        await archive.mutateAsync(initial.id);
+                      }
+                      setNotice(initial.archived_at ? 'Exercise restored.' : 'Exercise archived.');
+                      setError(undefined);
+                    } catch (cause) {
+                      setError(errorMessage(cause, 'Could not change the archive state. Try again.'));
+                    }
+                  }}
+                >
+                  {initial.archived_at ? 'Restore exercise' : 'Archive exercise'}
+                </Button>
+                <Button
+                  variant="ghost"
+                  isDisabled={pending}
+                  onPress={() => setDeleting(true)}
+                >
+                  Delete exercise
+                </Button>
+              </div>
             )}
             <Button
               type="submit"
               isPending={save.isPending}
+              isDisabled={pending}
             >
               Save exercise
             </Button>
           </FormActions>
         )}
       </form>
-      {initial?.media && (
-        <a
-          className="inline-flex min-h-11 items-center font-medium underline"
-          href={initial.media}
-          target="_blank"
-          rel="noreferrer"
-        >
-          Open photo or video (new tab)
-        </a>
-      )}
       {deleting && initial && (
         <Dialog
           isOpen
-          onOpenChange={(open) => setDeleting(open)}
+          onOpenChange={setDeleting}
         >
           <DialogHeader>
             <DialogTitle>Delete {initial.name}?</DialogTitle>
           </DialogHeader>
-          <p>Existing workout prescriptions keep their exercise details.</p>
+          <p>You can delete an exercise only when no workout or recorded activity uses it.</p>
           <FormError message={error} />
           <div className="flex gap-2">
             <Button
@@ -381,6 +378,204 @@ function Editor({initial}: {initial?: Exercise}) {
     </Page>
   );
 }
+
+function MetricRows({value, onChange}: {value: Metrics; onChange: (value: Metrics) => void}) {
+  const id = useId();
+  return (
+    <section
+      className="space-y-3"
+      aria-labelledby="exercise-metrics"
+    >
+      <h2
+        id="exercise-metrics"
+        className="editor-section-title"
+      >
+        Metrics in display order
+      </h2>
+      <p className="text-sm font-medium text-muted-foreground">
+        Each metric can have its own label. Leave the label empty to use its name.
+      </p>
+      <ol className="space-y-4">
+        {value.map((metric, index) => (
+          <li
+            key={metric.key}
+            className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] sm:items-end"
+          >
+            <label className="grid gap-1">
+              <span className="text-sm font-medium">Metric {index + 1}</span>
+              <select
+                className={selectClass}
+                value={metric.key}
+                onChange={(event) => {
+                  const key = metricKeys.find((key) => key === event.target.value);
+                  if (key) {
+                    onChange(value.map((row, position) => (position === index ? {...row, key} : row)));
+                  }
+                }}
+              >
+                {metricKeys
+                  .filter((key) => key === metric.key || !value.some((row) => row.key === key))
+                  .map((key) => (
+                    <option
+                      key={key}
+                      value={key}
+                    >
+                      {metricCatalogue[key].label}
+                    </option>
+                  ))}
+              </select>
+            </label>
+            <label
+              htmlFor={`${id}-${metric.key}-label`}
+              className="grid gap-1"
+            >
+              <span className="text-sm font-medium">Metric {index + 1} label</span>
+              <Input
+                id={`${id}-${metric.key}-label`}
+                value={metric.label ?? ''}
+                maxLength={80}
+                onChange={(event) =>
+                  onChange(
+                    value.map((row, position) => (position === index ? {...row, label: event.target.value} : row)),
+                  )
+                }
+              />
+            </label>
+            <div className="flex justify-end gap-1">
+              <Button
+                size="icon-sm"
+                variant="ghost"
+                aria-label={`Move ${metricLabel(metric.key)} up`}
+                isDisabled={index === 0}
+                onPress={() => onChange(move(value, index, index - 1))}
+              >
+                <ArrowUp />
+              </Button>
+              <Button
+                size="icon-sm"
+                variant="ghost"
+                aria-label={`Move ${metricLabel(metric.key)} down`}
+                isDisabled={index === value.length - 1}
+                onPress={() => onChange(move(value, index, index + 1))}
+              >
+                <ArrowDown />
+              </Button>
+              <Button
+                size="icon-sm"
+                variant="ghost"
+                aria-label={`Remove ${metricLabel(metric.key)}`}
+                onPress={() => onChange(value.filter((row) => row.key !== metric.key))}
+              >
+                <X />
+              </Button>
+            </div>
+          </li>
+        ))}
+      </ol>
+      <label className="grid gap-1">
+        <span className="text-sm font-medium">Add metric</span>
+        <select
+          className={selectClass}
+          value=""
+          disabled={value.length === metricKeys.length}
+          onChange={(event) => {
+            const key = metricKeys.find((key) => key === event.target.value);
+            if (key) {
+              onChange([...value, {key, label: null}]);
+            }
+          }}
+        >
+          <option value="">Choose a metric</option>
+          {metricKeys
+            .filter((key) => !value.some((row) => row.key === key))
+            .map((key) => (
+              <option
+                key={key}
+                value={key}
+              >
+                {metricCatalogue[key].label}
+              </option>
+            ))}
+        </select>
+      </label>
+    </section>
+  );
+}
+
+function MediaRows({value, onChange}: {value: Media; onChange: (value: Media) => void}) {
+  const id = useId();
+  return (
+    <ol className="space-y-4">
+      {value.map((item, index) => (
+        <li
+          key={item.id ?? index}
+          className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] sm:items-end"
+        >
+          <label
+            htmlFor={`${id}-${index}-url`}
+            className="grid gap-1"
+          >
+            <span className="text-sm font-medium">Media {index + 1} URL</span>
+            <Input
+              id={`${id}-${index}-url`}
+              type="url"
+              value={item.url}
+              required
+              onChange={(event) =>
+                onChange(value.map((row, position) => (position === index ? {...row, url: event.target.value} : row)))
+              }
+            />
+          </label>
+          <label
+            htmlFor={`${id}-${index}-caption`}
+            className="grid gap-1"
+          >
+            <span className="text-sm font-medium">Media {index + 1} caption (optional)</span>
+            <Input
+              id={`${id}-${index}-caption`}
+              value={item.caption ?? ''}
+              maxLength={1000}
+              onChange={(event) =>
+                onChange(
+                  value.map((row, position) => (position === index ? {...row, caption: event.target.value} : row)),
+                )
+              }
+            />
+          </label>
+          <div className="flex justify-end gap-1">
+            <Button
+              size="icon-sm"
+              variant="ghost"
+              aria-label={`Move media ${index + 1} up`}
+              isDisabled={index === 0}
+              onPress={() => onChange(move(value, index, index - 1))}
+            >
+              <ArrowUp />
+            </Button>
+            <Button
+              size="icon-sm"
+              variant="ghost"
+              aria-label={`Move media ${index + 1} down`}
+              isDisabled={index === value.length - 1}
+              onPress={() => onChange(move(value, index, index + 1))}
+            >
+              <ArrowDown />
+            </Button>
+            <Button
+              size="icon-sm"
+              variant="ghost"
+              aria-label={`Remove media ${index + 1}`}
+              onPress={() => onChange(value.filter((_row, position) => position !== index))}
+            >
+              <X />
+            </Button>
+          </div>
+        </li>
+      ))}
+    </ol>
+  );
+}
+
 function Facet({
   label,
   options,
@@ -394,7 +589,7 @@ function Facet({
 }) {
   return (
     <fieldset>
-      <legend className="text-sm font-medium">{label} (select at least one)</legend>
+      <legend className="text-sm font-medium">{label} (optional)</legend>
       <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1">
         {options.map((option) => (
           <label
@@ -415,27 +610,21 @@ function Facet({
     </fieldset>
   );
 }
-function Tags({
-  label,
-  description,
-  value,
-  onChange,
-}: {
-  label: string;
-  description: string;
-  value: string[];
-  onChange: (value: string[]) => void;
-}) {
+
+function Tags({label, value, onChange}: {label: string; value: string[]; onChange: (value: string[]) => void}) {
   const [draft, setDraft] = useState(value.join(', '));
   const id = useId();
   return (
-    <label
-      htmlFor={id}
-      className="grid gap-1"
-    >
-      <span className="text-sm font-medium">{label}</span>
+    <div className="grid gap-1">
+      <label
+        htmlFor={id}
+        className="text-sm font-medium"
+      >
+        {label}
+      </label>
       <Input
         id={id}
+        aria-describedby={`${id}-help`}
         value={draft}
         onChange={(event) => {
           setDraft(event.target.value);
@@ -449,7 +638,12 @@ function Tags({
           ]);
         }}
       />
-      <span className="text-sm font-medium text-muted-foreground">{description}</span>
-    </label>
+      <span
+        id={`${id}-help`}
+        className="text-sm font-medium text-muted-foreground"
+      >
+        Separate names with commas.
+      </span>
+    </div>
   );
 }

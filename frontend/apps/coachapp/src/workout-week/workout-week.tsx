@@ -1,17 +1,28 @@
+import {effortLabel} from '@easy/workouts/session';
 import {Plus} from 'lucide-react';
 import {useCallback, useEffect, useRef, useState} from 'react';
-import {useBeforeUnload, useBlocker} from 'react-router-dom';
+import {generatePath, Link, useBeforeUnload, useBlocker, useNavigate} from 'react-router-dom';
 import {errorMessage} from '../api/client';
 import {useClient} from '../api/clients';
+import {
+  useActiveWorkoutLog,
+  useOccurrenceWorkoutLogs,
+  useStartSession,
+  useWorkoutLogs,
+  type WorkoutLog,
+} from '../api/workout-logs';
 import {useWorkoutWeek, type WorkoutSchedule} from '../api/workout-week';
-import {Button} from '../ui/button';
+import {useWorkout, type Workout} from '../api/workouts';
+import {routes} from '../routes';
+import {Button, buttonVariants} from '../ui/button';
 import {Dialog, DialogHeader, DialogTitle} from '../ui/dialog';
 import {FormError} from '../ui/form-error';
+import {InfiniteList} from '../ui/infinite-list';
 import {Page, PageHeader} from '../ui/page';
 import {type Day, daysLabel} from '../ui/week';
 import {WeekColumns} from '../ui/week-columns';
 import {DraftGuard, SaveRecovery, UndoToast} from '../ui/week-editor';
-import {byTime, occasionLabel} from './model';
+import {byTime, occasionLabel, occursOn} from './model';
 import {AddDialog, ScheduleDialog} from './parts';
 import {useSaveWeek} from './save-week';
 
@@ -28,7 +39,14 @@ const addId = (day: Day) => `workout-add-${day.bit}`;
 function WeekScreen({clientId}: {clientId: string}) {
   const query = useWorkoutWeek(clientId);
   const client = useClient(clientId);
+  const sessions = useWorkoutLogs(clientId);
+  const active = useActiveWorkoutLog(clientId);
+  const occurrences = useOccurrenceWorkoutLogs(clientId, query.data?.data.today ?? '');
+  const start = useStartSession(clientId);
+  const navigate = useNavigate();
+  const [startError, setStartError] = useState('');
   const state = query.data?.data;
+  const todayBit = state ? 1 << ((new Date(`${state.today}T12:00:00Z`).getUTCDay() + 6) % 7) : 0;
   const write = useSaveWeek(clientId);
   const [open, setOpen] = useState<{schedule: WorkoutSchedule; day: Day} | null>(null);
   const [adding, setAdding] = useState<Day | null>(null);
@@ -102,6 +120,29 @@ function WeekScreen({clientId}: {clientId: string}) {
     }
     setAdding(null);
   };
+  const openSession = async (schedule: WorkoutSchedule) => {
+    if (!state || start.isPending) {
+      return;
+    }
+    setStartError('');
+    try {
+      const current = await occurrences.refetch({throwOnError: true});
+      const existing = current.data?.data.find((log) => log.schedule_id === schedule.id && log.state !== 'discarded');
+      if (existing) {
+        navigate(sessionPath(clientId, existing.id));
+        return;
+      }
+      const recording = await active.refetch({throwOnError: true});
+      if (recording.data?.data) {
+        navigate(sessionPath(clientId, recording.data.data.id));
+        return;
+      }
+      const result = await start.mutateAsync({scheduleId: schedule.id, date: state.today});
+      navigate(sessionPath(clientId, result.data.id));
+    } catch (cause) {
+      setStartError(errorMessage(cause, 'Could not open this session. Try again.'));
+    }
+  };
   return (
     <DraftGuard value={register}>
       <Page className="client-page pb-32">
@@ -114,6 +155,33 @@ function WeekScreen({clientId}: {clientId: string}) {
               : 'Repeats every week. Changes apply from today; earlier weeks stay as they were.'
           }
         />
+        {active.data?.data && (
+          <Link
+            className={buttonVariants({variant: 'outline'})}
+            to={sessionPath(clientId, active.data.data.id)}
+          >
+            Open active session
+          </Link>
+        )}
+        {active.isError && (
+          <div className="space-y-2">
+            <FormError message={errorMessage(active.error, 'Could not check the active session.')} />
+            <Button
+              variant="outline"
+              onPress={() => {
+                active.refetch();
+              }}
+            >
+              Check active session
+            </Button>
+          </div>
+        )}
+        {occurrences.isError && (
+          <FormError
+            message={errorMessage(occurrences.error, 'Could not check today’s sessions. Try the session action again.')}
+          />
+        )}
+        <FormError message={startError} />
         {query.isError && (
           <div className="space-y-3">
             <FormError
@@ -145,24 +213,42 @@ function WeekScreen({clientId}: {clientId: string}) {
                   {items.map((row) => {
                     const workout = state.workouts.find((item) => item.id === row.workout_id);
                     const occasion = occasionLabel(row, state.coaches);
+                    const existingLog = occurrences.data?.data.find(
+                      (log) => log.schedule_id === row.id && log.state !== 'discarded',
+                    );
                     return (
-                      <Button
+                      <div
                         key={row.id}
-                        id={cardId(row, day)}
-                        variant="outline"
-                        isDisabled={write.pending || write.blocked}
-                        data-workout-schedule
-                        className="h-auto w-full flex-col items-start gap-1 whitespace-normal border-transparent px-3 py-3 text-left"
-                        onPress={() => setOpen({schedule: row, day})}
+                        className="min-w-0 space-y-1"
                       >
-                        <span className="font-semibold">{workout?.name ?? 'Workout'}</span>
-                        {occasion && <span className="text-sm font-medium text-muted-foreground">{occasion}</span>}
-                        {Boolean(row.weekdays_mask & ~day.bit) && (
-                          <span className="text-sm font-medium text-muted-foreground">
-                            Also {daysLabel(row.weekdays_mask & ~day.bit)}
-                          </span>
+                        <Button
+                          id={cardId(row, day)}
+                          variant="outline"
+                          isDisabled={write.pending || write.blocked}
+                          data-workout-schedule
+                          className="h-auto w-full flex-col items-start gap-1 whitespace-normal border-transparent px-3 py-3 text-left"
+                          onPress={() => setOpen({schedule: row, day})}
+                        >
+                          <span className="font-semibold">{workout?.name ?? 'Workout'}</span>
+                          {occasion && <span className="text-sm font-medium text-muted-foreground">{occasion}</span>}
+                          {Boolean(row.weekdays_mask & ~day.bit) && (
+                            <span className="text-sm font-medium text-muted-foreground">
+                              Also {daysLabel(row.weekdays_mask & ~day.bit)}
+                            </span>
+                          )}
+                        </Button>
+                        {day.bit === todayBit && occursOn(row, state.today) && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            isPending={start.isPending}
+                            isDisabled={write.pending || write.blocked || active.isFetching || occurrences.isFetching}
+                            onPress={() => openSession(row)}
+                          >
+                            {existingLog ? 'Open' : row.coach_id ? 'Start session' : 'Record session'}
+                          </Button>
                         )}
-                      </Button>
+                      </div>
                     );
                   })}
                   {items.length === 0 && <p className="px-1 text-sm font-medium text-muted-foreground">Rest day</p>}
@@ -184,6 +270,31 @@ function WeekScreen({clientId}: {clientId: string}) {
           </WeekColumns>
         )}
         {!open && !adding && write.error && recovery}
+        <section
+          className="space-y-4"
+          aria-labelledby="recent-sessions-title"
+        >
+          <h2
+            id="recent-sessions-title"
+            className="editor-section-title"
+          >
+            Recent sessions
+          </h2>
+          <InfiniteList
+            query={sessions}
+            label="sessions"
+            singular="session"
+            empty={<p className="text-sm font-medium text-muted-foreground">No sessions recorded yet.</p>}
+          >
+            {(log) => (
+              <RecentSession
+                clientId={clientId}
+                log={log}
+                workouts={state?.workouts ?? []}
+              />
+            )}
+          </InfiniteList>
+        </section>
       </Page>
       {state && open && (
         <ScheduleDialog
@@ -266,5 +377,54 @@ function WeekScreen({clientId}: {clientId: string}) {
         </div>
       </Dialog>
     </DraftGuard>
+  );
+}
+
+const sessionPath = (clientId: string, logId: string) =>
+  generatePath(routes.clientWorkoutSession, {id: clientId, logId});
+
+function RecentSession({clientId, log, workouts}: {clientId: string; log: WorkoutLog; workouts: Workout[]}) {
+  const name = workouts.find((workout) => workout.id === log.workout_id)?.name;
+  if (log.workout_id && !name) {
+    return (
+      <HistoricalSession
+        clientId={clientId}
+        log={log}
+      />
+    );
+  }
+  return (
+    <SessionLink
+      clientId={clientId}
+      log={log}
+      name={name ?? 'Workout session'}
+    />
+  );
+}
+
+function HistoricalSession({clientId, log}: {clientId: string; log: WorkoutLog}) {
+  const query = useWorkout(log.workout_id ?? '', clientId);
+  return (
+    <SessionLink
+      clientId={clientId}
+      log={log}
+      name={query.data?.data.name ?? (query.isError ? 'Workout unavailable' : 'Opening workout…')}
+    />
+  );
+}
+
+function SessionLink({clientId, log, name}: {clientId: string; log: WorkoutLog; name: string}) {
+  return (
+    <Link
+      to={sessionPath(clientId, log.id)}
+      className="block space-y-1 p-4"
+    >
+      <p className="break-words font-semibold">{name}</p>
+      <p className="text-sm font-medium text-muted-foreground">
+        {log.date} · {log.state === 'active' ? 'In progress' : log.state === 'completed' ? 'Completed' : 'Discarded'} ·{' '}
+        {log.recorder_name}
+        {log.effort === null ? '' : ` · ${effortLabel(log.effort)}`}
+      </p>
+    </Link>
   );
 }

@@ -1,3 +1,5 @@
+> Superseded on 2026-10-19 by [activity-logging-plan.md](activity-logging-plan.md). Kept as the record of the W1–W37 build.
+
 # Workout implementation plan
 
 Sources: concept.md (W1–W37, U1–U14, V1–V7), CONTEXT.md, both retained prototypes, and nutrition commits 4eccb21a / c61e11a1.

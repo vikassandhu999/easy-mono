@@ -1,419 +1,682 @@
 defmodule Easy.WorkoutLogsTest do
   use Easy.DataCase, async: true
-  alias Easy.{Ctx, WorkoutLogs, Workouts}
-  alias Easy.Workouts.{ExerciseSet, Workout, WorkoutLog, WorkoutSchedule}
+
+  alias Easy.Ctx
+  alias Easy.WorkoutLogs
+  alias Easy.Workouts
+  alias Easy.Workouts.{ExerciseLog, ExerciseSet, WorkoutLog}
 
   setup do
-    coach = insert(:coach)
-    client = insert(:client, business: coach.business, coach: coach, timezone: "Etc/UTC")
+    coach = insert(:coach, preferred_name: "Sam")
+    client = insert(:client, business: coach.business, coach: coach, timezone: "Etc/UTC", preferred_name: "Alex")
     exercise = insert(:exercise, business: coach.business)
-    coach_ctx = trainer_ctx(coach)
-    ctx = %Ctx{business_id: coach.business_id, user_id: client.user_id, client_id: client.id}
+    replacement = insert(:exercise, business: coach.business)
+    ctx = trainer_ctx(coach)
 
-    {:ok, %{data: workout}} =
-      Workouts.create_workout_for_client(coach_ctx, client.id, %{
-        name: "Lower A",
-        groups: [%{rounds: 3, exercises: [%{exercise_id: exercise.id, targets: [%{"reps" => %{"mode" => "exact", "value" => 8}}]}]}]
-      })
+    groups = [
+      %{
+        name: "Main",
+        rounds: 3,
+        exercises: [
+          %{
+            exercise_id: exercise.id,
+            side_mode: "combined",
+            targets: [%{reps: %{mode: "exact", value: 8}, rest: %{mode: "exact", value_s: 60}}]
+          }
+        ]
+      }
+    ]
 
-    {:ok, %{data: schedule}} = Workouts.add_schedule_for_client(coach_ctx, client.id, %{workout_id: workout.id, weekdays_mask: 127})
-    %{ctx: ctx, coach_ctx: coach_ctx, client: client, exercise: exercise, workout: workout, schedule: schedule, item: hd(hd(workout.groups).exercises), today: Date.utc_today()}
-  end
+    assert {:ok, %{data: workout}} = Workouts.create_workout_for_client(ctx, client.id, %{name: "Session", groups: groups})
 
-  defp start(f, attrs \\ %{}) do
-    WorkoutLogs.start_client_workout_log(f.ctx, Map.merge(%{workout_id: f.workout.id, schedule_id: f.schedule.id, scheduled_date: f.today, date: f.today}, attrs))
-  end
-
-  defp set(f, attrs \\ %{}),
-    do: Map.merge(%{workout_exercise_id: f.item.id, exercise_id: f.exercise.id, round: 1, reps: 8, weight_kg: 60, entered_units: %{"weight" => "kg"}}, attrs)
-
-  defp finish(f, id, attrs \\ %{}), do: WorkoutLogs.finish_client_workout_log(f.ctx, id, Map.merge(%{difficulty: :just_right, pain: false}, attrs))
-
-  @tag criticality: 10
-  test "start claims the occurrence, stamps trusted identities, and has no prefilled sets", f do
-    # WHY: Starting must reserve the occasion without claiming unticked targets were performed.
-    spoofed = %{business_id: Ecto.UUID.generate(), client_id: Ecto.UUID.generate(), recorded_by: Ecto.UUID.generate()}
-    assert {:ok, log} = start(f, spoofed)
-    assert log.state == :active and log.sets == []
-    assert log.business_id == f.ctx.business_id and log.client_id == f.client.id and log.recorded_by == f.ctx.user_id
-    assert log.workout_id == f.workout.id and log.schedule_id == f.schedule.id and log.scheduled_date == f.today
-    assert {:error, :conflict} = start(f)
-    assert {:error, :conflict} = WorkoutLogs.start_client_workout_log(f.ctx, %{date: f.today})
-    assert {:ok, %{count: 1, workout_logs: [listed]}} = WorkoutLogs.list_client_workout_logs(f.ctx)
-    assert listed.id == log.id
-  end
-
-  @tag criticality: 10
-  test "future dates, unmatched occurrences and coach-led starts are rejected", f do
-    # WHY: A client cannot mark future work or record a coach-led session.
-    assert {:error, :future_date} = start(f, %{date: Date.add(f.today, 1)})
-    assert {:error, :future_date} = start(f, %{scheduled_date: Date.add(f.today, 1)})
-
-    for invalid <- [nil, "not-a-date", 7] do
-      assert {:error, :invalid_prescription} = start(f, %{scheduled_date: invalid})
-    end
-
-    assert {:error, :invalid_prescription} = start(f, %{workout_id: Ecto.UUID.generate()})
-
-    assert {:error, :invalid_prescription} =
-             WorkoutLogs.start_client_workout_log(f.ctx, %{date: f.today, scheduled_date: f.today})
-
-    {:ok, %{data: led}} =
-      Workouts.add_schedule_for_client(f.coach_ctx, f.client.id, %{workout_id: f.workout.id, weekdays_mask: 127, coach_id: f.coach_ctx.coach_id, time: "18:00:00"})
-
-    assert {:error, :forbidden} = start(f, %{schedule_id: led.id})
-  end
-
-  @tag criticality: 9
-  test "set corrections replace only saved ticks and Undo restores the exact values", f do
-    # WHY: Unticking must remove a performed set while input typed on the device stays unsaved.
-    {:ok, log} = start(f)
-    assert {:ok, %{data: saved, undo_token: token}} = WorkoutLogs.update_client_workout_log(f.ctx, log.id, %{sets: [set(f)]})
-    assert [%{reps: 8, weight_kg: kg} = first] = saved.sets
-    assert Decimal.equal?(kg, Decimal.new(60))
-    assert {:ok, %{data: corrected}} = WorkoutLogs.update_client_workout_log(f.ctx, log.id, %{sets: [set(f, %{id: first.id, reps: 9})]})
-    assert hd(corrected.sets).id == first.id and hd(corrected.sets).reps == 9
-    assert {:error, :conflict} = WorkoutLogs.restore_client_workout_log(f.ctx, %{undo_token: token})
-    assert {:ok, %{data: empty, undo_token: untick}} = WorkoutLogs.update_client_workout_log(f.ctx, log.id, %{sets: []})
-    assert empty.sets == []
-    assert {:ok, restored} = WorkoutLogs.restore_client_workout_log(f.ctx, %{undo_token: untick})
-    assert hd(restored.sets).reps == 9
-    assert {:error, :conflict} = WorkoutLogs.restore_client_workout_log(f.ctx, %{undo_token: untick})
-  end
-
-  @tag criticality: 9
-  test "correcting a saved set clears explicit nil and omitted metric values", f do
-    # WHY: Removing a performed metric must remove its saved value, not only its visible input.
-    {:ok, log} = start(f)
-    {:ok, %{data: saved}} = WorkoutLogs.update_client_workout_log(f.ctx, log.id, %{sets: [set(f)]})
-    previous = hd(saved.sets)
-    cleared = %{id: previous.id, workout_exercise_id: f.item.id, exercise_id: f.exercise.id, round: 1, reps: nil}
-    assert {:ok, %{data: updated, undo_token: token}} = WorkoutLogs.update_client_workout_log(f.ctx, log.id, %{sets: [cleared]})
-    assert [%{id: set_id, reps: nil, weight_kg: nil}] = updated.sets
-    assert set_id == previous.id
-    assert {:ok, reread} = WorkoutLogs.get_client_workout_log(f.ctx, log.id)
-    assert [%{reps: nil, weight_kg: nil}] = reread.sets
-    assert %{reps: nil, weight_kg: nil} = Repo.get!(ExerciseSet, set_id)
-    assert {:ok, restored} = WorkoutLogs.restore_client_workout_log(f.ctx, %{undo_token: token})
-    assert hd(restored.sets).reps == 8
-    assert Decimal.equal?(hd(restored.sets).weight_kg, Decimal.new(60))
-    assert {:ok, %{data: preserved}} = WorkoutLogs.update_client_workout_log(f.ctx, log.id, %{text: "Corrected note"})
-    assert hd(preserved.sets).reps == 8
-  end
-
-  @tag criticality: 8
-  test "all log operations return not_found for malformed ids", f do
-    # WHY: Invalid input must return a domain failure instead of raising a database cast error.
-    feedback = %{difficulty: :just_right, pain: false}
-
-    for id <- ["not-an-id", nil] do
-      assert {:error, :not_found} = WorkoutLogs.get_client_workout_log(f.ctx, id)
-      assert {:error, :not_found} = WorkoutLogs.update_client_workout_log(f.ctx, id, %{})
-      assert {:error, :not_found} = WorkoutLogs.finish_client_workout_log(f.ctx, id, feedback)
-      assert {:error, :not_found} = WorkoutLogs.discard_client_workout_log(f.ctx, id)
-      assert {:error, :not_found} = WorkoutLogs.reopen_client_workout_log(f.ctx, id)
-      assert {:error, :not_found} = WorkoutLogs.delete_client_workout_log(f.ctx, id)
-    end
-  end
-
-  @tag criticality: 9
-  test "finish stores only ticked sets, validates feedback and can reopen", f do
-    # WHY: Finishing never turns unticked planned rounds into completed work.
-    {:ok, log} = start(f)
-    assert {:error, %Ecto.Changeset{}} = WorkoutLogs.finish_client_workout_log(f.ctx, log.id, %{})
-    assert {:error, %Ecto.Changeset{}} = finish(f, log.id, %{pain_note: "Knee"})
-    assert {:ok, %{data: done, undo_token: token}} = finish(f, log.id, %{sets: [set(f)], pain: true, pain_note: "Knee"})
-    assert done.state == :completed and done.pain_note == "Knee" and length(done.sets) == 1
-    assert {:error, :conflict} = WorkoutLogs.update_client_workout_log(f.ctx, log.id, %{sets: []})
-    assert {:error, :conflict} = start(f)
-    assert {:ok, active} = WorkoutLogs.restore_client_workout_log(f.ctx, %{undo_token: token})
-    assert active.state == :active and active.sets == []
-    assert {:ok, %{data: _}} = finish(f, log.id)
-    assert {:ok, %{data: reopened}} = WorkoutLogs.reopen_client_workout_log(f.ctx, log.id)
-    assert reopened.state == :active
-  end
-
-  @tag criticality: 9
-  test "discard releases the active and occurrence slots while Undo detects later claims", f do
-    # WHY: Discard lets the client start again; Undo must not overwrite another session.
-    {:ok, log} = start(f)
-    assert {:ok, %{data: discarded, undo_token: token}} = WorkoutLogs.discard_client_workout_log(f.ctx, log.id)
-    assert discarded.state == :discarded
-    assert {:ok, resumed} = WorkoutLogs.restore_client_workout_log(f.ctx, %{undo_token: token})
-    assert resumed.state == :active
-    assert {:ok, %{undo_token: second}} = WorkoutLogs.discard_client_workout_log(f.ctx, log.id)
-    assert {:ok, _} = start(f)
-    assert {:error, :conflict} = WorkoutLogs.restore_client_workout_log(f.ctx, %{undo_token: second})
-  end
-
-  @tag criticality: 10
-  test "delete removes log and sets and signed Undo recreates their snapshots", f do
-    # WHY: A destructive client correction needs one safe inverse without a record spine.
-    {:ok, log} = start(f)
-    {:ok, %{data: saved}} = WorkoutLogs.update_client_workout_log(f.ctx, log.id, %{sets: [set(f)]})
-    assert {:ok, %{undo_token: token}} = WorkoutLogs.delete_client_workout_log(f.ctx, log.id)
-    refute Repo.get(WorkoutLog, log.id)
-    refute Repo.get(ExerciseSet, hd(saved.sets).id)
-    assert {:error, :not_found} = WorkoutLogs.get_client_workout_log(f.ctx, log.id)
-    assert {:ok, restored} = WorkoutLogs.restore_client_workout_log(f.ctx, %{undo_token: token})
-    assert restored.id == log.id and hd(restored.sets).id == hd(saved.sets).id
-    assert {:error, :conflict} = WorkoutLogs.restore_client_workout_log(f.ctx, %{undo_token: token})
-    assert {:error, :conflict} = WorkoutLogs.restore_client_workout_log(f.ctx, %{undo_token: "invalid"})
-    assert {:error, :conflict} = WorkoutLogs.restore_client_workout_log(f.ctx, %{})
-  end
-
-  @tag criticality: 10
-  test "delete Undo conflicts after coach content changes but allows catalogue changes", f do
-    # WHY: Recreating a log must not point its old sets at new instructions.
-    {:ok, log} = start(f)
-    {:ok, %{data: _}} = WorkoutLogs.update_client_workout_log(f.ctx, log.id, %{sets: [set(f)]})
-    {:ok, %{undo_token: token}} = WorkoutLogs.delete_client_workout_log(f.ctx, log.id)
-    {:ok, _} = Workouts.update_exercise(f.coach_ctx, f.exercise.id, %{name: "Catalogue changed"})
-    assert {:ok, _} = WorkoutLogs.restore_client_workout_log(f.ctx, %{undo_token: token})
-    {:ok, %{undo_token: second}} = WorkoutLogs.delete_client_workout_log(f.ctx, log.id)
-    {:ok, %{data: _}} = Workouts.update_workout_for_client(f.coach_ctx, f.client.id, f.workout.id, %{name: "New instructions"})
-    assert {:error, :conflict} = WorkoutLogs.restore_client_workout_log(f.ctx, %{undo_token: second})
-    refute Repo.get(WorkoutLog, log.id)
-  end
-
-  @tag criticality: 10
-  test "delete Undo conflicts after the coach changes the same schedule in place", f do
-    # WHY: A saved occurrence must keep the session details it followed.
-    {:ok, log} = start(f)
-    {:ok, %{undo_token: token}} = WorkoutLogs.delete_client_workout_log(f.ctx, log.id)
-    {:ok, %{data: changed}} = Workouts.update_schedule_for_client(f.coach_ctx, f.client.id, f.schedule.id, %{time: "20:00:00"})
-    assert changed.id == f.schedule.id
-    assert {:error, :conflict} = WorkoutLogs.restore_client_workout_log(f.ctx, %{undo_token: token})
-  end
-
-  @tag criticality: 10
-  test "every operation is isolated by client and business and denies coach actors", f do
-    # WHY: Knowledge of a record id grants no access to another client's records.
-    {:ok, log} = start(f)
-    other = insert(:client, business: f.client.business)
-    foreign = insert(:client)
-    contexts = [f.coach_ctx, %{f.ctx | client_id: other.id}, %{f.ctx | business_id: foreign.business_id, client_id: foreign.id}]
-
-    for ctx <- contexts do
-      assert {:error, :not_found} = WorkoutLogs.get_client_workout_log(ctx, log.id)
-      assert {:error, :not_found} = WorkoutLogs.update_client_workout_log(ctx, log.id, %{})
-      assert {:error, :not_found} = WorkoutLogs.finish_client_workout_log(ctx, log.id, %{difficulty: :just_right, pain: false})
-      assert {:error, :not_found} = WorkoutLogs.discard_client_workout_log(ctx, log.id)
-      assert {:error, :not_found} = WorkoutLogs.reopen_client_workout_log(ctx, log.id)
-      assert {:error, :not_found} = WorkoutLogs.delete_client_workout_log(ctx, log.id)
-    end
-
-    assert {:error, :not_found} = WorkoutLogs.list_client_workout_logs(f.coach_ctx)
-    assert {:ok, %{count: 0, workout_logs: []}} = WorkoutLogs.list_client_workout_logs(%{f.ctx | client_id: other.id})
-    assert {:error, :not_found} = WorkoutLogs.start_client_workout_log(%{f.ctx | client_id: other.id}, %{date: f.today, workout_id: f.workout.id})
-  end
-
-  @tag criticality: 9
-  test "swaps use the performed exercise's own metrics and retain catalogue snapshots", f do
-    # WHY: A substitute can have different metrics; later catalogue edits cannot rewrite saved work.
-    replacement = insert(:exercise, business: f.client.business, name: "Plank", metrics: ["duration"])
-    {:ok, log} = start(f)
-    body = %{swaps: %{f.item.id => replacement.id}, sets: [set(f, %{exercise_id: replacement.id, reps: nil, weight_kg: nil, duration_s: 60, entered_units: %{"duration" => "s"}})]}
-    assert {:ok, %{data: saved}} = WorkoutLogs.update_client_workout_log(f.ctx, log.id, body)
-    assert hd(saved.sets).duration_s == 60 and saved.swaps[f.item.id]["metrics"] == ["duration"]
-    assert {:ok, _} = Workouts.update_exercise(f.coach_ctx, replacement.id, %{name: "Changed", metrics: ["reps"], unilateral: true})
-    assert {:ok, %{data: corrected}} = WorkoutLogs.update_client_workout_log(f.ctx, log.id, %{sets: [Map.merge(hd(body.sets), %{id: hd(saved.sets).id, duration_s: 90})]})
-    assert hd(corrected.sets).exercise_snapshot["name"] == "Plank"
-    assert hd(corrected.sets).exercise_snapshot["metrics"] == ["duration"]
-    assert {:error, %Ecto.Changeset{}} = WorkoutLogs.update_client_workout_log(f.ctx, log.id, %{sets: [Map.merge(hd(body.sets), %{reps: 8})]})
-    wire = WorkoutLogs.present(corrected)
-    assert wire.swaps[f.item.id] == replacement.id and hd(wire.sets).exercise["name"] == "Plank"
-  end
-
-  @tag criticality: 10
-  test "foreign swaps, prescribed links, and forged set ids are rejected atomically", f do
-    # WHY: A performed set can only follow this log's prescription and visible exercises.
-    foreign = insert(:exercise)
-    {:ok, log} = start(f)
-    assert {:error, :not_found} = WorkoutLogs.update_client_workout_log(f.ctx, log.id, %{swaps: %{f.item.id => foreign.id}})
-    assert {:error, :invalid_prescription} = WorkoutLogs.update_client_workout_log(f.ctx, log.id, %{swaps: %{Ecto.UUID.generate() => f.exercise.id}})
-    assert {:error, :not_found} = WorkoutLogs.update_client_workout_log(f.ctx, log.id, %{sets: [set(f, %{workout_exercise_id: Ecto.UUID.generate()})]})
-    assert {:error, :invalid_set} = WorkoutLogs.update_client_workout_log(f.ctx, log.id, %{sets: [set(f, %{id: Ecto.UUID.generate()})]})
-    assert {:error, %Ecto.Changeset{}} = WorkoutLogs.update_client_workout_log(f.ctx, log.id, %{text: "Should roll back", sets: [set(f, %{reps: -1})]})
-    {:ok, unchanged} = WorkoutLogs.get_client_workout_log(f.ctx, log.id)
-    assert unchanged.text == nil and unchanged.sets == []
-  end
-
-  @tag criticality: 9
-  test "unilateral sets have two independent sides and all catalogue metrics are typed", f do
-    # WHY: Each side must be ticked apart, and metric reports require stable base-unit columns.
-    metrics = ~w(reps weight duration distance elevation_gain height calories speed incline level power cadence heart_rate effort reserve successes attempts score result grade)
-    extra = insert(:exercise, business: f.client.business, metrics: metrics, grade_scale: ["V1", "V2"], unilateral: true)
-    {:ok, log} = start(f)
-
-    values = %{
-      exercise_id: extra.id,
-      round: 1,
-      side: :left,
-      reps: 1,
-      weight_kg: -5,
-      duration_s: 20,
-      distance_m: 50,
-      elevation_gain_m: 3,
-      height_cm: 20,
-      calories_kcal: 8,
-      speed_m_s: 2,
-      incline_pct: -2,
-      level: 1,
-      power_w: 50,
-      cadence_rpm: 30,
-      heart_rate_bpm: 90,
-      effort: 8,
-      reserve: 2,
-      successes: 2,
-      attempts: 3,
-      score: 7,
-      result: :win,
-      grade: "V2"
+    %{
+      coach: coach,
+      client: client,
+      ctx: ctx,
+      client_ctx: client_ctx(client),
+      exercise: exercise,
+      replacement: replacement,
+      workout: workout,
+      entry: hd(hd(workout.groups).exercises),
+      today: Date.utc_today()
     }
-
-    assert {:error, %Ecto.Changeset{}} = WorkoutLogs.update_client_workout_log(f.ctx, log.id, %{sets: [Map.delete(values, :side)]})
-    assert {:ok, %{data: saved}} = WorkoutLogs.update_client_workout_log(f.ctx, log.id, %{sets: [values, %{values | side: :right}]})
-    assert length(saved.sets) == 2
-    wire = WorkoutLogs.present(saved)
-    assert Enum.sort(Enum.map(wire.sets, & &1.side)) == [:left, :right]
-    assert Enum.all?(wire.sets, &(&1.weight_kg == -5.0 and &1.result == :win and &1.grade == "V2"))
-    assert {:error, %Ecto.Changeset{}} = WorkoutLogs.update_client_workout_log(f.ctx, log.id, %{sets: [%{values | successes: 4}]})
   end
 
-  @tag criticality: 10
-  test "database active and occurrence uniqueness prevent concurrent duplicate claims", f do
-    # WHY: The client lock orders app writes; unique indexes also protect other writers.
-    {:ok, log} = start(f)
-    cs = WorkoutLog.insert_changeset(f.ctx.business_id, f.ctx.user_id, f.client.id, DateTime.utc_now(:second), %{date: f.today})
-    assert {:error, invalid} = Repo.insert(cs)
-    assert "has already been taken" in errors_on(invalid).state
-    assert {:ok, %{data: _}} = finish(f, log.id)
-    duplicate = cs |> put_change(:schedule_id, f.schedule.id) |> put_change(:scheduled_date, f.today) |> put_change(:workout_id, f.workout.id)
-    assert {:error, invalid} = Repo.insert(duplicate)
-    assert "has already been taken" in errors_on(invalid).schedule_id
+  test "client and coach starts set the recorder and reopen keeps it", f do
+    client_log = start_log(f)
+    assert {client_log.recorded_by, client_log.coach_id, client_log.recorder_name} == {:client, nil, "Alex"}
+
+    assert {:ok, edited} = WorkoutLogs.update_workout_log_for_client(f.ctx, f.client.id, client_log.id, %{text: "Coach note"})
+    assert {edited.recorded_by, edited.coach_id, edited.text} == {:client, nil, "Coach note"}
+    assert {:ok, _} = WorkoutLogs.finish_workout_log_for_client(f.ctx, f.client.id, client_log.id, %{})
+    assert {:ok, reopened} = WorkoutLogs.reopen_client_workout_log(f.client_ctx, client_log.id)
+    assert {reopened.recorded_by, reopened.coach_id, reopened.recorder_name} == {:client, nil, "Alex"}
+    assert {:ok, _} = WorkoutLogs.discard_client_workout_log(f.client_ctx, reopened.id)
+
+    assert {:ok, coach_log} =
+             WorkoutLogs.start_workout_log_for_client(f.ctx, f.client.id, %{id: Ecto.UUID.generate(), workout_id: f.workout.id})
+
+    assert {coach_log.recorded_by, coach_log.coach_id, coach_log.recorder_name} == {:coach, f.coach.id, "Sam"}
+    assert {:ok, _} = WorkoutLogs.update_client_workout_log(f.client_ctx, coach_log.id, %{text: "Client note"})
+    assert {:ok, _} = WorkoutLogs.finish_client_workout_log(f.client_ctx, coach_log.id, %{})
+    assert {:ok, reopened} = WorkoutLogs.reopen_workout_log_for_client(f.ctx, f.client.id, coach_log.id)
+    assert {reopened.recorded_by, reopened.coach_id, reopened.text} == {:coach, f.coach.id, "Client note"}
   end
 
-  @tag criticality: 10
-  test "today's coach edits copy only after an occurrence has been claimed", f do
-    # WHY: A log must keep the exact instructions the client followed.
-    assert {:ok, %{data: same}} = Workouts.update_workout_for_client(f.coach_ctx, f.client.id, f.workout.id, %{name: "Before start"})
-    assert same.id == f.workout.id
-    {:ok, log} = start(f)
-    assert {:ok, %{data: copy, undo_token: coach_undo}} = Workouts.update_workout_for_client(f.coach_ctx, f.client.id, f.workout.id, %{name: "After start"})
-    assert copy.id != f.workout.id
-    assert Repo.get!(Workout, f.workout.id).name == "Before start"
-    assert Repo.get!(Workout, f.workout.id).archived_at
-    assert Repo.get!(WorkoutSchedule, f.schedule.id).until_date == f.today
-    next = Repo.one(from(s in WorkoutSchedule, where: s.workout_id == ^copy.id))
-    assert next.from_date == Date.add(f.today, 1)
-    assert {:ok, %{schedules: current_rows, workouts: current_workouts}} = Workouts.read_week_for_client(f.coach_ctx, f.client.id)
-    assert Enum.map(current_rows, & &1.id) == [next.id]
-    assert Enum.map(current_workouts, & &1.id) == [copy.id]
-    assert {:ok, retained} = WorkoutLogs.get_client_workout_log(f.ctx, log.id)
-    assert retained.workout.name == "Before start"
-    assert {:ok, _} = Workouts.undo_for_client(f.coach_ctx, f.client.id, coach_undo)
-    assert Repo.get!(WorkoutLog, log.id).workout_id == f.workout.id
+  test "a coach can start a coach-led occurrence and the client reads the same active log", f do
+    leader = insert(:coach, business: f.coach.business)
+    schedule = schedule(f, %{coach_id: leader.id})
+    attrs = %{id: Ecto.UUID.generate(), schedule_id: schedule.id, scheduled_date: f.today}
+    assert {:ok, log} = WorkoutLogs.start_workout_log_for_client(f.ctx, f.client.id, attrs)
+    assert {log.workout_id, log.schedule_id, log.scheduled_date} == {f.workout.id, schedule.id, f.today}
+    assert {log.recorded_by, log.coach_id} == {:coach, f.coach.id}
+    assert {:ok, found} = WorkoutLogs.get_client_workout_log(f.client_ctx, log.id)
+    assert {found.id, found.state, found.recorder_name} == {log.id, :active, "Sam"}
+    assert {:ok, %{count: 1, workout_logs: [listed]}} = WorkoutLogs.list_client_workout_logs(f.client_ctx, [])
+    assert listed.id == log.id
+
+    assert {:ok, _} = WorkoutLogs.discard_workout_log_for_client(f.ctx, f.client.id, log.id)
+    assert {:ok, client_log} = WorkoutLogs.start_client_workout_log(f.client_ctx, %{attrs | id: Ecto.UUID.generate()})
+    assert {client_log.recorded_by, client_log.coach_id, client_log.schedule_id} == {:client, nil, schedule.id}
   end
 
-  @tag criticality: 10
-  test "coach schedule edits and deletes preserve today's claim", f do
-    # WHY: Session details already followed are prescription facts too.
-    {:ok, _} = start(f)
-    assert {:ok, %{data: changed}} = Workouts.update_schedule_for_client(f.coach_ctx, f.client.id, f.schedule.id, %{time: "19:00:00"})
-    assert changed.id != f.schedule.id and changed.from_date == Date.add(f.today, 1)
-    assert Repo.get!(WorkoutSchedule, f.schedule.id).until_date == f.today
-    assert {:ok, _} = Workouts.delete_workout_for_client(f.coach_ctx, f.client.id, f.workout.id)
-    assert Repo.get!(Workout, f.workout.id).archived_at
-    assert Repo.get!(WorkoutSchedule, f.schedule.id).until_date == f.today
+  test "a second active log for the client is a conflict", f do
+    log = start_log(f)
+    assert {:error, :conflict} = WorkoutLogs.start_client_workout_log(f.client_ctx, %{id: Ecto.UUID.generate()})
+
+    assert {:error, :conflict} =
+             WorkoutLogs.start_workout_log_for_client(f.ctx, f.client.id, %{id: Ecto.UUID.generate(), workout_id: f.workout.id})
+
+    assert Repo.aggregate(WorkoutLog, :count) == 1
+    assert Repo.get!(WorkoutLog, log.id).state == :active
   end
 
-  @tag criticality: 10
-  test "coach Undo cannot rewrite a workout that the client started after the edit", f do
-    # WHY: Undo must preserve records created by another actor between edit and recovery.
-    {:ok, %{undo_token: token}} = Workouts.update_workout_for_client(f.coach_ctx, f.client.id, f.workout.id, %{name: "Edited"})
-    {:ok, _} = start(f)
-    assert {:error, :conflict} = Workouts.undo_for_client(f.coach_ctx, f.client.id, token)
-    assert Repo.get!(Workout, f.workout.id).name == "Edited"
+  test "a claimed occurrence cannot be started twice; a discarded one frees it", f do
+    schedule = schedule(f)
+    attrs = %{schedule_id: schedule.id, scheduled_date: f.today}
+    log = start_log(f, attrs)
+    assert {:ok, _} = WorkoutLogs.finish_client_workout_log(f.client_ctx, log.id, %{})
+    assert {:error, :conflict} = WorkoutLogs.start_client_workout_log(f.client_ctx, Map.put(attrs, :id, Ecto.UUID.generate()))
+    assert {:ok, _} = WorkoutLogs.reopen_client_workout_log(f.client_ctx, log.id)
+    assert {:ok, discarded} = WorkoutLogs.discard_client_workout_log(f.client_ctx, log.id)
+    assert discarded.state == :discarded
+    replacement = start_log(f, attrs)
+    assert replacement.id != log.id
+    assert replacement.schedule_id == schedule.id
+    assert Repo.get!(WorkoutLog, log.id).state == :discarded
   end
 
-  @tag criticality: 9
-  test "coach Undo restores reordered groups without colliding with their positions", f do
-    # WHY: Adding log foreign keys must not break the coach's existing reorder recovery.
-    groups = [%{rounds: 2, exercises: [%{exercise_id: f.exercise.id}]}, %{rounds: 3, exercises: [%{exercise_id: f.exercise.id}]}]
-    {:ok, %{data: before}} = Workouts.update_workout_for_client(f.coach_ctx, f.client.id, f.workout.id, %{groups: groups})
+  test "a future date is rejected", f do
+    future = Date.add(f.today, 1)
+    attrs = %{id: Ecto.UUID.generate(), date: future}
+    assert {:error, changeset} = WorkoutLogs.start_client_workout_log(f.client_ctx, attrs)
+    assert errors_on(changeset).date
+    schedule = schedule(f)
 
-    reversed =
-      Enum.reverse(before.groups)
-      |> Enum.map(fn group -> %{id: group.id, rounds: group.rounds, exercises: Enum.map(group.exercises, &Map.take(&1, [:id, :exercise_id, :targets, :targets_mode, :rest]))} end)
+    assert {:error, changeset} =
+             WorkoutLogs.start_workout_log_for_client(f.ctx, f.client.id, %{
+               id: Ecto.UUID.generate(),
+               schedule_id: schedule.id,
+               scheduled_date: future
+             })
 
-    {:ok, %{undo_token: token}} = Workouts.update_workout_for_client(f.coach_ctx, f.client.id, f.workout.id, %{groups: reversed})
-    assert {:ok, _} = Workouts.undo_for_client(f.coach_ctx, f.client.id, token)
-    {:ok, after_row} = Workouts.get_workout_for_client(f.coach_ctx, f.client.id, f.workout.id)
-    assert Enum.map(after_row.groups, & &1.id) == Enum.map(before.groups, & &1.id)
+    assert errors_on(changeset).scheduled_date
+    assert Repo.aggregate(WorkoutLog, :count) == 0
   end
 
-  @tag criticality: 9
-  test "video and free logs allow optional extra sets without creating a shared record", f do
-    # WHY: Optional tracking must work for open sessions and must not use the withdrawn spine.
-    seq = f.client.last_change_seq
-    changes = Repo.aggregate("record_changes", :count)
-    {:ok, %{data: video}} = Workouts.create_workout_for_client(f.coach_ctx, f.client.id, %{name: "Video", type: :video, video: "https://example.com/video"})
-    {:ok, log} = WorkoutLogs.start_client_workout_log(f.ctx, %{date: f.today, workout_id: video.id})
-    assert {:ok, %{data: done}} = finish(f, log.id)
-    assert done.sets == []
-    {:ok, free} = WorkoutLogs.start_client_workout_log(f.ctx, %{date: f.today})
-    assert {:ok, %{data: _}} = WorkoutLogs.update_client_workout_log(f.ctx, free.id, %{sets: [Map.put(set(f), :workout_exercise_id, nil)]})
-    assert Repo.get!(Easy.Clients.Client, f.client.id).last_change_seq == seq
-    assert Repo.aggregate("record_changes", :count) == changes
+  test "starting an activity creates only that activity with the entry's targets", f do
+    log = start_log(f)
+    assert log.exercise_logs == []
+    {log, activity} = start_activity(f, log)
+    assert {activity.workout_exercise_id, activity.exercise_id, activity.position} == {f.entry.id, f.exercise.id, 0}
+    assert {activity.rounds, activity.side_mode, activity.targets_mode} == {3, :combined, :same_for_all}
+    assert {hd(activity.targets).reps.value, hd(activity.targets).rest.value_s} == {8, Decimal.new(60)}
+    assert {activity.reps, activity.weight_kg, activity.sets} == {nil, nil, []}
+    assert hd(hd(log.workout.groups).exercises).exercise.id == f.exercise.id
+    assert activity.exercise.id == f.exercise.id
+    assert Repo.aggregate(ExerciseLog, :count) == 1
+    assert Repo.aggregate(ExerciseSet, :count) == 0
   end
-end
 
-defmodule Easy.WorkoutLogsConcurrencyTest do
-  use ExUnit.Case, async: false
-  import Easy.Factory
-  alias Easy.Ctx
-  alias Easy.Repo
-  alias Easy.WorkoutLogs
-  alias Easy.Workouts.WorkoutLog
-  alias Ecto.Adapters.SQL.Sandbox
-  import Ecto.Query
+  test "a replacement before saved work reuses the activity", f do
+    {log, activity} = f |> start_log() |> then(&start_activity(f, &1))
+    attrs = %{id: Ecto.UUID.generate(), exercise_id: f.replacement.id}
+    assert {:ok, changed} = WorkoutLogs.replace_client_activity(f.client_ctx, log.id, activity.id, attrs)
+    [replacement] = changed.exercise_logs
 
-  @tag criticality: 10
-  test "independent transactions racing to start leave one active log" do
-    # WHY: Two devices must not both create an active workout before either sees the other.
-    Sandbox.unboxed_run(Repo, fn ->
-      coach = insert(:coach)
-      client = insert(:client, business: coach.business, coach: coach, timezone: "Etc/UTC")
-      ctx = %Ctx{business_id: client.business_id, user_id: client.user_id, client_id: client.id}
-      parent = self()
-      tasks = for _ <- 1..2, do: Task.async(fn -> race_start(parent, ctx) end)
-      ready = for _ <- 1..2, do: receive(do: ({:ready, pid} -> pid))
-      Enum.each(ready, &send(&1, :start))
+    assert {replacement.id, replacement.exercise_id, replacement.workout_exercise_id} ==
+             {activity.id, f.replacement.id, f.entry.id}
 
-      try do
-        results = Enum.map(tasks, &Task.await(&1, 10_000))
-        assert Enum.count(results, &match?({:ok, _}, &1)) == 1
-        assert Enum.count(results, &(&1 == {:error, :conflict})) == 1
-        assert Repo.aggregate(WorkoutLog.for_client(ctx.business_id, client.id), :count) == 1
-      after
-        Repo.delete_all(from(t in Easy.CoachingTerms.CoachingTerm, where: t.client_id == ^client.id))
-        Repo.delete_all(from(c in Easy.Clients.Client, where: c.id == ^client.id))
-        Repo.delete_all(from(c in Easy.Orgs.Coach, where: c.id == ^coach.id))
-        Repo.delete_all(from(b in Easy.Orgs.Business, where: b.id == ^client.business_id))
-        ids = [coach.user_id, client.user_id, coach.business.owner_user_id]
-        Repo.delete_all(from(u in Easy.Identity.User, where: u.id in ^ids))
+    assert {replacement.rounds, replacement.targets_mode, hd(replacement.targets).reps} == {3, :same_for_all, nil}
+    assert hd(replacement.targets).rest.value_s == Decimal.new(60)
+    assert replacement.sets == []
+    assert {:ok, repeated} = WorkoutLogs.replace_client_activity(f.client_ctx, log.id, activity.id, attrs)
+    assert hd(repeated.exercise_logs).id == activity.id
+
+    assert {:error, :conflict} =
+             WorkoutLogs.replace_client_activity(f.client_ctx, log.id, activity.id, %{attrs | exercise_id: f.exercise.id})
+
+    assert Repo.aggregate(ExerciseLog, :count) == 1
+  end
+
+  test "a replacement after a recorded set creates a new activity and keeps the set", f do
+    {log, activity} = f |> start_log() |> then(&start_activity(f, &1))
+    {log, set} = record_set(f, log, activity, %{round: 1, reps: 5})
+    replacement_id = Ecto.UUID.generate()
+    attrs = %{id: replacement_id, exercise_id: f.replacement.id}
+    assert {:ok, changed} = WorkoutLogs.replace_activity_for_client(f.ctx, f.client.id, log.id, activity.id, attrs)
+    [original, replacement] = changed.exercise_logs
+    assert {original.id, hd(original.sets).id, hd(original.sets).reps} == {activity.id, set.id, 5}
+    assert {replacement.id, replacement.exercise_id, replacement.position} == {replacement_id, f.replacement.id, 1}
+
+    assert {replacement.rounds, hd(replacement.targets).reps, hd(replacement.targets).rest.value_s} ==
+             {3, nil, Decimal.new(60)}
+
+    assert {:ok, retried} = WorkoutLogs.replace_activity_for_client(f.ctx, f.client.id, log.id, activity.id, attrs)
+    assert Enum.map(retried.exercise_logs, & &1.id) == [activity.id, replacement_id]
+
+    assert {:error, :conflict} =
+             WorkoutLogs.replace_client_activity(f.client_ctx, log.id, activity.id, %{attrs | exercise_id: f.exercise.id})
+
+    assert Repo.aggregate(ExerciseLog, :count) == 2
+    assert Repo.aggregate(ExerciseSet, :count) == 1
+  end
+
+  test "a side-specific swap keeps left on the original and right on the replacement", f do
+    f = each_side(f)
+    {log, activity} = f |> start_log() |> then(&start_activity(f, &1))
+    {log, left} = record_set(f, log, activity, %{round: 1, side: "left", reps: 10})
+    id = Ecto.UUID.generate()
+
+    assert {:ok, log} =
+             WorkoutLogs.replace_client_activity(f.client_ctx, log.id, activity.id, %{id: id, exercise_id: f.replacement.id})
+
+    replacement = find_activity(log, id)
+    {log, right} = record_set(f, log, replacement, %{round: 1, side: "right", reps: 8})
+    attrs = %{id: Ecto.UUID.generate(), state: "completed", round: 1, side: "left", reps: 7}
+    assert {:error, changeset} = WorkoutLogs.record_client_set(f.client_ctx, log.id, replacement.id, attrs)
+    assert errors_on(changeset).round
+    [original, replacement] = log.exercise_logs
+    assert {hd(original.sets).id, hd(original.sets).reps, hd(original.sets).side} == {left.id, 10, :left}
+    assert {hd(replacement.sets).id, hd(replacement.sets).reps, hd(replacement.sets).side} == {right.id, 8, :right}
+    assert Repo.aggregate(ExerciseSet, :count) == 2
+  end
+
+  test "skipped and missing sets stay distinct through finish and reopen", f do
+    {log, activity} = f |> start_log() |> then(&start_activity(f, &1))
+    {log, done} = record_set(f, log, activity, %{round: 1, reps: 8})
+    {log, skipped} = record_set(f, log, activity, %{round: 2, state: "skipped"})
+    assert {:ok, _} = WorkoutLogs.finish_client_workout_log(f.client_ctx, log.id, %{})
+    assert {:ok, _} = WorkoutLogs.reopen_client_workout_log(f.client_ctx, log.id)
+    assert {:ok, finished} = WorkoutLogs.finish_workout_log_for_client(f.ctx, f.client.id, log.id, %{})
+    [activity] = finished.exercise_logs
+    assert {finished.state, activity.state} == {:completed, :active}
+    assert Enum.map(activity.sets, &{&1.id, &1.round, &1.state}) == [{done.id, 1, :completed}, {skipped.id, 2, :skipped}]
+    refute Enum.any?(activity.sets, &(&1.round == 3))
+    assert Repo.aggregate(ExerciseSet, :count) == 2
+  end
+
+  test "partial intervals keep the reported overall result", f do
+    assert {:ok, run} = Workouts.create_exercise(f.ctx, %{name: "Run", kind: "activity"})
+    log = start_log(f, %{workout_id: nil})
+    {log, activity} = start_activity(f, log, %{workout_exercise_id: nil, exercise_id: run.id})
+
+    assert {:ok, log} =
+             WorkoutLogs.update_client_activity(f.client_ctx, log.id, activity.id, %{distance_m: 5000, duration_s: "1800.5"})
+
+    activity = find_activity(log, activity.id)
+    {log, _} = record_set(f, log, activity, %{round: 1, distance_m: 1000, duration_s: "360.25"})
+    {log, _} = record_set(f, log, activity, %{round: 2, distance_m: 1000, duration_s: "350.5"})
+    assert {:ok, completed} = WorkoutLogs.complete_client_activity(f.client_ctx, log.id, activity.id, %{})
+    [activity] = completed.exercise_logs
+    assert {activity.distance_m, activity.duration_s} == {Decimal.new(5000), Decimal.new("1800.5")}
+    assert Enum.map(activity.sets, & &1.distance_m) == [Decimal.new(1000), Decimal.new(1000)]
+    assert activity.reps == nil
+  end
+
+  test "completing without measurements stores no numbers", f do
+    {log, activity} = f |> start_log() |> then(&start_activity(f, &1))
+    assert {:ok, log} = WorkoutLogs.complete_activity_for_client(f.ctx, f.client.id, log.id, activity.id, %{})
+    [completed] = log.exercise_logs
+    assert {completed.state, completed.reps, completed.weight_kg, completed.sets} == {:completed, nil, nil, []}
+    {log, done} = record_set(f, log, completed, %{round: 1})
+    assert {done.state, done.reps, done.weight_kg, done.duration_s} == {:completed, nil, nil, nil}
+    assert hd(log.exercise_logs).reps == nil
+    assert Repo.aggregate(ExerciseSet, :count) == 1
+  end
+
+  test "skipping recorded work is rejected", f do
+    {log, activity} = f |> start_log() |> then(&start_activity(f, &1))
+    {log, done} = record_set(f, log, activity, %{round: 1})
+    assert {:error, changeset} = WorkoutLogs.skip_client_activity(f.client_ctx, log.id, activity.id)
+    assert errors_on(changeset).state
+    assert {:error, changeset} = WorkoutLogs.correct_client_set(f.client_ctx, log.id, activity.id, done.id, %{state: "skipped"})
+    assert errors_on(changeset).state
+    assert Repo.get!(ExerciseSet, done.id).state == :completed
+  end
+
+  test "a closed workout rejects activity and set writes", f do
+    {log, activity} = f |> start_log() |> then(&start_activity(f, &1))
+    {log, set} = record_set(f, log, activity, %{round: 1, reps: 8})
+    assert {:ok, _} = WorkoutLogs.finish_client_workout_log(f.client_ctx, log.id, %{})
+
+    for {name, args} <- closed_commands(f, log, activity, set) do
+      assert {:error, %Ecto.Changeset{}} = apply(WorkoutLogs, name, [f.client_ctx | args]), "#{name} changed a closed workout"
+    end
+
+    assert {:ok, retained} = WorkoutLogs.get_client_workout_log(f.client_ctx, log.id)
+    assert {retained.state, hd(hd(retained.exercise_logs).sets).reps} == {:completed, 8}
+  end
+
+  test "retrying start_activity with the same id returns the session; different content conflicts", f do
+    log = start_log(f)
+    id = Ecto.UUID.generate()
+    attrs = %{id: id, exercise_id: f.exercise.id, workout_exercise_id: f.entry.id}
+    assert {:ok, first} = WorkoutLogs.start_client_activity(f.client_ctx, log.id, attrs)
+    assert {:ok, retried} = WorkoutLogs.start_activity_for_client(f.ctx, f.client.id, log.id, attrs)
+    assert Enum.map(retried.exercise_logs, & &1.id) == [id]
+    assert hd(retried.exercise_logs).updated_at == hd(first.exercise_logs).updated_at
+    assert {:error, :conflict} = WorkoutLogs.start_client_activity(f.client_ctx, log.id, %{attrs | exercise_id: f.replacement.id})
+    assert Repo.aggregate(ExerciseLog, :count) == 1
+  end
+
+  test "retrying record_set with the same id is idempotent", f do
+    {log, activity} = f |> start_log() |> then(&start_activity(f, &1))
+    attrs = %{id: Ecto.UUID.generate(), state: "completed", round: 1, reps: 8, weight_kg: "20.0", entered_units: %{weight: "lb"}}
+    assert {:ok, first} = WorkoutLogs.record_client_set(f.client_ctx, log.id, activity.id, attrs)
+
+    assert {:ok, retried} =
+             WorkoutLogs.record_set_for_client(f.ctx, f.client.id, log.id, activity.id, %{attrs | weight_kg: 20})
+
+    first_set = hd(hd(first.exercise_logs).sets)
+    retried_set = hd(hd(retried.exercise_logs).sets)
+    assert {retried_set.id, retried_set.reps} == {attrs.id, 8}
+    assert Decimal.equal?(retried_set.weight_kg, Decimal.new(20))
+    assert retried_set.updated_at == first_set.updated_at
+    assert {:error, :conflict} = WorkoutLogs.record_client_set(f.client_ctx, log.id, activity.id, %{attrs | reps: 9})
+    assert {:error, :conflict} = WorkoutLogs.record_client_set(f.client_ctx, log.id, activity.id, %{attrs | entered_units: %{weight: "kg"}})
+    assert Repo.aggregate(ExerciseSet, :count) == 1
+  end
+
+  test "repeated transitions return the session unchanged", f do
+    {log, activity} = f |> start_log() |> then(&start_activity(f, &1))
+    assert {:ok, completed} = WorkoutLogs.complete_client_activity(f.client_ctx, log.id, activity.id, %{})
+    assert {:ok, repeated} = WorkoutLogs.complete_client_activity(f.client_ctx, log.id, activity.id, %{})
+    assert snapshot(repeated) == snapshot(completed)
+    assert {:ok, reopened} = WorkoutLogs.reopen_client_activity(f.client_ctx, log.id, activity.id)
+    assert {:ok, repeated} = WorkoutLogs.reopen_activity_for_client(f.ctx, f.client.id, log.id, activity.id)
+    assert snapshot(repeated) == snapshot(reopened)
+    assert {:ok, skipped} = WorkoutLogs.skip_client_activity(f.client_ctx, log.id, activity.id)
+    assert {:ok, repeated} = WorkoutLogs.skip_activity_for_client(f.ctx, f.client.id, log.id, activity.id)
+    assert snapshot(repeated) == snapshot(skipped)
+    assert {:ok, finished} = WorkoutLogs.finish_client_workout_log(f.client_ctx, log.id, %{})
+    assert {:ok, repeated} = WorkoutLogs.finish_workout_log_for_client(f.ctx, f.client.id, log.id, %{})
+    assert snapshot(repeated) == snapshot(finished)
+    assert {:ok, reopened} = WorkoutLogs.reopen_client_workout_log(f.client_ctx, log.id)
+    assert {:ok, repeated} = WorkoutLogs.reopen_workout_log_for_client(f.ctx, f.client.id, log.id)
+    assert snapshot(repeated) == snapshot(reopened)
+    assert {:ok, discarded} = WorkoutLogs.discard_client_workout_log(f.client_ctx, log.id)
+    assert {:ok, repeated} = WorkoutLogs.discard_workout_log_for_client(f.ctx, f.client.id, log.id)
+    assert snapshot(repeated) == snapshot(discarded)
+  end
+
+  test "client and coach activity completion retries compare canonical measurements", f do
+    {log, activity} = f |> start_log() |> then(&start_activity(f, &1))
+    measurements = %{reps: 8, weight_kg: "20.0", entered_units: %{weight: "lb"}}
+    assert {:ok, completed} = WorkoutLogs.complete_client_activity(f.client_ctx, log.id, activity.id, measurements)
+    assert {hd(completed.exercise_logs).state, hd(completed.exercise_logs).reps} == {:completed, 8}
+
+    for attrs <- [measurements, %{"reps" => "8", "weight_kg" => "20.00", "entered_units" => %{"weight" => "lb"}}, %{weight_kg: 20}, %{}] do
+      assert {:ok, replayed} = WorkoutLogs.complete_client_activity(f.client_ctx, log.id, activity.id, attrs)
+      assert snapshot(replayed) == snapshot(completed)
+      assert {:ok, replayed} = WorkoutLogs.complete_activity_for_client(f.ctx, f.client.id, log.id, activity.id, attrs)
+      assert snapshot(replayed) == snapshot(completed)
+    end
+
+    for attrs <- [%{reps: 9}, %{weight_kg: 21}, %{weight_kg: nil}, %{entered_units: %{weight: "kg"}}, %{reps: "8.5"}] do
+      assert {:error, %Ecto.Changeset{}} = WorkoutLogs.complete_client_activity(f.client_ctx, log.id, activity.id, attrs)
+      assert {:error, %Ecto.Changeset{}} = WorkoutLogs.complete_activity_for_client(f.ctx, f.client.id, log.id, activity.id, attrs)
+    end
+
+    assert {:ok, retained} = WorkoutLogs.get_client_workout_log(f.client_ctx, log.id)
+    assert snapshot(retained) == snapshot(completed)
+
+    assert {:ok, closed} = WorkoutLogs.finish_client_workout_log(f.client_ctx, log.id, %{})
+
+    for attrs <- [measurements, %{weight_kg: 20}, %{}] do
+      assert {:ok, replayed} = WorkoutLogs.complete_client_activity(f.client_ctx, log.id, activity.id, attrs)
+      assert snapshot(replayed) == snapshot(closed)
+      assert {:ok, replayed} = WorkoutLogs.complete_activity_for_client(f.ctx, f.client.id, log.id, activity.id, attrs)
+      assert snapshot(replayed) == snapshot(closed)
+    end
+
+    assert {:error, %Ecto.Changeset{}} = WorkoutLogs.complete_client_activity(f.client_ctx, log.id, activity.id, %{reps: 9})
+    assert {:error, %Ecto.Changeset{}} = WorkoutLogs.complete_activity_for_client(f.ctx, f.client.id, log.id, activity.id, %{reps: 9})
+  end
+
+  test "client and coach set removal retries keep the authorized activity and session unchanged", f do
+    {log, activity} = f |> start_log() |> then(&start_activity(f, &1))
+    {log, set} = record_set(f, log, activity, %{round: 1, reps: 8})
+    assert {:ok, removed} = WorkoutLogs.remove_client_set(f.client_ctx, log.id, activity.id, set.id)
+    assert hd(removed.exercise_logs).sets == []
+    assert Repo.get(ExerciseSet, set.id) == nil
+
+    assert {:ok, repeated} = WorkoutLogs.remove_client_set(f.client_ctx, log.id, activity.id, set.id)
+    assert snapshot(repeated) == snapshot(removed)
+    assert {:ok, repeated} = WorkoutLogs.remove_set_for_client(f.ctx, f.client.id, log.id, activity.id, set.id)
+    assert snapshot(repeated) == snapshot(removed)
+
+    missing_activity = Ecto.UUID.generate()
+    assert {:error, :not_found} = WorkoutLogs.remove_client_set(f.client_ctx, log.id, missing_activity, set.id)
+    assert {:error, :not_found} = WorkoutLogs.remove_set_for_client(f.ctx, f.client.id, log.id, missing_activity, set.id)
+    assert {:error, :not_found} = WorkoutLogs.remove_client_set(f.client_ctx, log.id, activity.id, "invalid")
+    assert {:error, :not_found} = WorkoutLogs.remove_set_for_client(f.ctx, f.client.id, log.id, activity.id, "invalid")
+
+    {log, other_activity} = start_activity(f, removed, %{exercise_id: f.replacement.id, workout_exercise_id: nil})
+    {log, other_set} = record_set(f, log, other_activity, %{round: 1, reps: 5})
+    assert {:error, :not_found} = WorkoutLogs.remove_client_set(f.client_ctx, log.id, activity.id, other_set.id)
+    assert {:error, :not_found} = WorkoutLogs.remove_set_for_client(f.ctx, f.client.id, log.id, activity.id, other_set.id)
+    assert Repo.get!(ExerciseSet, other_set.id).reps == 5
+
+    foreign_coach = insert(:coach)
+    assert {:error, :not_found} = WorkoutLogs.remove_set_for_client(trainer_ctx(foreign_coach), f.client.id, log.id, activity.id, set.id)
+    assert {:error, :not_found} = WorkoutLogs.remove_client_set(client_ctx(insert(:client)), log.id, activity.id, set.id)
+  end
+
+  test "finish accepts no feedback and stores effort from 1 to 5", f do
+    log = start_log(f)
+    assert {:ok, empty} = WorkoutLogs.finish_client_workout_log(f.client_ctx, log.id, %{})
+    assert {empty.state, empty.effort, empty.pain, empty.text} == {:completed, nil, nil, nil}
+    assert {:ok, _} = WorkoutLogs.reopen_client_workout_log(f.client_ctx, log.id)
+
+    for effort <- [0, 6] do
+      assert {:error, changeset} = WorkoutLogs.finish_client_workout_log(f.client_ctx, log.id, %{effort: effort})
+      assert errors_on(changeset).effort
+    end
+
+    for effort <- 1..5 do
+      assert {:ok, saved} = WorkoutLogs.finish_client_workout_log(f.client_ctx, log.id, %{effort: effort})
+      assert saved.effort == effort
+      assert {:ok, _} = WorkoutLogs.reopen_client_workout_log(f.client_ctx, log.id)
+    end
+
+    assert {:ok, saved} = WorkoutLogs.finish_client_workout_log(f.client_ctx, log.id, %{pain: false, text: "  Felt good\nNo pain  "})
+    assert {saved.pain, saved.text} == {false, "Felt good\nNo pain"}
+  end
+
+  test "an archived prescribed exercise can still be logged; an archived replacement cannot be newly chosen", f do
+    assert {:ok, _} = Workouts.archive_exercise(f.ctx, f.exercise.id)
+    assert {:ok, _} = Workouts.archive_exercise(f.ctx, f.replacement.id)
+    {log, activity} = f |> start_log() |> then(&start_activity(f, &1))
+    assert activity.exercise_id == f.exercise.id
+    attrs = %{id: Ecto.UUID.generate(), exercise_id: f.replacement.id}
+    assert {:error, changeset} = WorkoutLogs.replace_client_activity(f.client_ctx, log.id, activity.id, attrs)
+    assert errors_on(changeset).exercise_id
+
+    assert {:error, changeset} =
+             WorkoutLogs.start_client_activity(f.client_ctx, log.id, %{
+               id: Ecto.UUID.generate(),
+               exercise_id: f.exercise.id
+             })
+
+    assert errors_on(changeset).exercise_id
+    {_, done} = record_set(f, log, activity, %{round: 1, reps: 8})
+    assert done.reps == 8
+  end
+
+  test "finish retries compare normalized feedback without changing the completed session", f do
+    log = start_log(f)
+    feedback = %{effort: 4, pain: false, text: "  Felt good  "}
+    assert {:ok, finished} = WorkoutLogs.finish_client_workout_log(f.client_ctx, log.id, feedback)
+
+    for attrs <- [feedback, %{"effort" => "4", "pain" => false, "text" => "Felt good"}, %{pain: false}, %{}] do
+      assert {:ok, replayed} = WorkoutLogs.finish_client_workout_log(f.client_ctx, log.id, attrs)
+      assert snapshot(replayed) == snapshot(finished)
+      assert {:ok, replayed} = WorkoutLogs.finish_workout_log_for_client(f.ctx, f.client.id, log.id, attrs)
+      assert snapshot(replayed) == snapshot(finished)
+    end
+
+    for attrs <- [%{effort: 3}, %{pain: true}, %{text: nil}, %{effort: 6}, %{text: "Different"}] do
+      assert {:error, %Ecto.Changeset{}} = WorkoutLogs.finish_client_workout_log(f.client_ctx, log.id, attrs)
+      assert {:error, %Ecto.Changeset{}} = WorkoutLogs.finish_workout_log_for_client(f.ctx, f.client.id, log.id, attrs)
+    end
+
+    assert {:ok, retained} = WorkoutLogs.get_client_workout_log(f.client_ctx, log.id)
+    assert snapshot(retained) == snapshot(finished)
+  end
+
+  test "state and scheduled date filters scope counts and rows to the authorized client", f do
+    schedule = schedule(f)
+    yesterday = Date.add(f.today, -1)
+    completed = start_log(f, %{schedule_id: schedule.id, scheduled_date: f.today, date: yesterday})
+    assert {:ok, _} = WorkoutLogs.finish_client_workout_log(f.client_ctx, completed.id, %{})
+    discarded = start_log(f)
+    assert {:ok, _} = WorkoutLogs.discard_client_workout_log(f.client_ctx, discarded.id)
+    active = start_log(f, %{date: yesterday})
+
+    for client <- [insert(:client, business: f.coach.business, coach: f.coach), insert(:client)] do
+      Repo.insert!(%WorkoutLog{business_id: client.business_id, client_id: client.id, recorded_by: :client, date: yesterday})
+    end
+
+    lists = [
+      &WorkoutLogs.list_client_workout_logs(f.client_ctx, &1),
+      &WorkoutLogs.list_workout_logs_for_client(f.ctx, f.client.id, &1)
+    ]
+
+    for list <- lists do
+      for {state, id} <- [{:active, active.id}, {:completed, completed.id}, {:discarded, discarded.id}] do
+        assert {:ok, %{count: 1, workout_logs: [found]}} = list.(state: state, limit: 1)
+        assert found.id == id
       end
-    end)
+
+      assert {:ok, %{count: 1, workout_logs: [found]}} = list.(state: "active", date: yesterday)
+      assert found.id == active.id
+      assert {:ok, %{count: 1, workout_logs: [found]}} = list.(scheduled_date: f.today, state: :completed)
+      assert {found.id, found.date, found.scheduled_date} == {completed.id, yesterday, f.today}
+      assert {:ok, %{count: 0, workout_logs: []}} = list.(scheduled_date: yesterday)
+      assert {:ok, %{count: 0, workout_logs: []}} = list.(scheduled_date: f.today, date: f.today)
+
+      for {field, value} <- [state: "unknown", state: 1, scheduled_date: "invalid"] do
+        assert {:error, changeset} = list.([{field, value}])
+        assert errors_on(changeset)[field]
+      end
+    end
+
+    foreign = insert(:business)
+    assert {:error, :not_found} = WorkoutLogs.list_client_workout_logs(%{f.client_ctx | business_id: foreign.id}, state: :active)
+    assert {:error, :not_found} = WorkoutLogs.list_workout_logs_for_client(trainer_ctx(insert(:coach)), f.client.id, scheduled_date: f.today)
   end
 
-  defp race_start(parent, ctx) do
-    Sandbox.unboxed_run(Repo, fn ->
-      send(parent, {:ready, self()})
+  test "retrying start uses its original id and a different prescription conflicts", f do
+    id = Ecto.UUID.generate()
+    attrs = %{id: id, workout_id: f.workout.id}
+    assert {:ok, first} = WorkoutLogs.start_client_workout_log(f.client_ctx, attrs)
+    assert {:ok, repeated} = WorkoutLogs.start_workout_log_for_client(f.ctx, f.client.id, attrs)
 
-      receive do
-        :start -> WorkoutLogs.start_client_workout_log(ctx, %{date: Date.utc_today()})
-      end
-    end)
+    assert {repeated.id, repeated.recorded_by, repeated.inserted_at, repeated.updated_at} ==
+             {id, :client, first.inserted_at, first.updated_at}
+
+    assert {:ok, %{data: another}} = Workouts.create_workout_for_client(f.ctx, f.client.id, %{name: "Another", type: "open"})
+    assert {:error, :conflict} = WorkoutLogs.start_client_workout_log(f.client_ctx, %{attrs | workout_id: another.id})
+    assert Repo.aggregate(WorkoutLog, :count) == 1
+  end
+
+  test "set corrections preserve slots and explicit removal removes only the selected row", f do
+    {log, activity} = f |> start_log() |> then(&start_activity(f, &1))
+    {log, first} = record_set(f, log, activity, %{round: 1, reps: 8})
+    {log, second} = record_set(f, log, activity, %{round: 2, state: "skipped"})
+
+    assert {:ok, changed} =
+             WorkoutLogs.correct_set_for_client(f.ctx, f.client.id, log.id, activity.id, first.id, %{reps: 9})
+
+    corrected = hd(hd(changed.exercise_logs).sets)
+    assert {corrected.id, corrected.round, corrected.reps} == {first.id, 1, 9}
+    assert {:ok, performed} = WorkoutLogs.correct_client_set(f.client_ctx, log.id, activity.id, second.id, %{state: "completed", reps: 5})
+
+    assert Enum.map(hd(performed.exercise_logs).sets, &{&1.id, &1.state, &1.reps}) ==
+             [{first.id, :completed, 9}, {second.id, :completed, 5}]
+
+    assert {:ok, removed} = WorkoutLogs.remove_set_for_client(f.ctx, f.client.id, log.id, activity.id, first.id)
+    assert Enum.map(hd(removed.exercise_logs).sets, & &1.id) == [second.id]
+    assert Repo.get(ExerciseSet, first.id) == nil
+    assert Repo.get!(ExerciseSet, second.id).reps == 5
+  end
+
+  test "lists filter dates, count before pagination, and order equal dates by id", f do
+    first = start_log(f, %{date: Date.add(f.today, -1)})
+    assert {:ok, _} = WorkoutLogs.finish_client_workout_log(f.client_ctx, first.id, %{})
+    second = start_log(f)
+    assert {:ok, _} = WorkoutLogs.finish_client_workout_log(f.client_ctx, second.id, %{})
+    third = start_log(f)
+    ids = Enum.sort([second.id, third.id], :desc)
+    assert {:ok, %{count: 3, workout_logs: [latest]}} = WorkoutLogs.list_client_workout_logs(f.client_ctx, limit: 1)
+    assert latest.id == hd(ids)
+
+    assert {:ok, %{count: 2, workout_logs: [next]}} =
+             WorkoutLogs.list_workout_logs_for_client(f.ctx, f.client.id, date: f.today, offset: 1, limit: 1)
+
+    assert next.id == List.last(ids)
+
+    assert {:ok, %{count: 1, workout_logs: [past]}} =
+             WorkoutLogs.list_client_workout_logs(f.client_ctx, date: Date.add(f.today, -1))
+
+    assert past.id == first.id
+  end
+
+  test "another business's coach and a coach without client access cannot call any operation", f do
+    {log, activity} = f |> start_log() |> then(&start_activity(f, &1))
+    {log, set} = record_set(f, log, activity, %{round: 1, reps: 8})
+    inaccessible = insert(:coach, business: f.coach.business)
+    foreign = insert(:coach)
+
+    for coach <- [inaccessible, foreign] do
+      assert_coach_denied(trainer_ctx(coach), f, log, activity, set)
+    end
+
+    assert Repo.get!(WorkoutLog, log.id).state == :active
+    assert Repo.get!(ExerciseSet, set.id).reps == 8
+  end
+
+  test "another client cannot reach any recording operation on this client's records", f do
+    {log, activity} = f |> start_log() |> then(&start_activity(f, &1))
+    {log, set} = record_set(f, log, activity, %{round: 1, reps: 8})
+    another = insert(:client, business: f.coach.business, coach: f.coach, timezone: "Etc/UTC")
+    ctx = client_ctx(another)
+    assert_client_denied(ctx, f, log, activity, set, except: [:list_client_workout_logs])
+    assert {:ok, %{count: 0, workout_logs: []}} = WorkoutLogs.list_client_workout_logs(ctx, [])
+    assert Repo.aggregate(WorkoutLog, :count) == 1
+  end
+
+  test "every client operation rejects a client identity outside its business", f do
+    {log, activity} = f |> start_log() |> then(&start_activity(f, &1))
+    {log, set} = record_set(f, log, activity, %{round: 1, reps: 8})
+    foreign = insert(:business)
+    ctx = %{f.client_ctx | business_id: foreign.id}
+    assert_client_denied(ctx, f, log, activity, set)
+    assert Repo.get!(ExerciseSet, set.id).reps == 8
+  end
+
+  test "child ids outside the requested session return not found", f do
+    {first, first_activity} = f |> start_log() |> then(&start_activity(f, &1))
+    {first, first_set} = record_set(f, first, first_activity, %{round: 1, reps: 8})
+    assert {:ok, _} = WorkoutLogs.finish_client_workout_log(f.client_ctx, first.id, %{})
+    {second, second_activity} = f |> start_log() |> then(&start_activity(f, &1))
+    {second, _} = record_set(f, second, second_activity, %{round: 1, reps: 5})
+    assert {:error, :not_found} = WorkoutLogs.update_client_activity(f.client_ctx, second.id, first_activity.id, %{reps: 10})
+
+    assert {:error, :not_found} =
+             WorkoutLogs.correct_set_for_client(f.ctx, f.client.id, second.id, second_activity.id, first_set.id, %{reps: 10})
+
+    assert {:error, :not_found} = WorkoutLogs.remove_client_set(f.client_ctx, second.id, second_activity.id, first_set.id)
+    assert Repo.get!(ExerciseSet, first_set.id).reps == 8
+  end
+
+  defp client_ctx(client), do: %{Ctx.new(client.business_id, client.user_id) | client_id: client.id}
+
+  defp start_log(f, overrides \\ %{}) do
+    attrs = Map.merge(%{id: Ecto.UUID.generate(), workout_id: f.workout.id}, overrides)
+    assert {:ok, log} = WorkoutLogs.start_client_workout_log(f.client_ctx, attrs)
+    log
+  end
+
+  defp start_activity(f, log, overrides \\ %{}) do
+    attrs = Map.merge(%{id: Ecto.UUID.generate(), exercise_id: f.exercise.id, workout_exercise_id: f.entry.id}, overrides)
+    assert {:ok, log} = WorkoutLogs.start_client_activity(f.client_ctx, log.id, attrs)
+    {log, find_activity(log, attrs.id)}
+  end
+
+  defp record_set(f, log, activity, overrides) do
+    attrs = Map.merge(%{id: Ecto.UUID.generate(), state: "completed", round: 1}, overrides)
+    assert {:ok, log} = WorkoutLogs.record_client_set(f.client_ctx, log.id, activity.id, attrs)
+    set = Enum.find(find_activity(log, activity.id).sets, &(&1.id == attrs.id))
+    {log, set}
+  end
+
+  defp find_activity(log, id), do: Enum.find(log.exercise_logs, &(&1.id == id))
+
+  defp schedule(f, overrides \\ %{}) do
+    attrs = Map.merge(%{workout_id: f.workout.id, weekdays_mask: 127}, overrides)
+    assert {:ok, %{data: schedule}} = Workouts.add_schedule_for_client(f.ctx, f.client.id, attrs)
+    schedule
+  end
+
+  defp each_side(f) do
+    group = hd(f.workout.groups)
+    entry = hd(group.exercises)
+    attrs = %{groups: [%{id: group.id, rounds: group.rounds, exercises: [%{id: entry.id, side_mode: "per_side"}]}]}
+    assert {:ok, %{data: workout}} = Workouts.update_workout_for_client(f.ctx, f.client.id, f.workout.id, attrs)
+    %{f | workout: workout, entry: hd(hd(workout.groups).exercises)}
+  end
+
+  defp snapshot(log) do
+    Map.take(log, [:id, :state, :date, :time, :effort, :pain, :text, :recorded_by, :coach_id, :updated_at, :exercise_logs])
+  end
+
+  defp closed_commands(f, log, activity, set) do
+    [
+      {:start_client_activity, [log.id, %{id: Ecto.UUID.generate(), exercise_id: f.exercise.id}]},
+      {:update_client_activity, [log.id, activity.id, %{reps: 9}]},
+      {:complete_client_activity, [log.id, activity.id, %{}]},
+      {:skip_client_activity, [log.id, activity.id]},
+      {:replace_client_activity, [log.id, activity.id, %{id: Ecto.UUID.generate(), exercise_id: f.replacement.id}]},
+      {:record_client_set, [log.id, activity.id, %{id: Ecto.UUID.generate(), state: "completed", round: 2}]},
+      {:correct_client_set, [log.id, activity.id, set.id, %{reps: 9}]},
+      {:remove_client_set, [log.id, activity.id, set.id]}
+    ]
+  end
+
+  defp commands(f, log, activity, set) do
+    [
+      {:start_client_workout_log, :start_workout_log_for_client, [%{id: Ecto.UUID.generate(), workout_id: f.workout.id}]},
+      {:get_client_workout_log, :get_workout_log_for_client, [log.id]},
+      {:list_client_workout_logs, :list_workout_logs_for_client, [[]]},
+      {:update_client_workout_log, :update_workout_log_for_client, [log.id, %{text: "No"}]},
+      {:finish_client_workout_log, :finish_workout_log_for_client, [log.id, %{}]},
+      {:discard_client_workout_log, :discard_workout_log_for_client, [log.id]},
+      {:reopen_client_workout_log, :reopen_workout_log_for_client, [log.id]},
+      {:start_client_activity, :start_activity_for_client, [log.id, %{id: Ecto.UUID.generate(), exercise_id: f.exercise.id}]},
+      {:update_client_activity, :update_activity_for_client, [log.id, activity.id, %{reps: 9}]},
+      {:complete_client_activity, :complete_activity_for_client, [log.id, activity.id, %{}]},
+      {:skip_client_activity, :skip_activity_for_client, [log.id, activity.id]},
+      {:reopen_client_activity, :reopen_activity_for_client, [log.id, activity.id]},
+      {:replace_client_activity, :replace_activity_for_client, [log.id, activity.id, %{id: Ecto.UUID.generate(), exercise_id: f.replacement.id}]},
+      {:record_client_set, :record_set_for_client, [log.id, activity.id, %{id: Ecto.UUID.generate(), state: "completed", round: 2}]},
+      {:correct_client_set, :correct_set_for_client, [log.id, activity.id, set.id, %{reps: 9}]},
+      {:remove_client_set, :remove_set_for_client, [log.id, activity.id, set.id]}
+    ]
+  end
+
+  defp assert_coach_denied(ctx, f, log, activity, set) do
+    for {_client_name, coach_name, args} <- commands(f, log, activity, set) do
+      assert {:error, :not_found} = apply(WorkoutLogs, coach_name, [ctx, f.client.id | args]), "#{coach_name} leaked access"
+    end
+  end
+
+  defp assert_client_denied(ctx, f, log, activity, set, opts \\ []) do
+    excluded = Keyword.get(opts, :except, [])
+
+    for {name, _coach_name, args} <- commands(f, log, activity, set), name not in excluded do
+      assert {:error, :not_found} = apply(WorkoutLogs, name, [ctx | args]), "#{name} leaked access"
+    end
   end
 end

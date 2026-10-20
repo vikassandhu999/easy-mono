@@ -115,7 +115,7 @@ export function WorkoutLibrary() {
                 }
                 try {
                   const result = await create.mutateAsync({
-                    body: {name: name.trim(), type: 'prescribed', description: null, video: null, groups: []},
+                    body: {name: name.trim(), type: 'prescribed', description: null, video_url: null, groups: []},
                   });
                   navigate(`/workouts/${result.data.id}`);
                 } catch (cause) {

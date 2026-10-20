@@ -20,6 +20,8 @@ defmodule Easy.Attachments.Attachment do
   @type t :: %__MODULE__{}
 
   schema "attachments" do
+    field :source, Ecto.Enum, values: [:upload, :external_link], default: :upload
+    field :external_url, :string
     field :uploaded_by_type, Ecto.Enum, values: @actors
     field :uploaded_by_id, :binary_id
     field :storage_key, :string
@@ -39,6 +41,7 @@ defmodule Easy.Attachments.Attachment do
   def insert_changeset(business_id, uploaded_by_type, uploaded_by_id, client_id, id, attrs) do
     %__MODULE__{id: id}
     |> cast(attrs, [:content_type, :byte_size, :duration_ms, :captured_on])
+    |> put_change(:source, :upload)
     |> put_change(:business_id, business_id)
     |> put_change(:client_id, client_id)
     |> put_change(:uploaded_by_type, uploaded_by_type)
@@ -61,6 +64,31 @@ defmodule Easy.Attachments.Attachment do
     |> unique_constraint(:storage_key)
     |> foreign_key_constraint(:business_id)
     |> foreign_key_constraint(:client_id, name: :attachments_client_business_id_fkey)
+  end
+
+  @spec external_link_changeset(String.t(), String.t(), {:coach, String.t()} | :system) :: Ecto.Changeset.t()
+  def external_link_changeset(business_id, url, uploader) do
+    {type, id} =
+      case uploader do
+        {:coach, coach_id} -> {:coach, coach_id}
+        :system -> {:system, nil}
+      end
+
+    %__MODULE__{id: Ecto.UUID.generate()}
+    |> cast(%{external_url: url}, [:external_url], empty_values: [])
+    |> put_change(:business_id, business_id)
+    |> put_change(:source, :external_link)
+    |> put_change(:uploaded_by_type, type)
+    |> put_change(:uploaded_by_id, id)
+    |> validate_required([:business_id, :source, :external_url, :uploaded_by_type])
+    |> validate_change(:external_url, fn :external_url, value ->
+      case URI.new(value) do
+        {:ok, %URI{scheme: scheme, host: host}} when scheme in ["http", "https"] and is_binary(host) and host != "" -> []
+        _ -> [external_url: "must be a full HTTP or HTTPS URL with a host"]
+      end
+    end)
+    |> foreign_key_constraint(:business_id)
+    |> check_constraint(:source, name: :attachments_source_valid)
   end
 
   defp put_storage_key(changeset) do

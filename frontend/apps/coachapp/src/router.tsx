@@ -50,6 +50,7 @@ import {TrackerEditor} from './trackers/tracker-editor';
 import {Trackers} from './trackers/trackers';
 import {WorkoutBuilder} from './workout-builder/workout-builder';
 import {WorkoutBuilderPrototype} from './workout-builder-prototype/workout-builder-prototype';
+import {WorkoutSession} from './workout-session/workout-session';
 import {WorkoutWeek} from './workout-week/workout-week';
 import {WorkoutLibrary} from './workouts/workouts';
 
@@ -200,6 +201,7 @@ export const router = createBrowserRouter([
               {path: routes.conversations, element: <Conversations />},
               {path: routes.clientConversation, element: <Conversation />},
               {path: routes.clientTraining, element: <ClientTraining />},
+              {path: routes.clientWorkoutSession, element: <WorkoutSession />},
               {path: routes.workouts, element: <WorkoutLibrary />},
               {path: routes.createWorkout, element: <WorkoutBuilder />},
               {path: routes.workout, element: <WorkoutBuilder />},

@@ -1,10 +1,11 @@
+import {metricLabel} from '@easy/workouts/metrics';
 import {Link, useLocation, useSearchParams} from 'react-router-dom';
 import {useExercises} from '../api/exercises';
 import {buttonVariants} from '../ui/button';
 import {InfiniteList} from '../ui/infinite-list';
 import {ListSearch} from '../ui/list-search';
 import {Page, PageHeader, Surface} from '../ui/page';
-import {goals, kindLabels, kinds, labelOf, placeLabels, places} from './exercise';
+import {goals, kindLabels, kinds, placeLabels, places} from './exercise';
 export function Exercises() {
   const [params, setParams] = useSearchParams();
   const location = useLocation();
@@ -16,6 +17,7 @@ export function Exercises() {
     ...(kind ? {kind} : {}),
     ...(goal ? {goal} : {}),
     ...(place ? {place} : {}),
+    ...(params.get('archived') === 'true' ? {archived: true} : {}),
   });
   const filter = (key: string, value: string) =>
     setParams(
@@ -79,6 +81,14 @@ export function Exercises() {
           </label>
         ))}
       </div>
+      <label className="flex min-h-11 items-center gap-3 font-medium">
+        <input
+          type="checkbox"
+          checked={params.get('archived') === 'true'}
+          onChange={(event) => filter('archived', event.target.checked ? 'true' : '')}
+        />
+        Show archived
+      </label>
       <InfiniteList
         query={query}
         label="exercises"
@@ -99,11 +109,11 @@ export function Exercises() {
             <p className="break-words font-semibold">{exercise.name}</p>
             <p className="text-sm font-medium text-muted-foreground">
               {kindLabels[exercise.kind]}
-              {exercise.unilateral ? ' · Each side' : ''} ·{' '}
-              {exercise.metrics.map((key) => labelOf(key, exercise)).join(' · ')}
+              {exercise.metrics.length > 0 ? ' · ' : ''}
+              {exercise.metrics.map((metric) => metricLabel(metric.key, metric)).join(' · ')}
             </p>
             <p className="text-sm font-medium text-muted-foreground">
-              {exercise.is_builtin ? 'Shared · Read-only' : 'Your exercise'}
+              {exercise.is_builtin ? 'Shared · Read-only' : exercise.archived_at ? 'Archived' : 'Your exercise'}
             </p>
           </Link>
         )}

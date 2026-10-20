@@ -1,13 +1,13 @@
+import {effortLabel} from '@easy/workouts/session';
 import {ChevronRight, Dumbbell, Pill, Plus, Utensils} from 'lucide-react';
 import {type ReactNode, useEffect, useState} from 'react';
 import {useLocation, useNavigate, useSearchParams} from 'react-router-dom';
 import {useProfile} from '../api/auth';
 import {errorMessage} from '../api/client';
 import {type ClientDay, useClientDay, useWeekMarkers} from '../api/client-days';
-import {readDraft, removeDraft} from '../api/drafts';
+import {readDraft} from '../api/drafts';
 import {useDeleteNutrition, useSaveNutrition} from '../api/nutrition-logs';
 import {getSession} from '../api/session';
-import {useWriteWorkout} from '../api/workout-logs';
 import {BottomSheet} from '../ui/bottom-sheet';
 import {Button} from '../ui/button';
 import {cn} from '../ui/cn';
@@ -18,11 +18,9 @@ import {
   amountText,
   asNutritionLog,
   asPreset,
-  asWorkoutLog,
   boundsText,
   dayLabel,
   dayName,
-  difficultyLabel,
   draftKey,
   nowTime,
   optionLabel,
@@ -78,7 +76,6 @@ function DayView({day, onDate, children}: {day: ClientDay; onDate: (date: string
   const show = useUndoMessage();
   const save = useSaveNutrition();
   const remove = useDeleteNutrition();
-  const workoutWrite = useWriteWorkout();
   const [preview, setPreview] = useState<Preset | null>(null);
   const [error, setError] = useState('');
   const future = day.date > day.today;
@@ -140,7 +137,7 @@ function DayView({day, onDate, children}: {day: ClientDay; onDate: (date: string
     day.date === day.today
       ? items.find((item) =>
           item.kind === 'workout'
-            ? !item.schedule.coach_id && !workoutFor(item.schedule.id)
+            ? !workoutFor(item.schedule.id)
             : day.presets.find((preset) => preset.id === item.schedule.nutrition_preset_id)?.type !== 'meal' &&
               !nutritionFor(item.schedule.id),
         )?.schedule.id
@@ -209,7 +206,7 @@ function DayView({day, onDate, children}: {day: ClientDay; onDate: (date: string
           );
         })}
       </div>
-      {active && active.date !== day.date && (
+      {active && (active.date !== day.date || !day.workout_schedules.some((row) => row.id === active.schedule_id)) && (
         <Button
           variant="secondary"
           className="mb-4 w-full justify-between"
@@ -357,7 +354,7 @@ function DayView({day, onDate, children}: {day: ClientDay; onDate: (date: string
             return null;
           }
           const rawLog = workoutFor(schedule.id);
-          const log = rawLog ? asWorkoutLog(rawLog) : null;
+          const log = rawLog;
           const coach = day.coaches.find((row) => row.id === item.schedule.coach_id)?.name;
           const elsewhere = active && active.id !== log?.id;
           const detail = [
@@ -371,17 +368,13 @@ function DayView({day, onDate, children}: {day: ClientDay; onDate: (date: string
           ]
             .filter(Boolean)
             .join(' · ');
-          const note = coach
-            ? `${coach} records this session`
-            : log?.state === 'completed'
-              ? [
-                  workout.type === 'prescribed' ? `${log.sets.length} sets` : null,
-                  log.difficulty ? difficultyLabel[log.difficulty] : null,
-                ]
-                  .filter(Boolean)
-                  .join(' · ')
+          const note =
+            log?.state === 'completed'
+              ? effortLabel(log.effort) || 'Session recorded'
               : log
-                ? `${log.sets.length} sets recorded so far`
+                ? log.recorded_by === 'coach'
+                  ? `${log.recorder_name} is recording this session`
+                  : 'Session in progress'
                 : elsewhere && !future
                   ? 'Finish your workout in progress first.'
                   : past
@@ -405,45 +398,14 @@ function DayView({day, onDate, children}: {day: ClientDay; onDate: (date: string
                 }
                 onPress={() => workoutRoute(schedule.id, day.date, log?.id)}
                 action={
-                  !coach && !readOnly && !log && !elsewhere ? (
+                  !readOnly && !log && !elsewhere ? (
                     <Button
                       size="sm"
                       variant={primary ? 'default' : 'outline'}
-                      aria-label={`Start ${workout.name}`}
-                      isPending={workoutWrite.isPending}
-                      onPress={async () => {
-                        setError('');
-                        try {
-                          const result = await workoutWrite.mutateAsync({
-                            action: 'start',
-                            body: {
-                              workout_id: workout.id,
-                              schedule_id: schedule.id,
-                              scheduled_date: day.date,
-                              date: day.date,
-                              time: nowTime(),
-                            },
-                          });
-                          if ('data' in result) {
-                            const id = result.data.id;
-                            show({
-                              text: 'Workout started.',
-                              undo: async () => {
-                                await workoutWrite.mutateAsync({action: 'delete', id});
-                                const owner = getSession()?.id;
-                                if (owner) {
-                                  await removeDraft(owner, `workout.${id}`);
-                                }
-                              },
-                            });
-                          }
-                          workoutRoute(schedule.id, day.date, 'data' in result ? result.data.id : undefined);
-                        } catch (cause) {
-                          setError(errorMessage(cause, 'Could not start.'));
-                        }
-                      }}
+                      aria-label={`Open ${workout.name}`}
+                      onPress={() => workoutRoute(schedule.id)}
                     >
-                      Start
+                      Open workout
                     </Button>
                   ) : null
                 }

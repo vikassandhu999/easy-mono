@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import type {WorkoutSchedule, WorkoutWeek} from '../../src/api/workout-week.ts';
-import {matchSaveIntent, occasionLabel, readIntent, type SaveIntent} from '../../src/workout-week/model.ts';
+import {matchSaveIntent, occasionLabel, occursOn, readIntent, type SaveIntent} from '../../src/workout-week/model.ts';
 
 const workout = {
   id: 'lower',
@@ -9,7 +9,36 @@ const workout = {
   description: null,
   video: null,
   type: 'prescribed' as const,
-  groups: [],
+  groups: [
+    {
+      id: 'group',
+      name: null,
+      rounds: 3,
+      exercises: [
+        {
+          id: 'entry',
+          exercise_id: 'squat',
+          side_mode: 'per_side' as const,
+          targets_mode: 'same_for_all' as const,
+          targets: [{reps: {mode: 'exact' as const, value: 8}, rest: {mode: 'exact' as const, value_s: 60}}],
+          exercise: {
+            id: 'squat',
+            name: 'Split squat',
+            kind: 'movement' as const,
+            instructions: null,
+            goals: [],
+            places: [],
+            metrics: [{key: 'reps' as const, label: 'Repetitions'}],
+            equipment: null,
+            muscles: [],
+            media: [],
+            archived_at: null,
+            is_builtin: true,
+          },
+        },
+      ],
+    },
+  ],
 };
 const row: WorkoutSchedule = {
   id: 'row',
@@ -80,7 +109,15 @@ const copy: SaveIntent = {
   library,
   message: 'Copied.',
 };
-const copied = {...workout, id: 'client-copy'};
+const copied = {
+  ...workout,
+  id: 'client-copy',
+  groups: workout.groups.map((group) => ({
+    ...group,
+    id: 'copied-group',
+    exercises: group.exercises.map((entry) => ({...entry, id: 'copied-entry'})),
+  })),
+};
 assert.equal(
   matchSaveIntent(copy, {
     ...before,
@@ -98,6 +135,45 @@ assert.equal(
   'conflict',
 );
 assert.equal(matchSaveIntent(copy, before), 'absent');
+const wrongSide = {
+  ...copied,
+  groups: copied.groups.map((group) => ({
+    ...group,
+    exercises: group.exercises.map((entry) => ({...entry, side_mode: 'combined' as const})),
+  })),
+};
+assert.equal(
+  matchSaveIntent(copy, {
+    ...before,
+    workouts: [...before.workouts, wrongSide],
+    schedules: [...before.schedules, {...row, id: 'copy-row', workout_id: copied.id, weekdays_mask: 16}],
+  }),
+  'conflict',
+);
+
+const videoLibrary = {
+  ...library,
+  type: 'video' as const,
+  video: {id: 'asset', url: 'https://example.com/workout.mp4'},
+  groups: [],
+};
+const videoCopy = {
+  ...videoLibrary,
+  id: 'video-copy',
+  client_id: 'client',
+  video: {...videoLibrary.video, id: 'copied-asset'},
+};
+assert.equal(
+  matchSaveIntent(
+    {...copy, body: {library_workout_id: videoLibrary.id, weekdays_mask: 16}, library: videoLibrary},
+    {
+      ...before,
+      workouts: [...before.workouts, videoCopy],
+      schedules: [...before.schedules, {...row, id: 'video-row', workout_id: videoCopy.id, weekdays_mask: 16}],
+    },
+  ),
+  'saved',
+);
 assert.deepEqual(readIntent(JSON.stringify(add)), add);
 assert.equal(readIntent('{bad'), null);
 assert.equal(readIntent(JSON.stringify({kind: 'remove', before, id: 'row', weekday: 9, message: 'Bad'})), null);
@@ -122,3 +198,9 @@ assert.equal(
 console.log(
   'Workout week recovery checks merged masks, occasions, removal, library copies, absence, conflicts and persisted intent.',
 );
+
+assert.equal(occursOn(row, '2026-10-12'), true);
+assert.equal(occursOn(row, '2026-10-15'), true);
+assert.equal(occursOn(row, '2026-10-13'), false);
+assert.equal(occursOn({...row, until_date: '2026-10-11'}, '2026-10-12'), false);
+assert.equal(occursOn({...row, from_date: '2026-10-13'}, '2026-10-12'), false);

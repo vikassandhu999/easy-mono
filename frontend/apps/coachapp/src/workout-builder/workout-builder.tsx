@@ -439,7 +439,7 @@ function CreateWorkout({clientId}: {clientId?: string}) {
           }
           try {
             const result = await save.mutateAsync({
-              body: {name: name.trim(), description: null, type: 'prescribed', video: null, groups: []},
+              body: {name: name.trim(), description: null, type: 'prescribed', video_url: null, groups: []},
             });
             navigate(
               clientId ? `/clients/${clientId}/training/workouts/${result.data.id}` : `/workouts/${result.data.id}`,

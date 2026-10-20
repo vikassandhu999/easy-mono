@@ -2,6 +2,7 @@ import type {ClientFilters} from './clients';
 import type {ConversationFilters} from './conversations';
 import type {FoodFilters} from './foods';
 import type {TeamFilters} from './team';
+import type {WorkoutLogFilters} from './workout-logs';
 
 export const authKeys = {
   all: ['auth'] as const,
@@ -126,4 +127,14 @@ export const nutritionWeekKeys = {
     [...nutritionWeekKeys.lists(), 'infinite', filters] as const,
   details: () => [...nutritionWeekKeys.all, 'detail'] as const,
   detail: (clientId: string) => [...nutritionWeekKeys.details(), clientId] as const,
+};
+
+export const workoutLogKeys = {
+  all: ['workout-logs'] as const,
+  lists: () => [...workoutLogKeys.all, 'list'] as const,
+  list: (clientId: string, filters: object) => [...workoutLogKeys.lists(), clientId, filters] as const,
+  infinite: (clientId: string, filters: WorkoutLogFilters) =>
+    [...workoutLogKeys.lists(), 'infinite', clientId, filters] as const,
+  details: () => [...workoutLogKeys.all, 'detail'] as const,
+  detail: (clientId: string, id: string) => [...workoutLogKeys.details(), clientId, id] as const,
 };

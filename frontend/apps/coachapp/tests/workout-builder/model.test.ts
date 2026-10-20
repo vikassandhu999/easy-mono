@@ -1,7 +1,16 @@
 import assert from 'node:assert/strict';
+import {test} from 'node:test';
 import type {Exercise} from '../../src/api/exercises.ts';
-import {labelOf} from '../../src/exercises/exercise.ts';
-import {actions, bodyOf, draftOf, problemsOf, restoreRemoval, type Workout} from '../../src/workout-builder/model.ts';
+import type {Workout as SavedWorkout} from '../../src/api/workouts.ts';
+import {
+  actions,
+  bodyOf,
+  draftOf,
+  labelFor,
+  problemsOf,
+  restoreRemoval,
+  type Workout,
+} from '../../src/workout-builder/model.ts';
 import {readDraft, readDraftKeys, remapAfterSave, WorkoutSaveQueue} from '../../src/workout-builder/save-queue.ts';
 
 const bench: Exercise = {
@@ -10,13 +19,15 @@ const bench: Exercise = {
   kind: 'movement',
   goals: ['strength'],
   places: ['gym'],
-  metrics: ['reps', 'weight'],
-  count_label: null,
-  grade_scale: [],
-  unilateral: false,
-  equipment: [],
+  instructions: null,
+  metrics: [
+    {key: 'reps', label: null},
+    {key: 'weight', label: null},
+  ],
+  equipment: null,
   muscles: [],
-  media: null,
+  media: [],
+  archived_at: null,
   is_builtin: true,
 };
 const pull: Exercise = {...bench, id: 'pull', name: 'Pull-up'};
@@ -33,13 +44,15 @@ workout = actions.putTarget(
 workout = actions.putTarget(workout, {group: 0, exercise: 0, key: 'rest', round: 2}, {mode: 'none'});
 workout = actions.addExercise(workout, 0, pull);
 const body = bodyOf(workout);
-assert.deepEqual(body.groups?.[0]?.exercises[0]?.rest, [null, null, null]);
-assert.deepEqual(body.groups?.[0]?.exercises[1]?.rest, [
-  {mode: 'exact', value: 90},
-  {mode: 'range', min: 60, max: 90},
-  null,
+assert.deepEqual(
+  body.groups?.[0]?.exercises[0]?.targets?.map((round) => round.rest),
+  [{mode: 'none'}, {mode: 'none'}, {mode: 'none'}],
+);
+assert.deepEqual(body.groups?.[0]?.exercises[1]?.targets, [
+  {rest: {mode: 'exact', value_s: 90}},
+  {rest: {mode: 'range', min_s: 60, max_s: 90}},
+  {rest: {mode: 'none'}},
 ]);
-assert.deepEqual(body.groups?.[0]?.exercises[1]?.targets, [{}, {}, {}]);
 assert.equal(body.groups?.[0]?.exercises[1]?.targets_mode, 'per_round');
 workout = actions.setRounds(workout, 0, 4);
 assert.equal(workout.groups[0]?.exercises[1]?.roundTargets.length, 4);
@@ -167,9 +180,9 @@ const returned = {
           id: 'server-exercise',
           exercise_id: 'bench',
           exercise: {...bench, name: 'Prescribed bench'},
+          side_mode: 'combined' as const,
           targets_mode: 'same_for_all' as const,
-          targets: [{}],
-          rest: [],
+          targets: [{rest: {mode: 'client_chooses' as const}}],
         },
       ],
     },
@@ -265,6 +278,85 @@ assert.deepEqual(
 );
 assert.deepEqual(readDraftKeys('{', 'draft:coach:'), []);
 
-assert.equal(labelOf('reps', {count_label: 'Waves'}), 'Waves');
-assert.equal(labelOf('successes', {count_label: 'Waves'}), 'Waves · Successes');
-assert.equal(labelOf('attempts', {count_label: 'Waves'}), 'Waves · Attempts');
+const labelled: Exercise = {
+  ...bench,
+  metrics: [
+    {key: 'reps', label: 'Waves'},
+    {key: 'successes', label: 'Good waves'},
+    {key: 'attempts', label: null},
+  ],
+};
+assert.equal(labelFor('reps', labelled), 'Waves');
+assert.equal(labelFor('successes', labelled), 'Good waves');
+assert.equal(labelFor('attempts', labelled), 'Attempts');
+
+function savedTargets(
+  targets: SavedWorkout['groups'][number]['exercises'][number]['targets'],
+  sideMode: 'combined' | 'per_side' = 'combined',
+): SavedWorkout {
+  return {
+    ...returned,
+    groups: [
+      {
+        ...returned.groups[0],
+        exercises: [
+          {
+            ...returned.groups[0].exercises[0],
+            targets,
+            side_mode: sideMode,
+          },
+        ],
+      },
+    ],
+  };
+}
+
+test('rest none round-trips', () => {
+  const draft = draftOf(savedTargets([{rest: {mode: 'none'}}]));
+  assert.deepEqual(draft.groups[0]?.exercises[0]?.targets.rest, {mode: 'none'});
+  assert.deepEqual(bodyOf(draft).groups?.[0]?.exercises[0]?.targets, [{rest: {mode: 'none'}}]);
+});
+
+test('client chooses rest round-trips', () => {
+  const draft = draftOf(savedTargets([{rest: {mode: 'client_chooses'}}]));
+  assert.deepEqual(draft.groups[0]?.exercises[0]?.targets.rest, {mode: 'client_chooses'});
+  assert.deepEqual(bodyOf(draft).groups?.[0]?.exercises[0]?.targets, [{rest: {mode: 'client_chooses'}}]);
+});
+
+test('side mode round-trips', () => {
+  const draft = draftOf(savedTargets([{rest: {mode: 'none'}}], 'per_side'));
+  assert.equal(draft.groups[0]?.exercises[0]?.sideMode, 'per_side');
+  assert.equal(bodyOf(draft).groups?.[0]?.exercises[0]?.side_mode, 'per_side');
+  const combined = actions.setSideMode(draft, 0, 0, 'combined');
+  assert.equal(bodyOf(combined).groups?.[0]?.exercises[0]?.side_mode, 'combined');
+});
+
+test('per-round target count follows rounds', () => {
+  let draft = draftOf(savedTargets([{rest: {mode: 'none'}}], 'per_side'));
+  draft = actions.togglePerRound(draft, 0, 0);
+  draft = actions.setRounds(draft, 0, 5);
+  assert.equal(bodyOf(draft).groups?.[0]?.exercises[0]?.targets?.length, 5);
+  draft = actions.setRounds(draft, 0, 2);
+  assert.equal(bodyOf(draft).groups?.[0]?.exercises[0]?.targets?.length, 2);
+});
+
+test('Any metrics are omitted and video uses the external URL', () => {
+  let draft = draftOf(savedTargets([{reps: {mode: 'client_chooses'}, rest: {mode: 'none'}}]));
+  assert.deepEqual(bodyOf(draft).groups?.[0]?.exercises[0]?.targets, [{rest: {mode: 'none'}}]);
+  draft = draftOf({...saved, type: 'video', video: {id: 'video', url: 'https://example.com/workout.mp4'}});
+  assert.equal(draft.video, 'https://example.com/workout.mp4');
+  assert.equal(bodyOf(draft).video_url, 'https://example.com/workout.mp4');
+});
+
+test('stored drafts validate side modes, labelled metrics, media and rest modes', () => {
+  const draft = draftOf(savedTargets([{rest: {mode: 'client_chooses'}}], 'per_side'));
+  assert.deepEqual(readDraft(JSON.stringify(draft)), draft);
+  const entry = draft.groups[0]?.exercises[0];
+  const withEntry = (change: object) =>
+    JSON.stringify({...draft, groups: [{...draft.groups[0], exercises: [{...entry, ...change}]}]});
+  assert.equal(readDraft(withEntry({sideMode: 'left'})), null);
+  assert.equal(readDraft(withEntry({targets: {rest: {mode: 'max'}}})), null);
+  assert.equal(readDraft(withEntry({targets: {reps: {mode: 'none'}}})), null);
+  assert.equal(readDraft(withEntry({source: {...bench, metrics: ['reps']}})), null);
+  assert.equal(readDraft(withEntry({source: {...bench, media: [{id: 'media', url: 7, caption: null}]}})), null);
+});

@@ -4,7 +4,7 @@ defmodule EasyWeb.TypedRouteTestController do
   alias EasyWeb.Types.TypedItem
 
   typed(:show, ok: {200, data(TypedItem.t())})
-  typed(:create, body: TypedItem.create(), ok: {201, data(TypedItem.t())})
+  typed(:create, body: TypedItem.create(), ok: {201, data(TypedItem.t())}, replay_status: 200)
   typed(:index, query: TypedItem.list_query(), ok: {200, page(TypedItem.t())})
   typed(:delete, ok: {204, nil})
 

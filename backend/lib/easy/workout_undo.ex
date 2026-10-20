@@ -2,13 +2,13 @@ defmodule Easy.Workouts.Undo do
   import Ecto.Query
   alias Easy.{Ctx, Repo}
   alias Easy.Orgs.Coach
-  alias Easy.Workouts.{Exercise, ExerciseGroup, Workout, WorkoutExercise, WorkoutLog, WorkoutSchedule}
-  @schemas [Workout, ExerciseGroup, WorkoutExercise, WorkoutSchedule]
+  alias Easy.Workouts.{Content, Exercise, Workout, WorkoutExerciseReference, WorkoutLog, WorkoutSchedule}
+  @schemas [Workout, WorkoutExerciseReference, WorkoutSchedule]
   @salt "client workout undo"
   @spec snapshot(Ctx.t(), String.t()) :: map()
   def snapshot(ctx, client_id) do
     Map.new(@schemas, fn schema ->
-      rows = query(schema, ctx, client_id) |> order_by([r], asc: r.id) |> Repo.all()
+      rows = query(schema, ctx, client_id) |> order_by(^primary_keys(schema)) |> Repo.all()
       {schema, Enum.map(rows, &Map.take(&1, schema.__schema__(:fields)))}
     end)
   end
@@ -36,30 +36,46 @@ defmodule Easy.Workouts.Undo do
          true <- preserves_logs?(ctx, client_id, payload.before) do
       retained = retained_ids(ctx, client_id)
 
-      Enum.each(Enum.reverse(@schemas), fn schema ->
-        ids = retained[schema]
-        Repo.delete_all(from(r in query(schema, ctx, client_id), where: r.id not in ^ids))
-      end)
+      Enum.each(Enum.reverse(@schemas), &delete_unretained(&1, ctx, client_id, retained))
 
-      Enum.each(@schemas, fn schema ->
-        fields = schema.__schema__(:fields) -- [:id]
-        Repo.insert_all(schema, payload.before[schema], on_conflict: {:replace, fields}, conflict_target: [:id])
-      end)
+      Enum.each(@schemas, &restore_rows(&1, payload.before[&1]))
 
+      query(Workout, ctx, client_id) |> Repo.all() |> Enum.each(&Content.sync_references/1)
       {:ok, :restored}
     else
       _ -> {:error, :conflict}
     end
   end
 
+  defp delete_unretained(WorkoutExerciseReference, ctx, client_id, retained) do
+    query(WorkoutExerciseReference, ctx, client_id)
+    |> where([r], r.workout_id not in ^retained[Workout])
+    |> Repo.delete_all()
+  end
+
+  defp delete_unretained(schema, ctx, client_id, retained) do
+    query(schema, ctx, client_id)
+    |> where([r], r.id not in ^retained[schema])
+    |> Repo.delete_all()
+  end
+
+  defp restore_rows(WorkoutExerciseReference, rows) do
+    Repo.insert_all(WorkoutExerciseReference, rows,
+      on_conflict: :nothing,
+      conflict_target: [:workout_id, :exercise_id]
+    )
+  end
+
+  defp restore_rows(schema, rows) do
+    fields = schema.__schema__(:fields) -- [:id]
+    Repo.insert_all(schema, rows, on_conflict: {:replace, fields}, conflict_target: [:id])
+  end
+
   defp retained_ids(ctx, client_id) do
     logs = WorkoutLog.for_client(ctx.business_id, client_id) |> order_by([l], asc: l.id) |> Repo.all()
     workout_ids = logs |> Enum.map(& &1.workout_id) |> Enum.reject(&is_nil/1)
     schedule_ids = logs |> Enum.map(& &1.schedule_id) |> Enum.reject(&is_nil/1)
-    groups = query(ExerciseGroup, ctx, client_id) |> where([g], g.workout_id in ^workout_ids) |> order_by([g], asc: g.id) |> Repo.all()
-    group_ids = Enum.map(groups, & &1.id)
-    item_ids = query(WorkoutExercise, ctx, client_id) |> where([e], e.exercise_group_id in ^group_ids) |> order_by([e], asc: e.id) |> select([e], e.id) |> Repo.all()
-    %{Workout => workout_ids, WorkoutSchedule => schedule_ids, ExerciseGroup => group_ids, WorkoutExercise => item_ids}
+    %{Workout => workout_ids, WorkoutSchedule => schedule_ids}
   end
 
   defp preserves_logs?(ctx, client_id, before) do
@@ -72,19 +88,8 @@ defmodule Easy.Workouts.Undo do
     end)
   end
 
-  defp same_workout?(_, _, nil), do: true
-
-  defp same_workout?(before, current, id) do
-    before_groups = Enum.filter(before[ExerciseGroup], &(&1.workout_id == id))
-    current_groups = Enum.filter(current[ExerciseGroup], &(&1.workout_id == id))
-    group_ids = Enum.map(before_groups, & &1.id)
-    before_items = Enum.filter(before[WorkoutExercise], &(&1.exercise_group_id in group_ids))
-    current_items = Enum.filter(current[WorkoutExercise], &(&1.exercise_group_id in group_ids))
-
-    same_groups = content_rows(before_groups) == content_rows(current_groups)
-    same_items = content_rows(before_items) == content_rows(current_items)
-    same_row?(before[Workout], current[Workout], id, [:archived_at]) and same_groups and same_items
-  end
+  defp same_workout?(before, current, id),
+    do: same_row?(before[Workout], current[Workout], id, [:archived_at])
 
   defp same_row?(_, _, nil, _), do: true
 
@@ -94,10 +99,14 @@ defmodule Easy.Workouts.Undo do
     old && new && Map.drop(old, ignored ++ [:updated_at]) == Map.drop(new, ignored ++ [:updated_at])
   end
 
-  defp content_rows(rows), do: Enum.map(rows, &Map.drop(&1, [:inserted_at, :updated_at]))
-
   defp lock_references(ctx, before) do
-    exercises = before[WorkoutExercise] |> Enum.map(& &1.exercise_id) |> Enum.uniq()
+    exercises =
+      before[Workout]
+      |> Enum.flat_map(& &1.groups)
+      |> Enum.flat_map(& &1.exercises)
+      |> Enum.map(& &1.exercise_id)
+      |> Enum.uniq()
+
     coaches = before[WorkoutSchedule] |> Enum.map(& &1.coach_id) |> Enum.reject(&is_nil/1) |> Enum.uniq()
 
     existing_exercises =
@@ -121,21 +130,14 @@ defmodule Easy.Workouts.Undo do
 
   defp fingerprint(rows), do: :crypto.hash(:sha256, :erlang.term_to_binary(rows))
 
-  defp query(ExerciseGroup, ctx, client_id) do
-    from(g in ExerciseGroup,
-      join: w in Workout,
-      on: w.id == g.workout_id and w.business_id == g.business_id,
-      where: g.business_id == ^ctx.business_id and w.client_id == ^client_id
-    )
-  end
+  defp primary_keys(WorkoutExerciseReference), do: [:workout_id, :exercise_id]
+  defp primary_keys(_schema), do: [:id]
 
-  defp query(WorkoutExercise, ctx, client_id) do
-    from(e in WorkoutExercise,
-      join: g in ExerciseGroup,
-      on: g.id == e.exercise_group_id and g.business_id == e.business_id,
+  defp query(WorkoutExerciseReference, ctx, client_id) do
+    from(r in WorkoutExerciseReference,
       join: w in Workout,
-      on: w.id == g.workout_id and w.business_id == g.business_id,
-      where: e.business_id == ^ctx.business_id and w.client_id == ^client_id
+      on: w.id == r.workout_id and w.business_id == r.business_id,
+      where: r.business_id == ^ctx.business_id and w.client_id == ^client_id
     )
   end
 

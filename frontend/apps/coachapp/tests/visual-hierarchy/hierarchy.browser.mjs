@@ -61,7 +61,7 @@ try {
           kind: 'movement',
           goals: ['strength'],
           places: ['gym'],
-          metrics: ['reps', 'weight'],
+          metrics: [{key: 'reps'}, {key: 'weight'}],
         })
       ).data,
     );
@@ -78,8 +78,13 @@ try {
           exercises: exercises.map((exercise) => ({
             exercise_id: exercise.id,
             targets_mode: 'same_for_all',
-            targets: [{reps: {mode: 'range', min: 8, max: 10}, weight: {mode: 'exact', value: 12}}],
-            rest: [{mode: 'exact', value: 90}],
+            targets: [
+              {
+                reps: {mode: 'range', min: 8, max: 10},
+                weight: {mode: 'exact', value: 12},
+                rest: {mode: 'exact', value_s: 90},
+              },
+            ],
           })),
         },
       ],
@@ -130,6 +135,9 @@ try {
         await expect(page.getByLabel(label, {exact: true})).toBeVisible();
       } else {
         await expect(page.getByRole('heading', {name: 'Alex Morgan', exact: true})).toBeVisible();
+      }
+      if (name === 'food') {
+        await expect(page.getByLabel('Energy · kcal', {exact: true})).toHaveValue('380');
       }
       await page.evaluate(() => {
         document.activeElement?.blur();

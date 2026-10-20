@@ -1,13 +1,25 @@
+import {type MetricKey, metricLabel} from '@easy/workouts/metrics';
+import {targetModes} from '@easy/workouts/targets';
 import {useEffect, useState} from 'react';
 import type {Exercise} from '../api/exercises';
 import {useExercises} from '../api/exercises';
-import {kindLabels, labelOf, metricInfo} from '../exercises/exercise';
+import {kindLabels} from '../exercises/exercise';
 import {Button} from '../ui/button';
 import {cn} from '../ui/cn';
 import {Dialog, DialogHeader, DialogTitle} from '../ui/dialog';
 import {InfiniteList} from '../ui/infinite-list';
 import {Input} from '../ui/input';
-import {actions, getTarget, type Mode, modeLabels, type Target, type Where, type Workout} from './model';
+import {
+  actions,
+  getTarget,
+  infoFor,
+  labelFor,
+  type Mode,
+  modeLabels,
+  type Target,
+  type Where,
+  type Workout,
+} from './model';
 
 export type BuilderProps = {workout: Workout; setWorkout: (next: Workout) => void};
 export const fieldClass =
@@ -67,15 +79,11 @@ export function TargetEditor({
   if (!group || !exercise) {
     return null;
   }
-  const info = metricInfo[where.key];
-  const target = getTarget(exercise, where.key, where.round) ?? {mode: where.key === 'rest' ? 'none' : 'choose'};
+  const info = infoFor(where.key);
+  const target = getTarget(exercise, where.key, where.round) ?? {mode: 'client_chooses'};
   const put = (next: Target) => setWorkout(actions.putTarget(workout, where, next));
-  const modes: Mode[] =
-    where.key === 'rest'
-      ? ['exact', 'range', 'none']
-      : info?.text
-        ? ['exact', 'choose']
-        : ['exact', 'range', 'max', 'choose'];
+  const modes: readonly Mode[] =
+    where.key === 'rest' ? ['client_chooses', 'none', 'exact', 'range'] : targetModes(where.key as MetricKey | 'grade');
   const changeMode = (mode: Mode) =>
     put(
       mode === 'exact'
@@ -88,11 +96,10 @@ export function TargetEditor({
     exact: 'The client sees this target and records what they did.',
     range: 'The client aims inside this range.',
     max: 'The client does as much as possible.',
-    choose: 'No target. The client chooses and records what they did.',
+    client_chooses: 'The client chooses and records what they did.',
     none: 'The client goes straight to the next exercise.',
   };
-  const choices =
-    where.key === 'result' ? ['win', 'draw', 'loss'] : where.key === 'grade' ? exercise.source.grade_scale : null;
+  const choices = where.key === 'result' ? ['win', 'draw', 'loss'] : null;
   return (
     <div
       id={id}
@@ -105,7 +112,7 @@ export function TargetEditor({
           id={`${id}-title`}
           className="font-semibold"
         >
-          {labelOf(where.key, exercise.source)} — {exercise.source.name}
+          {labelFor(where.key, exercise.source)} — {exercise.source.name}
           {where.round !== null ? ` · round ${where.round + 1}` : ` · all ${group.rounds} rounds`}
         </h3>
         <Button
@@ -145,7 +152,7 @@ export function TargetEditor({
               value={target.v ?? ''}
               onChange={(event) => put({...target, v: event.target.value})}
             >
-              <option value="">Choose {labelOf(where.key).toLowerCase()}</option>
+              <option value="">Choose {labelFor(where.key).toLowerCase()}</option>
               {choices.map((value) => (
                 <option
                   key={value}
@@ -255,8 +262,8 @@ export function ExercisePicker({
                 <span className="block font-semibold">{exercise.name}</span>
                 <span className="block text-sm font-medium text-muted-foreground">
                   {kindLabels[exercise.kind]}
-                  {exercise.unilateral ? ' · Each side' : ''} ·{' '}
-                  {exercise.metrics.map((key) => labelOf(key, exercise)).join(' · ')}
+                  {' · '}
+                  {exercise.metrics.map((metric) => metricLabel(metric.key, metric)).join(' · ')}
                 </span>
               </span>
             </Button>

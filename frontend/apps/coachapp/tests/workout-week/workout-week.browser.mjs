@@ -130,35 +130,24 @@ async function journey(width) {
     return week();
   };
 
-  // Own catalogue exercises use the locked facets and ordered metric list.
+  // The exercise editor has its own browser suite; seed the builder's catalogue input through the API.
   const exerciseName = `Browser hold ${width}`;
-  await page.goto('/exercises/new');
-  await page.getByLabel('Exercise name', {exact: true}).fill(exerciseName);
-  await page.getByRole('combobox', {name: 'Kind', exact: true}).selectOption('practice');
-  await page.getByRole('checkbox', {name: 'Strength', exact: true}).uncheck();
-  await page.getByRole('checkbox', {name: 'Recovery', exact: true}).check();
-  await page.getByRole('checkbox', {name: 'Gym', exact: true}).uncheck();
-  await page.getByRole('checkbox', {name: 'Home', exact: true}).check();
-  await page.getByRole('checkbox', {name: 'Each side (unilateral)', exact: true}).check();
-  await page.getByRole('combobox', {name: 'Add metric', exact: true}).selectOption('effort');
-  await shot(page, `exercise-editor-${width}`);
-  await page.getByRole('button', {name: 'Save exercise', exact: true}).click();
-  await expect(page).toHaveURL(/\/exercises\/[0-9a-f-]{36}$/);
-  const custom = (await send('get', `/v1/coach/exercises?search=${encodeURIComponent(exerciseName)}`, undefined, token))
-    .data;
-  expect(
-    custom.map((row) => [row.name, row.kind, row.goals, row.places, row.metrics, row.unilateral, row.is_builtin]),
-  ).toEqual([[exerciseName, 'practice', ['recovery'], ['home'], ['duration', 'effort'], true, false]]);
-  await page.getByLabel('Exercise name', {exact: true}).fill(`${exerciseName} edited`);
-  await page.getByRole('button', {name: 'Save exercise', exact: true}).click();
-  await expect(page.getByText('Exercise saved.', {exact: true})).toBeVisible();
-  await page.goto('/exercises');
-  await page.getByLabel('Search exercises', {exact: true}).fill(`${exerciseName} edited`);
-  await expect(page.getByRole('link', {name: new RegExp(`^${escaped(exerciseName)} edited `)})).toBeVisible();
-  await page.getByLabel('Search exercises', {exact: true}).fill('Bench press');
-  await page.getByRole('link', {name: /^Bench press /}).click();
-  await expect(page.getByLabel('Exercise name', {exact: true})).toBeDisabled();
-  await expect(page.getByRole('button', {name: 'Save exercise', exact: true})).toHaveCount(0);
+  const created = await send(
+    'post',
+    '/v1/coach/exercises',
+    {
+      name: `${exerciseName} edited`,
+      kind: 'practice',
+      goals: ['recovery'],
+      places: ['home'],
+      metrics: [
+        {key: 'duration', label: null},
+        {key: 'effort', label: null},
+      ],
+    },
+    token,
+  );
+  const custom = [created.data];
 
   // Build a superset using the real catalogue. Rest follows the last exercise.
   await page.goto(`/workouts/${fixture.builderWorkoutId}`);
@@ -167,8 +156,16 @@ async function journey(width) {
   await page.getByLabel('Workout name', {exact: true}).fill(name);
   await page.getByRole('button', {name: 'Add exercise', exact: true}).last().click();
   await chooseExercise(page, 'Bench press');
+  const eachSide = page.getByRole('checkbox', {name: 'Each side for Bench press', exact: true});
+  await eachSide.focus();
+  await eachSide.press('Space');
+  await expect(eachSide).toBeChecked();
+  await saved();
+  await page.reload();
+  await expect(page.getByRole('checkbox', {name: 'Each side for Bench press', exact: true})).toBeChecked();
+  await expect(page.getByText('each side', {exact: true})).toBeVisible();
   await setExact(page, page.getByRole('button', {name: 'Reps Any', exact: true}), '8');
-  await setExact(page, page.getByRole('button', {name: 'Rest None', exact: true}), '1:30');
+  await setExact(page, page.getByRole('button', {name: 'Rest Any', exact: true}), '1:30');
   await page.getByRole('button', {name: 'Add exercise (superset)', exact: true}).click();
   await chooseExercise(page, 'Pull-up');
   await saved();
@@ -176,7 +173,11 @@ async function journey(width) {
   expect(built.groups).toHaveLength(1);
   expect(built.groups[0].rounds).toBe(3);
   expect(built.groups[0].exercises.map((row) => row.exercise.name)).toEqual(['Bench press', 'Pull-up']);
-  expect(built.groups[0].exercises.map((row) => row.rest)).toEqual([[null], [{mode: 'exact', value: 90}]]);
+  expect(built.groups[0].exercises[0].side_mode).toBe('per_side');
+  expect(built.groups[0].exercises.map((row) => row.targets.map((round) => round.rest))).toEqual([
+    [{mode: 'none'}],
+    [{mode: 'exact', value_s: 90}],
+  ]);
   await expect(page.getByRole('textbox', {name: 'A · Superset', exact: true})).toBeVisible();
 
   await page.getByRole('button', {name: 'Reps Any', exact: true}).click();
@@ -197,9 +198,9 @@ async function journey(width) {
   built = await workout(fixture.builderWorkoutId);
   expect(built.groups[0].exercises[1].targets_mode).toBe('per_round');
   expect(built.groups[0].exercises[1].targets).toEqual([
-    {reps: {mode: 'exact', value: 6}},
-    {reps: {mode: 'exact', value: 7}},
-    {reps: {mode: 'max'}},
+    {reps: {mode: 'exact', value: 6}, rest: {mode: 'exact', value_s: 90}},
+    {reps: {mode: 'exact', value: 7}, rest: {mode: 'exact', value_s: 90}},
+    {reps: {mode: 'max'}, rest: {mode: 'exact', value_s: 90}},
   ]);
   await shot(page, `builder-superset-${width}`);
 
@@ -223,7 +224,7 @@ async function journey(width) {
     'Bench press',
   ]);
 
-  // Later catalogue edits cannot change an existing workout exercise, including after reordering.
+  // Exercise references show current catalogue metadata; workout targets retain their instructions.
   const prescribedName = `${exerciseName} edited`;
   await page.getByRole('button', {name: 'Add exercise', exact: true}).last().click();
   await chooseExercise(page, prescribedName);
@@ -233,28 +234,43 @@ async function journey(width) {
   await send(
     'patch',
     `/v1/coach/exercises/${custom[0].id}`,
-    {name: `${exerciseName} catalogue changed`, metrics: ['duration']},
+    {
+      name: `${exerciseName} catalogue changed`,
+      metrics: [
+        {key: 'duration', label: 'Time under tension'},
+        {key: 'effort', label: null},
+      ],
+    },
     token,
   );
   await page
     .getByRole('textbox', {name: 'Instructions for the client (optional)', exact: true})
     .fill('Metadata after catalogue change.');
   await saved();
-  let frozen = (await workout(fixture.builderWorkoutId)).groups
+  let referenced = (await workout(fixture.builderWorkoutId)).groups
     .flatMap((group) => group.exercises)
     .find((row) => row.exercise_id === custom[0].id);
-  expect(frozen.exercise.name).toBe(prescribedName);
-  expect(frozen.exercise.metrics).toEqual(['duration', 'effort']);
-  expect(frozen.targets).toEqual([{duration: {mode: 'exact', value: 30}, effort: {mode: 'exact', value: 6}}]);
+  expect(referenced.exercise.name).toBe(`${exerciseName} catalogue changed`);
+  expect(referenced.exercise.metrics).toEqual([
+    {key: 'duration', label: 'Time under tension'},
+    {key: 'effort', label: null},
+  ]);
+  expect(referenced.targets).toEqual([
+    {duration: {mode: 'exact', value: 30}, effort: {mode: 'exact', value: 6}, rest: {mode: 'client_chooses'}},
+  ]);
   await page.getByRole('button', {name: 'Reorder', exact: true}).click();
-  await page.getByRole('combobox', {name: `Letter for ${prescribedName}`, exact: true}).selectOption('0');
+  await page
+    .getByRole('combobox', {name: `Letter for ${exerciseName} catalogue changed`, exact: true})
+    .selectOption('0');
   await page.getByRole('button', {name: 'Done reordering', exact: true}).click();
   await saved();
   built = await workout(fixture.builderWorkoutId);
   expect(built.groups).toHaveLength(1);
-  frozen = built.groups[0].exercises.find((row) => row.exercise_id === custom[0].id);
-  expect(frozen.exercise.name).toBe(prescribedName);
-  expect(frozen.targets).toEqual([{duration: {mode: 'exact', value: 30}, effort: {mode: 'exact', value: 6}}]);
+  referenced = built.groups[0].exercises.find((row) => row.exercise_id === custom[0].id);
+  expect(referenced.exercise.name).toBe(`${exerciseName} catalogue changed`);
+  expect(referenced.targets).toEqual([
+    {duration: {mode: 'exact', value: 30}, effort: {mode: 'exact', value: 6}, rest: {mode: 'client_chooses'}},
+  ]);
 
   // Failed autosave persists on this device across a reload, then Retry saves it.
   const builderPath = `/v1/coach/workouts/${fixture.builderWorkoutId}`;
@@ -402,6 +418,7 @@ async function journey(width) {
     passed: true,
     superset: true,
     perRound: true,
+    eachSide: true,
     restTransfer: true,
     autosaveRetry: true,
     libraryCopy: true,

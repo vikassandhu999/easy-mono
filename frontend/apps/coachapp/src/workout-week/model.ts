@@ -181,3 +181,13 @@ export function readIntent(raw: string | null): SaveIntent | null {
   }
   return null;
 }
+
+export function occursOn(schedule: WorkoutSchedule, date: string) {
+  const weekday = (new Date(`${date}T12:00:00Z`).getUTCDay() + 6) % 7;
+  const bit = 1 << weekday;
+  return (
+    schedule.from_date <= date &&
+    (schedule.until_date === null || schedule.until_date >= date) &&
+    Boolean(schedule.weekdays_mask & bit)
+  );
+}

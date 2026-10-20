@@ -2,7 +2,7 @@ import {useQuery} from '@tanstack/react-query';
 import {call, client} from './client';
 import {exerciseKeys} from './keys';
 
-export type {Exercise, Workout, WorkoutTarget, WorkoutTargets} from './schema';
+export type {Exercise} from './schema';
 export function useExercises(search: string) {
   return useQuery({
     queryKey: exerciseKeys.list(search),

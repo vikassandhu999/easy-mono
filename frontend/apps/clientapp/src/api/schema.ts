@@ -4,7 +4,7 @@
  */
 
 /* typed-routes:types */
-/* typed-routes:hash 2df908e68c804c328241981f7e7d3aa5d4e2e246d4217a121413eaa5ee904f6b */
+/* typed-routes:hash e85239a61635a36ce5869a7cb30df5562952debb004d3c80bb018ad904b9cee8 */
 export type Attachment = {
   id: string;
   content_type:
@@ -95,32 +95,33 @@ export type Conversation = {
   updated_at: string;
 };
 export type ConversationMarkReadQuery = {through?: string};
-export type EnteredUnits = {[key: string]: string};
 export type Exercise = {
   id: string;
   name: string;
+  instructions: string | null;
   kind: 'movement' | 'activity' | 'sport' | 'practice';
   goals: Array<string>;
   places: Array<string>;
-  metrics: Array<string>;
-  count_label: string | null;
-  grade_scale: Array<string>;
-  unilateral: boolean;
-  equipment: Array<string>;
+  metrics: Array<ExerciseMetric>;
+  equipment: string | null;
   muscles: Array<string>;
-  media: string | null;
+  media: Array<ExerciseMedia>;
+  archived_at: string | null;
   is_builtin: boolean;
 };
 export type ExerciseGroup = {id: string; name: string | null; rounds: number; exercises: Array<WorkoutExercise>};
 export type ExerciseIndex = {data: Array<Exercise>; count: number; next_cursor: string | null};
-export type ExerciseSet = {
+export type ExerciseLog = {
   id: string;
-  workout_exercise_id: string | null;
   exercise_id: string;
   exercise: Exercise;
-  round: number;
-  side: 'left' | 'right' | null;
-  entered_units: EnteredUnits;
+  workout_exercise_id: string | null;
+  state: 'active' | 'completed' | 'skipped';
+  position: number;
+  side_mode: 'combined' | 'per_side';
+  rounds: number;
+  targets_mode: 'same_for_all' | 'per_round';
+  targets: Array<WorkoutRoundTargets>;
   reps: number | null;
   weight_kg: number | null;
   duration_s: number | null;
@@ -128,27 +129,31 @@ export type ExerciseSet = {
   elevation_gain_m: number | null;
   height_cm: number | null;
   calories_kcal: number | null;
-  speed_m_s: number | null;
+  avg_speed_m_s: number | null;
   incline_pct: number | null;
   level: number | null;
-  power_w: number | null;
-  cadence_rpm: number | null;
-  heart_rate_bpm: number | null;
+  avg_power_w: number | null;
+  avg_cadence_per_min: number | null;
+  avg_heart_rate_bpm: number | null;
   effort: number | null;
-  reserve: number | null;
   successes: number | null;
   attempts: number | null;
   score: number | null;
   result: 'win' | 'draw' | 'loss' | null;
-  grade: string | null;
+  entered_units: ResultUnits | null;
+  sets: Array<ExerciseSet>;
 };
-export type ExerciseSetWrite = {
-  id?: string;
-  workout_exercise_id?: string | null;
+export type ExerciseLogReplace = {id: string; exercise_id: string};
+export type ExerciseLogStart = {
+  id: string;
   exercise_id: string;
-  round: number;
-  side?: 'left' | 'right' | null;
-  entered_units?: EnteredUnits;
+  workout_exercise_id?: string | null;
+  side_mode?: 'combined' | 'per_side';
+};
+export type ExerciseLogUpdate = {
+  rounds?: number;
+  targets_mode?: 'same_for_all' | 'per_round';
+  targets?: Array<WorkoutRoundTargetsCreate>;
   reps?: number | null;
   weight_kg?: number | null;
   duration_s?: number | null;
@@ -156,19 +161,121 @@ export type ExerciseSetWrite = {
   elevation_gain_m?: number | null;
   height_cm?: number | null;
   calories_kcal?: number | null;
-  speed_m_s?: number | null;
+  avg_speed_m_s?: number | null;
   incline_pct?: number | null;
   level?: number | null;
-  power_w?: number | null;
-  cadence_rpm?: number | null;
-  heart_rate_bpm?: number | null;
+  avg_power_w?: number | null;
+  avg_cadence_per_min?: number | null;
+  avg_heart_rate_bpm?: number | null;
+  effort?: number | null;
+  successes?: number | null;
+  attempts?: number | null;
+  score?: number | null;
+  result?: 'win' | 'draw' | 'loss' | null;
+  entered_units?: ResultUnits | null;
+};
+export type ExerciseMedia = {id: string; url: string; caption: string | null};
+export type ExerciseMetric = {key: ExerciseMetricKey; label: string | null};
+export type ExerciseMetricKey =
+  | 'reps'
+  | 'weight'
+  | 'duration'
+  | 'distance'
+  | 'elevation_gain'
+  | 'height'
+  | 'calories'
+  | 'speed'
+  | 'incline'
+  | 'level'
+  | 'power'
+  | 'cadence'
+  | 'heart_rate'
+  | 'effort'
+  | 'reserve'
+  | 'successes'
+  | 'attempts'
+  | 'score'
+  | 'result'
+  | 'tempo';
+export type ExerciseSet = {
+  id: string;
+  state: 'completed' | 'skipped';
+  round: number;
+  side: 'left' | 'right' | null;
+  reps: number | null;
+  weight_kg: number | null;
+  duration_s: number | null;
+  distance_m: number | null;
+  elevation_gain_m: number | null;
+  height_cm: number | null;
+  calories_kcal: number | null;
+  avg_speed_m_s: number | null;
+  incline_pct: number | null;
+  level: number | null;
+  avg_power_w: number | null;
+  avg_cadence_per_min: number | null;
+  avg_heart_rate_bpm: number | null;
+  effort: number | null;
+  reserve: number | null;
+  successes: number | null;
+  attempts: number | null;
+  score: number | null;
+  result: 'win' | 'draw' | 'loss' | null;
+  entered_units: ResultUnits | null;
+  speed_m_s: number | null;
+  power_w: number | null;
+  cadence_rpm: number | null;
+  heart_rate_bpm: number | null;
+  grade: string | null;
+};
+export type ExerciseSetCorrect = {
+  state?: 'completed' | 'skipped';
+  reps?: number | null;
+  weight_kg?: number | null;
+  duration_s?: number | null;
+  distance_m?: number | null;
+  elevation_gain_m?: number | null;
+  height_cm?: number | null;
+  calories_kcal?: number | null;
+  avg_speed_m_s?: number | null;
+  incline_pct?: number | null;
+  level?: number | null;
+  avg_power_w?: number | null;
+  avg_cadence_per_min?: number | null;
+  avg_heart_rate_bpm?: number | null;
   effort?: number | null;
   reserve?: number | null;
   successes?: number | null;
   attempts?: number | null;
   score?: number | null;
   result?: 'win' | 'draw' | 'loss' | null;
-  grade?: string | null;
+  entered_units?: ResultUnits | null;
+};
+export type ExerciseSetRecord = {
+  id: string;
+  state: 'completed' | 'skipped';
+  round: number;
+  side?: 'left' | 'right' | null;
+  reps?: number | null;
+  weight_kg?: number | null;
+  duration_s?: number | null;
+  distance_m?: number | null;
+  elevation_gain_m?: number | null;
+  height_cm?: number | null;
+  calories_kcal?: number | null;
+  avg_speed_m_s?: number | null;
+  incline_pct?: number | null;
+  level?: number | null;
+  avg_power_w?: number | null;
+  avg_cadence_per_min?: number | null;
+  avg_heart_rate_bpm?: number | null;
+  effort?: number | null;
+  reserve?: number | null;
+  successes?: number | null;
+  attempts?: number | null;
+  score?: number | null;
+  result?: 'win' | 'draw' | 'loss' | null;
+  entered_units?: ResultUnits | null;
 };
 export type Food = {
   id: string;
@@ -215,6 +322,27 @@ export type MealOption = {
   position: number;
   items: Array<MealItem>;
   totals: NutrientTotals;
+};
+export type Measurements = {
+  reps?: number | null;
+  weight_kg?: number | null;
+  duration_s?: number | null;
+  distance_m?: number | null;
+  elevation_gain_m?: number | null;
+  height_cm?: number | null;
+  calories_kcal?: number | null;
+  avg_speed_m_s?: number | null;
+  incline_pct?: number | null;
+  level?: number | null;
+  avg_power_w?: number | null;
+  avg_cadence_per_min?: number | null;
+  avg_heart_rate_bpm?: number | null;
+  effort?: number | null;
+  successes?: number | null;
+  attempts?: number | null;
+  score?: number | null;
+  result?: 'win' | 'draw' | 'loss' | null;
+  entered_units?: ResultUnits | null;
 };
 export type Nutrient = {code: string; name: string; unit: string};
 export type NutrientMap = {[key: string]: number};
@@ -271,9 +399,28 @@ export type NutritionSchedule = {
   coach_id: string | null;
 };
 export type NutritionTargets = {id: string; name: string; targets: TargetBounds};
+export type ResultUnits = {
+  reps?: 'count' | 'reps' | null;
+  weight?: 'kg' | 'lb' | null;
+  duration?: 's' | 'min' | 'h:mm:ss' | null;
+  distance?: 'm' | 'km' | 'mi' | 'yd' | null;
+  elevation_gain?: 'm' | 'ft' | null;
+  height?: 'cm' | 'in' | null;
+  calories?: 'kcal' | null;
+  speed?: 'm/s' | 'km/h' | 'mph' | 'min/km' | 'min/mi' | 'min/100m' | null;
+  incline?: '%' | null;
+  level?: 'level' | null;
+  power?: 'W' | null;
+  cadence?: 'rpm' | 'spm' | null;
+  heart_rate?: 'bpm' | null;
+  effort?: 'RPE' | null;
+  reserve?: 'RIR' | null;
+  successes?: 'count' | null;
+  attempts?: 'count' | null;
+  score?: 'points' | null;
+};
 export type ReviewReplyQuery = {cursor?: string; limit?: number; review_id?: string};
 export type Revision = {expected_revision: number};
-export type SwapExercises = {[key: string]: Exercise};
 export type TargetBounds = {[key: string]: NutrientTarget};
 export type Tracker = {
   id: string;
@@ -434,7 +581,7 @@ export type Workout = {
   name: string;
   description: string | null;
   type: 'prescribed' | 'video' | 'open';
-  video: string | null;
+  video: {id: string; url: string} | null;
   groups: Array<ExerciseGroup>;
 };
 export type WorkoutCoach = {id: string; name: string};
@@ -442,51 +589,106 @@ export type WorkoutExercise = {
   id: string;
   exercise_id: string;
   exercise: Exercise;
+  side_mode: 'combined' | 'per_side';
   targets_mode: 'same_for_all' | 'per_round';
-  targets: Array<WorkoutTargets>;
-  rest: Array<WorkoutTarget | null>;
+  targets: Array<WorkoutRoundTargets>;
 };
 export type WorkoutLog = {
   id: string;
+  client_id: string;
   date: string;
   time: string | null;
-  at_utc: string | null;
-  text: string | null;
-  recorded_by: string;
   state: 'active' | 'completed' | 'discarded';
-  difficulty: 'too_easy' | 'just_right' | 'too_hard' | null;
+  recorded_by: 'client' | 'coach';
+  coach_id: string | null;
+  recorder_name: string;
+  effort: number | null;
   pain: boolean | null;
-  pain_note: string | null;
+  text: string | null;
   workout_id: string | null;
   schedule_id: string | null;
   scheduled_date: string | null;
-  sets: Array<ExerciseSet>;
-  swaps: WorkoutSwaps;
-  swap_exercises: SwapExercises;
+  exercise_logs: Array<ExerciseLog>;
+  inserted_at: string;
+  updated_at: string;
 };
-export type WorkoutLogFinish = {
-  time?: string | null;
-  text?: string | null;
-  sets?: Array<ExerciseSetWrite>;
-  swaps?: WorkoutSwaps;
-  difficulty: 'too_easy' | 'just_right' | 'too_hard';
-  pain: boolean;
-  pain_note?: string | null;
+export type WorkoutLogFeedback = {effort?: number | null; pain?: boolean | null; text?: string | null};
+export type WorkoutLogIndex = {count: number; workout_logs: Array<WorkoutLog>};
+export type WorkoutLogListQuery = {
+  date?: string;
+  scheduled_date?: string;
+  state?: 'active' | 'completed' | 'discarded';
+  offset?: number;
+  limit?: number;
 };
-export type WorkoutLogMutation = {data: WorkoutLog; undo_token: string};
 export type WorkoutLogStart = {
-  date: string;
+  id?: string;
+  date?: string;
   time?: string | null;
-  text?: string | null;
   workout_id?: string | null;
   schedule_id?: string | null;
   scheduled_date?: string | null;
 };
 export type WorkoutLogUpdate = {
+  date?: string;
   time?: string | null;
+  effort?: number | null;
+  pain?: boolean | null;
   text?: string | null;
-  sets?: Array<ExerciseSetWrite>;
-  swaps?: WorkoutSwaps;
+};
+export type WorkoutRestTarget = {
+  mode: 'client_chooses' | 'none' | 'exact' | 'range';
+  value_s?: number;
+  min_s?: number;
+  max_s?: number;
+};
+export type WorkoutRoundTargets = {
+  reps?: WorkoutTarget | null;
+  weight?: WorkoutTarget | null;
+  duration?: WorkoutTarget | null;
+  distance?: WorkoutTarget | null;
+  elevation_gain?: WorkoutTarget | null;
+  height?: WorkoutTarget | null;
+  calories?: WorkoutTarget | null;
+  speed?: WorkoutTarget | null;
+  incline?: WorkoutTarget | null;
+  level?: WorkoutTarget | null;
+  power?: WorkoutTarget | null;
+  cadence?: WorkoutTarget | null;
+  heart_rate?: WorkoutTarget | null;
+  effort?: WorkoutTarget | null;
+  reserve?: WorkoutTarget | null;
+  successes?: WorkoutTarget | null;
+  attempts?: WorkoutTarget | null;
+  score?: WorkoutTarget | null;
+  result?: WorkoutTarget | null;
+  grade?: WorkoutTarget | null;
+  tempo?: WorkoutTarget | null;
+  rest: WorkoutRestTarget;
+};
+export type WorkoutRoundTargetsCreate = {
+  reps?: WorkoutTarget | null;
+  weight?: WorkoutTarget | null;
+  duration?: WorkoutTarget | null;
+  distance?: WorkoutTarget | null;
+  elevation_gain?: WorkoutTarget | null;
+  height?: WorkoutTarget | null;
+  calories?: WorkoutTarget | null;
+  speed?: WorkoutTarget | null;
+  incline?: WorkoutTarget | null;
+  level?: WorkoutTarget | null;
+  power?: WorkoutTarget | null;
+  cadence?: WorkoutTarget | null;
+  heart_rate?: WorkoutTarget | null;
+  effort?: WorkoutTarget | null;
+  reserve?: WorkoutTarget | null;
+  successes?: WorkoutTarget | null;
+  attempts?: WorkoutTarget | null;
+  score?: WorkoutTarget | null;
+  result?: WorkoutTarget | null;
+  grade?: WorkoutTarget | null;
+  tempo?: WorkoutTarget | null;
+  rest?: WorkoutRestTarget | null;
 };
 export type WorkoutSchedule = {
   id: string;
@@ -500,17 +702,17 @@ export type WorkoutSchedule = {
   meeting_url: string | null;
   coach_id: string | null;
 };
-export type WorkoutSwaps = {[key: string]: string};
-export type WorkoutTarget =
-  | {mode: 'exact'; value: number | string}
-  | {mode: 'range'; min: number; max: number}
-  | {mode: 'max'};
-export type WorkoutTargets = {[key: string]: WorkoutTarget};
+export type WorkoutTarget = {
+  mode: 'client_chooses' | 'exact' | 'range' | 'max';
+  value?: number | string;
+  min?: number;
+  max?: number;
+};
 /* typed-routes:types-end */
 
 export interface paths {
   /* typed-routes:paths */
-  /* typed-routes:hash 262b9846371b127ea643028aa87a8c63af5de6fb38d2bb555b9fe996b101825a */
+  /* typed-routes:hash 55e2950703851a93d8ad35b3e81da43fb167f24ae68bd0970d9c0457a355af82 */
   '/api/health': {
     get: {
       parameters: {
@@ -911,6 +1113,17 @@ export interface paths {
     };
   };
   '/v1/client/workout-logs': {
+    get: {
+      parameters: {
+        query?: WorkoutLogListQuery;
+        header?: {Authorization?: string};
+        path?: never;
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': WorkoutLogIndex}};
+      };
+    };
     post: {
       parameters: {
         query?: never;
@@ -921,35 +1134,11 @@ export interface paths {
       requestBody: {content: {'application/json': WorkoutLogStart}};
       responses: {
         201: {content: {'application/json': {data: WorkoutLog}}};
-      };
-    };
-  };
-  '/v1/client/workout-logs/restore': {
-    post: {
-      parameters: {
-        query?: never;
-        header?: {Authorization?: string};
-        path?: never;
-        cookie?: never;
-      };
-      requestBody: {content: {'application/json': LogRestore}};
-      responses: {
         200: {content: {'application/json': {data: WorkoutLog}}};
       };
     };
   };
   '/v1/client/workout-logs/{id}': {
-    delete: {
-      parameters: {
-        query?: never;
-        header?: {Authorization?: string};
-        path: {id: string};
-        cookie?: never;
-      };
-      responses: {
-        200: {content: {'application/json': LogRestore}};
-      };
-    };
     get: {
       parameters: {
         query?: never;
@@ -970,7 +1159,7 @@ export interface paths {
       };
       requestBody: {content: {'application/json': WorkoutLogUpdate}};
       responses: {
-        200: {content: {'application/json': WorkoutLogMutation}};
+        200: {content: {'application/json': {data: WorkoutLog}}};
       };
     };
   };
@@ -983,7 +1172,130 @@ export interface paths {
         cookie?: never;
       };
       responses: {
-        200: {content: {'application/json': WorkoutLogMutation}};
+        200: {content: {'application/json': {data: WorkoutLog}}};
+      };
+    };
+  };
+  '/v1/client/workout-logs/{id}/exercise-logs': {
+    post: {
+      parameters: {
+        query?: never;
+        header?: {Authorization?: string};
+        path: {id: string};
+        cookie?: never;
+      };
+      requestBody: {content: {'application/json': ExerciseLogStart}};
+      responses: {
+        201: {content: {'application/json': {data: WorkoutLog}}};
+        200: {content: {'application/json': {data: WorkoutLog}}};
+      };
+    };
+  };
+  '/v1/client/workout-logs/{id}/exercise-logs/{activity_id}': {
+    patch: {
+      parameters: {
+        query?: never;
+        header?: {Authorization?: string};
+        path: {id: string; activity_id: string};
+        cookie?: never;
+      };
+      requestBody: {content: {'application/json': ExerciseLogUpdate}};
+      responses: {
+        200: {content: {'application/json': {data: WorkoutLog}}};
+      };
+    };
+  };
+  '/v1/client/workout-logs/{id}/exercise-logs/{activity_id}/complete': {
+    post: {
+      parameters: {
+        query?: never;
+        header?: {Authorization?: string};
+        path: {id: string; activity_id: string};
+        cookie?: never;
+      };
+      requestBody: {content: {'application/json': Measurements}};
+      responses: {
+        200: {content: {'application/json': {data: WorkoutLog}}};
+      };
+    };
+  };
+  '/v1/client/workout-logs/{id}/exercise-logs/{activity_id}/reopen': {
+    post: {
+      parameters: {
+        query?: never;
+        header?: {Authorization?: string};
+        path: {id: string; activity_id: string};
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': {data: WorkoutLog}}};
+      };
+    };
+  };
+  '/v1/client/workout-logs/{id}/exercise-logs/{activity_id}/replace': {
+    post: {
+      parameters: {
+        query?: never;
+        header?: {Authorization?: string};
+        path: {id: string; activity_id: string};
+        cookie?: never;
+      };
+      requestBody: {content: {'application/json': ExerciseLogReplace}};
+      responses: {
+        200: {content: {'application/json': {data: WorkoutLog}}};
+      };
+    };
+  };
+  '/v1/client/workout-logs/{id}/exercise-logs/{activity_id}/sets': {
+    post: {
+      parameters: {
+        query?: never;
+        header?: {Authorization?: string};
+        path: {id: string; activity_id: string};
+        cookie?: never;
+      };
+      requestBody: {content: {'application/json': ExerciseSetRecord}};
+      responses: {
+        201: {content: {'application/json': {data: WorkoutLog}}};
+        200: {content: {'application/json': {data: WorkoutLog}}};
+      };
+    };
+  };
+  '/v1/client/workout-logs/{id}/exercise-logs/{activity_id}/sets/{set_id}': {
+    delete: {
+      parameters: {
+        query?: never;
+        header?: {Authorization?: string};
+        path: {id: string; activity_id: string; set_id: string};
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': {data: WorkoutLog}}};
+      };
+    };
+    patch: {
+      parameters: {
+        query?: never;
+        header?: {Authorization?: string};
+        path: {id: string; activity_id: string; set_id: string};
+        cookie?: never;
+      };
+      requestBody: {content: {'application/json': ExerciseSetCorrect}};
+      responses: {
+        200: {content: {'application/json': {data: WorkoutLog}}};
+      };
+    };
+  };
+  '/v1/client/workout-logs/{id}/exercise-logs/{activity_id}/skip': {
+    post: {
+      parameters: {
+        query?: never;
+        header?: {Authorization?: string};
+        path: {id: string; activity_id: string};
+        cookie?: never;
+      };
+      responses: {
+        200: {content: {'application/json': {data: WorkoutLog}}};
       };
     };
   };
@@ -995,9 +1307,9 @@ export interface paths {
         path: {id: string};
         cookie?: never;
       };
-      requestBody: {content: {'application/json': WorkoutLogFinish}};
+      requestBody: {content: {'application/json': WorkoutLogFeedback}};
       responses: {
-        200: {content: {'application/json': WorkoutLogMutation}};
+        200: {content: {'application/json': {data: WorkoutLog}}};
       };
     };
   };
@@ -1010,7 +1322,7 @@ export interface paths {
         cookie?: never;
       };
       responses: {
-        200: {content: {'application/json': WorkoutLogMutation}};
+        200: {content: {'application/json': {data: WorkoutLog}}};
       };
     };
   };

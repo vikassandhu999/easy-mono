@@ -63,8 +63,8 @@ defmodule Easy.Repo.Seeds.WorkoutWeek do
       type: :prescribed,
       description: "Warm up 10 minutes before you start. Stop a set if your form breaks down.",
       groups: [
-        %{name: "Main lift", rounds: 4, exercises: [item(squat.id, %{"reps" => exact(5), "weight" => exact(80)}, exact(180))]},
-        %{name: "Core", rounds: 3, exercises: [item(plank.id, %{"duration" => exact(30)}, exact(45))]}
+        %{name: "Main lift", rounds: 4, exercises: [item(squat.id, %{"reps" => exact(5), "weight" => exact(80)}, rest(180))]},
+        %{name: "Core", rounds: 3, exercises: [item(plank.id, %{"duration" => exact(30)}, rest(45))]}
       ]
     }
 
@@ -78,7 +78,8 @@ defmodule Easy.Repo.Seeds.WorkoutWeek do
     %{pastWorkoutId: workout.id, pastScheduleId: schedule.id, libraryWorkoutId: library.id, builderWorkoutId: builder.id, libraryName: library.name, pastName: workout.name}
   end
 
-  defp item(id, targets, rest), do: %{exercise_id: id, targets_mode: :same_for_all, targets: [targets], rest: [rest]}
+  defp item(id, targets, rest), do: %{exercise_id: id, side_mode: :combined, targets_mode: :same_for_all, targets: [Map.put(targets, "rest", rest)]}
+  defp rest(value), do: %{"mode" => "exact", "value_s" => value}
   defp exact(value), do: %{"mode" => "exact", "value" => value}
   defp builtin(name), do: Repo.one!(from(e in Exercise, where: is_nil(e.business_id) and e.name == ^name))
   defp get_or_insert(schema, identity, attrs), do: Repo.get_by(schema, identity) || Repo.insert!(struct(schema, Map.merge(identity, attrs)))

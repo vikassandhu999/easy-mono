@@ -4,8 +4,11 @@ import {ApiError, call, callEmpty, client} from './client';
 import {workoutKeys, workoutWeekKeys} from './keys';
 import {cursorPagination} from './pagination';
 import {queryClient} from './query-client';
-import type {paths, WorkoutIndex} from './schema';
+import type {paths, WorkoutIndex, WorkoutRoundTargetsCreate} from './schema';
+
 import {getSession} from './session';
+
+export type {WorkoutRestTarget, WorkoutRoundTargets, WorkoutRoundTargetsCreate, WorkoutTarget} from './schema';
 
 export type Workout = paths['/v1/coach/workouts/{id}']['get']['responses'][200]['content']['application/json']['data'];
 export type WorkoutBody = paths['/v1/coach/workouts']['post']['requestBody']['content']['application/json'];
@@ -228,19 +231,23 @@ function targetSignature(value: unknown): unknown {
   return value;
 }
 export function workoutMatches(workout: Workout, body: WorkoutBody) {
+  const round = (target: WorkoutRoundTargetsCreate) => ({
+    ...Object.fromEntries(Object.entries(target).filter(([key, value]) => key !== 'rest' && value != null)),
+    rest: target.rest ?? {mode: 'client_chooses'},
+  });
   const normalize = (source: Workout | WorkoutBody) => ({
-    name: source.name,
-    description: source.description || null,
+    name: source.name.trim(),
+    description: source.description?.trim() || null,
     type: source.type ?? 'prescribed',
-    video: source.video || null,
+    video_url: ('video' in source ? source.video?.url : source.video_url) || null,
     groups: (source.groups ?? []).map((group) => ({
-      name: group.name || null,
+      name: group.name?.trim() || null,
       rounds: group.rounds,
       exercises: group.exercises.map((exercise) => ({
         exercise_id: exercise.exercise_id,
+        side_mode: exercise.side_mode ?? 'combined',
         targets_mode: exercise.targets_mode ?? 'same_for_all',
-        targets: exercise.targets ?? [{}],
-        rest: (exercise.rest ?? []).length === 0 ? (exercise.targets ?? [{}]).map(() => null) : exercise.rest,
+        targets: (exercise.targets ?? [{}]).map(round),
       })),
     })),
   });

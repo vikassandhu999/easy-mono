@@ -1,7 +1,8 @@
+import {defaultMetrics} from '@easy/workouts/metrics';
 import {useInfiniteQuery, useMutation, useQuery} from '@tanstack/react-query';
 import {useRef} from 'react';
 import {ApiError, call, callEmpty, client} from './client';
-import {exerciseKeys, workoutKeys} from './keys';
+import {exerciseKeys, workoutKeys, workoutWeekKeys} from './keys';
 import {cursorPagination} from './pagination';
 import {queryClient} from './query-client';
 import type {ExerciseIndex, paths} from './schema';
@@ -13,7 +14,7 @@ export type ExerciseCreate = paths['/v1/coach/exercises']['post']['requestBody']
 export type ExerciseUpdate = paths['/v1/coach/exercises/{id}']['patch']['requestBody']['content']['application/json'];
 export type ExerciseFilters = Pick<
   NonNullable<paths['/v1/coach/exercises']['get']['parameters']['query']>,
-  'search' | 'kind' | 'goal' | 'place'
+  'search' | 'kind' | 'goal' | 'place' | 'archived'
 >;
 
 export function useExercises(filters: ExerciseFilters) {
@@ -36,6 +37,7 @@ const refresh = () =>
   Promise.all([
     queryClient.invalidateQueries({queryKey: exerciseKeys.lists()}),
     queryClient.invalidateQueries({queryKey: workoutKeys.all}),
+    queryClient.invalidateQueries({queryKey: workoutWeekKeys.all}),
   ]);
 export function useSaveExercise() {
   const pending = useRef<ExerciseAttempt | null>(null);
@@ -142,6 +144,27 @@ export function useDeleteExercise() {
   });
 }
 
+function useExerciseArchive(action: 'archive' | 'restore') {
+  return useMutation({
+    onMutate: () => getSession()?.id,
+    mutationFn: (id: string) =>
+      action === 'archive'
+        ? call(client.POST('/v1/coach/exercises/{id}/archive', {params: {path: {id}}}))
+        : call(client.POST('/v1/coach/exercises/{id}/restore', {params: {path: {id}}})),
+    onSuccess: async (result, id, sessionId) => {
+      requireSession(sessionId);
+      queryClient.setQueryData(exerciseKeys.detail(id), result);
+      await refresh();
+    },
+  });
+}
+export function useArchiveExercise() {
+  return useExerciseArchive('archive');
+}
+export function useRestoreExercise() {
+  return useExerciseArchive('restore');
+}
+
 function requireSession(id: string | undefined) {
   if (!id || getSession()?.id !== id) {
     throw new Error('Your session changed. Please try again.');
@@ -162,18 +185,20 @@ async function matchingExercises(name: string) {
   return rows;
 }
 function exerciseMatches(exercise: Exercise, body: ExerciseCreate) {
+  const text = (value: string | null | undefined) => value?.trim() || null;
   const normalize = (value: Exercise | ExerciseCreate) => [
-    value.name,
+    value.name.trim(),
     value.kind,
-    value.goals,
-    value.places,
-    value.metrics ?? [],
-    value.count_label || null,
-    value.grade_scale ?? [],
-    value.unilateral ?? false,
-    value.equipment ?? [],
+    value.goals ?? [],
+    value.places ?? [],
+    (value.metrics ?? defaultMetrics[value.kind].map((key) => ({key, label: null}))).map((metric) => ({
+      key: metric.key,
+      label: text(metric.label),
+    })),
+    text(value.instructions),
+    text(value.equipment),
     value.muscles ?? [],
-    value.media || null,
+    (value.media ?? []).map((item) => ({url: item.url, caption: text(item.caption)})),
   ];
   return JSON.stringify(normalize(exercise)) === JSON.stringify(normalize(body));
 }

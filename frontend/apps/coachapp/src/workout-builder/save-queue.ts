@@ -1,3 +1,4 @@
+import {metricKeys} from '@easy/workouts/metrics';
 import type {Workout as SavedWorkout, WorkoutBody} from '../api/workouts';
 import {bodyOf, problemsOf, type Workout} from './model.ts';
 
@@ -94,11 +95,43 @@ const strings = (value: unknown): value is string[] =>
 function targets(value: unknown) {
   return (
     object(value) &&
-    Object.values(value).every(
-      (target) =>
+    Object.entries(value).every(
+      ([key, target]) =>
+        (key === 'rest' || key === 'grade' || metricKeys.some((metric) => metric === key)) &&
         object(target) &&
-        ['exact', 'range', 'max', 'choose', 'none'].includes(String(target.mode)) &&
+        (key === 'rest'
+          ? ['exact', 'range', 'client_chooses', 'none']
+          : ['exact', 'range', 'max', 'client_chooses']
+        ).includes(String(target.mode)) &&
         ['v', 'min', 'max'].every((key) => target[key] === undefined || typeof target[key] === 'string'),
+    )
+  );
+}
+function sourceExercise(value: unknown) {
+  return (
+    object(value) &&
+    typeof value.id === 'string' &&
+    typeof value.name === 'string' &&
+    ['movement', 'activity', 'sport', 'practice'].includes(String(value.kind)) &&
+    typeof value.is_builtin === 'boolean' &&
+    ['goals', 'places', 'muscles'].every((key) => strings(value[key])) &&
+    ['instructions', 'equipment', 'archived_at'].every(
+      (key) => value[key] === null || typeof value[key] === 'string',
+    ) &&
+    Array.isArray(value.metrics) &&
+    value.metrics.every(
+      (metric) =>
+        object(metric) &&
+        metricKeys.some((key) => key === metric.key) &&
+        (metric.label === null || typeof metric.label === 'string'),
+    ) &&
+    Array.isArray(value.media) &&
+    value.media.every(
+      (item) =>
+        object(item) &&
+        typeof item.id === 'string' &&
+        typeof item.url === 'string' &&
+        (item.caption === null || typeof item.caption === 'string'),
     )
   );
 }
@@ -133,6 +166,7 @@ export function readDraft(raw: string | null): Workout | null {
         if (
           !object(exercise) ||
           typeof exercise.id !== 'string' ||
+          !['combined', 'per_side'].includes(String(exercise.sideMode)) ||
           typeof exercise.perRound !== 'boolean' ||
           !targets(exercise.targets) ||
           !Array.isArray(exercise.roundTargets) ||
@@ -140,17 +174,7 @@ export function readDraft(raw: string | null): Workout | null {
         ) {
           return null;
         }
-        const source = exercise.source;
-        if (
-          !object(source) ||
-          typeof source.id !== 'string' ||
-          typeof source.name !== 'string' ||
-          !['movement', 'activity', 'sport', 'practice'].includes(String(source.kind)) ||
-          typeof source.unilateral !== 'boolean' ||
-          typeof source.is_builtin !== 'boolean' ||
-          !['goals', 'places', 'metrics', 'grade_scale', 'equipment', 'muscles'].every((key) => strings(source[key])) ||
-          !['count_label', 'media'].every((key) => source[key] === null || typeof source[key] === 'string')
-        ) {
+        if (!sourceExercise(exercise.source)) {
           return null;
         }
         if (exercise.perRound && exercise.roundTargets.length !== group.rounds) {

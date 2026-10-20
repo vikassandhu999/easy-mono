@@ -272,6 +272,18 @@ defmodule EasyWeb.TypedRouteTest do
     assert body["error_detail"]["fields"]["extra"] == ["is unknown"]
   end
 
+  test "a declared create replay returns the same response with status 200" do
+    conn = TypedRoute.ok(typed_conn(:create), {:replay, %{data: %{id: "1", name: "soup"}}})
+    assert conn.status == 200
+    assert Jason.decode!(conn.resp_body) == %{"data" => %{"id" => "1", "name" => "soup"}}
+  end
+
+  test "an action without a replay declaration rejects a replay response" do
+    assert_raise ArgumentError, ~r/does not declare a replay/, fn ->
+      TypedRoute.ok(typed_conn(:show), {:replay, %{data: %{id: "1", name: "soup"}}})
+    end
+  end
+
   test "show and delete return 200 envelope and 204" do
     show =
       :show

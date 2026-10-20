@@ -1,55 +1,155 @@
 defmodule Easy.Workouts do
   import Ecto.Query
   import Bitwise
+  alias Easy.Attachments.Attachment
   alias Easy.{ClientAccess, Ctx, CursorPage, Repo}
   alias Easy.Clients.Client
   alias Easy.Orgs.Coach
-  alias Easy.Workouts.{Exercise, ExerciseGroup, Targets, Timing, Undo, Workout, WorkoutExercise, WorkoutSchedule}
+
+  alias Easy.Workouts.{
+    Content,
+    Exercise,
+    ExerciseMedia,
+    Timing,
+    Undo,
+    Workout,
+    WorkoutExerciseReference,
+    WorkoutSchedule
+  }
+
   @type result :: {:ok, map() | struct()} | {:error, atom() | Ecto.Changeset.t()}
 
   @spec list_exercises(Ctx.t(), keyword()) :: result()
   def list_exercises(ctx, opts \\ []) do
     with :ok <- Ctx.ensure_coach(ctx) do
       Exercise.visible(ctx.business_id)
+      |> exercise_archive_filter(opts[:archived])
       |> search(opts[:search])
       |> facet(:kind, opts[:kind])
       |> tag(:goals, opts[:goal])
       |> tag(:places, opts[:place])
-      |> tag(:equipment, opts[:equipment])
+      |> equipment_filter(opts[:equipment])
       |> tag(:muscles, opts[:muscle])
+      |> Exercise.include_media(ctx.business_id)
       |> page(opts)
     end
   end
 
   @spec get_exercise(Ctx.t(), String.t()) :: result()
-  def get_exercise(ctx, id),
-    do: with(:ok <- Ctx.ensure_coach(ctx), do: Exercise.visible(ctx.business_id) |> Repo.get(id) |> found())
+  def get_exercise(ctx, id) do
+    with :ok <- Ctx.ensure_coach(ctx) do
+      Exercise.visible(ctx.business_id)
+      |> Exercise.include_media(ctx.business_id)
+      |> Repo.get(id)
+      |> found()
+    end
+  end
 
   @spec create_exercise(Ctx.t(), map()) :: result()
-  def create_exercise(ctx, attrs),
-    do: with(:ok <- Ctx.ensure_coach(ctx), do: Exercise.insert_changeset(ctx.business_id, attrs) |> Repo.insert())
+  def create_exercise(ctx, attrs) do
+    library_write(ctx, fn ->
+      with {:ok, row} <- Exercise.insert_changeset(ctx.business_id, attrs) |> Repo.insert(),
+           :ok <- replace_exercise_media(ctx, %{row | media: []}, encode(attrs)) do
+        get_exercise(ctx, row.id)
+      end
+    end)
+  end
 
   @spec update_exercise(Ctx.t(), String.t(), map()) :: result()
-  def update_exercise(ctx, id, attrs),
-    do:
-      with(
-        :ok <- Ctx.ensure_coach(ctx),
-        {:ok, row} <- own_exercise(ctx, id),
-        do: Exercise.update_changeset(row, attrs) |> Repo.update()
-      )
+  def update_exercise(ctx, id, attrs) do
+    mutate_exercise(ctx, id, fn row ->
+      with {:ok, updated} <- Exercise.update_changeset(row, attrs) |> Repo.update(),
+           :ok <- replace_exercise_media(ctx, updated, encode(attrs)) do
+        get_exercise(ctx, id)
+      end
+    end)
+  end
+
+  @spec archive_exercise(Ctx.t(), String.t()) :: result()
+  def archive_exercise(ctx, id),
+    do: mutate_exercise(ctx, id, &(Exercise.archive_changeset(&1, DateTime.utc_now(:second)) |> Repo.update()))
+
+  @spec restore_exercise(Ctx.t(), String.t()) :: result()
+  def restore_exercise(ctx, id),
+    do: mutate_exercise(ctx, id, &(Exercise.restore_changeset(&1) |> Repo.update()))
 
   @spec copy_exercise(Ctx.t(), String.t()) :: result()
-  def copy_exercise(ctx, id),
-    do:
-      with(
-        {:ok, row} <- get_exercise(ctx, id),
-        do:
-          create_exercise(
-            ctx,
-            Map.take(row, Exercise.__schema__(:fields) -- [:id, :business_id, :inserted_at, :updated_at])
-            |> Map.update!(:name, &(&1 <> " (copy)"))
-          )
-      )
+  def copy_exercise(ctx, id) do
+    with {:ok, row} <- get_exercise(ctx, id),
+         do: library_write(ctx, fn -> duplicate_exercise(ctx, row) end)
+  end
+
+  defp duplicate_exercise(ctx, row) do
+    attrs =
+      row
+      |> Map.take([:name, :instructions, :kind, :goals, :places, :equipment, :muscles])
+      |> Map.put(:name, row.name <> " (copy)")
+      |> Map.put(:metrics, Enum.map(row.metrics, &Ecto.embedded_dump(&1, :json)))
+
+    with {:ok, copy} <- create_exercise(ctx, attrs) do
+      Enum.each(row.media, fn media ->
+        ExerciseMedia.insert_changeset(ctx.business_id, copy.id, media.attachment_id, %{caption: media.caption, position: media.position}) |> Repo.insert() |> unwrap()
+      end)
+
+      get_exercise(ctx, copy.id)
+    end
+  end
+
+  defp mutate_exercise(ctx, id, operation) do
+    library_write(ctx, fn ->
+      with {:ok, row} <- Exercise.for_business(ctx.business_id) |> where([e], e.id == ^id) |> lock("FOR UPDATE") |> Exercise.include_media(ctx.business_id) |> Repo.one() |> found(),
+           do: operation.(row)
+    end)
+  end
+
+  defp exercise_archive_filter(query, true), do: where(query, [e], not is_nil(e.archived_at))
+  defp exercise_archive_filter(query, _), do: Exercise.selectable(query)
+  defp equipment_filter(query, value) when value in [nil, ""], do: query
+  defp equipment_filter(query, value), do: where(query, [e], ilike(e.equipment, ^Easy.Search.like_pattern(value)))
+
+  defp replace_exercise_media(ctx, row, %{"media" => values}) when is_list(values) do
+    if Enum.all?(values, &(is_map(&1) and not is_struct(&1))),
+      do: replace_media_rows(ctx, row, values),
+      else: {:error, media_error(row, "must be an array of media objects")}
+  end
+
+  defp replace_exercise_media(_ctx, row, %{"media" => _}), do: {:error, media_error(row, "must be an array of media objects")}
+  defp replace_exercise_media(_ctx, _row, _attrs), do: :ok
+
+  defp replace_media_rows(ctx, row, values) do
+    {:ok, _} = Repo.query("SET CONSTRAINTS exercise_media_position DEFERRED")
+    current = Map.new(row.media, &{&1.id, &1})
+    ids = Enum.map(values, & &1["id"]) |> Enum.reject(&is_nil/1)
+
+    if Enum.uniq(ids) == ids and Enum.all?(ids, &Map.has_key?(current, &1)) do
+      from(m in ExerciseMedia, where: m.business_id == ^ctx.business_id and m.exercise_id == ^row.id and m.id not in ^ids)
+      |> Repo.delete_all()
+
+      values
+      |> Enum.with_index()
+      |> Enum.each(fn {attrs, position} ->
+        save_exercise_media(ctx, row, current[attrs["id"]], Map.put(attrs, "position", position)) |> unwrap()
+      end)
+
+      :ok
+    else
+      {:error, media_error(row, "must use distinct gallery ids from this exercise")}
+    end
+  end
+
+  defp media_error(row, message), do: row |> Ecto.Changeset.change() |> Ecto.Changeset.add_error(:media, message)
+
+  defp save_exercise_media(ctx, row, current, attrs) do
+    with {:ok, attachment} <- media_attachment(ctx, current, attrs["url"]) do
+      case current do
+        nil -> ExerciseMedia.insert_changeset(ctx.business_id, row.id, attachment.id, attrs) |> Repo.insert()
+        media -> media |> ExerciseMedia.update_changeset(attrs) |> Ecto.Changeset.put_change(:attachment_id, attachment.id) |> Repo.update()
+      end
+    end
+  end
+
+  defp media_attachment(_ctx, %{attachment: %{external_url: url} = attachment}, url), do: {:ok, attachment}
+  defp media_attachment(ctx, _current, url), do: Attachment.external_link_changeset(ctx.business_id, url, {:coach, ctx.coach_id}) |> Repo.insert()
 
   @spec delete_exercise(Ctx.t(), String.t()) :: result()
   def delete_exercise(ctx, id) do
@@ -72,14 +172,10 @@ defmodule Easy.Workouts do
   end
 
   defp exercise_in_use?(ctx, id) do
-    Repo.exists?(from(e in WorkoutExercise, where: e.business_id == ^ctx.business_id and e.exercise_id == ^id)) or
-      Repo.exists?(from(s in Easy.Workouts.ExerciseSet, where: s.business_id == ^ctx.business_id and s.exercise_id == ^id)) or
-      Repo.exists?(
-        from(l in Easy.Workouts.WorkoutLog, where: l.business_id == ^ctx.business_id and fragment("EXISTS(SELECT 1 FROM jsonb_each(?) s WHERE s.value->>'id'=?)", l.swaps, ^id))
-      )
+    Repo.exists?(from(e in WorkoutExerciseReference, where: e.business_id == ^ctx.business_id and e.exercise_id == ^id)) or
+      Repo.exists?(from(l in Easy.Workouts.ExerciseLog, where: l.business_id == ^ctx.business_id and l.exercise_id == ^id)) or
+      Repo.exists?(from(s in Easy.Workouts.ExerciseSet, where: s.business_id == ^ctx.business_id and s.exercise_id == ^id))
   end
-
-  defp own_exercise(ctx, id), do: Exercise.for_business(ctx.business_id) |> Repo.get(id) |> found()
 
   @spec list_workouts(Ctx.t(), keyword()) :: result()
   def list_workouts(ctx, opts \\ []), do: with(:ok <- Ctx.ensure_coach(ctx), do: list_owned(ctx, nil, opts))
@@ -166,7 +262,8 @@ defmodule Easy.Workouts do
       attrs = encode(attrs)
 
       with {:ok, row} <- chosen_workout(ctx, client_id, attrs),
-           do: merge_schedule(ctx, client_id, row.id, Map.put(attrs, "from_date", today), today)
+           :ok <- scheduling_content(ctx, row),
+           do: merge_schedule(ctx, client_id, row.id, Map.put_new(attrs, "from_date", today), today)
     end)
   end
 
@@ -274,8 +371,8 @@ defmodule Easy.Workouts do
          do: {:ok, CursorPage.finish(Repo.all(paged), limit, Repo.aggregate(q, :count))}
   end
 
-  defp list_owned(ctx, client_id, opts),
-    do:
+  defp list_owned(ctx, client_id, opts) do
+    result =
       Workout.for_owner(ctx.business_id, client_id)
       |> Workout.active()
       |> Workout.include_content(ctx.business_id)
@@ -283,141 +380,147 @@ defmodule Easy.Workouts do
       |> facet(:type, opts[:type])
       |> page(opts)
 
+    with {:ok, result} <- result,
+         do: {:ok, Map.update!(result, :data, &Content.load_exercises(&1, ctx.business_id))}
+  end
+
   defp workout(ctx, client_id, id, active \\ true) do
-    q = Workout.for_owner(ctx.business_id, client_id) |> Workout.include_content(ctx.business_id)
-    q = if active, do: Workout.active(q), else: q
-    q = if Repo.in_transaction?(), do: lock(q, "FOR UPDATE"), else: q
-    q |> Repo.get(id) |> found()
+    query = Workout.for_owner(ctx.business_id, client_id) |> Workout.include_content(ctx.business_id)
+    query = if active, do: Workout.active(query), else: query
+    query = if Repo.in_transaction?(), do: lock(query, "FOR UPDATE"), else: query
+
+    with {:ok, row} <- query |> Repo.get(id) |> found() do
+      {:ok, hd(Content.load_exercises([row], ctx.business_id))}
+    end
   end
 
   defp insert_workout(ctx, client_id, attrs, source \\ nil) do
-    with {:ok, row} <- Workout.insert_changeset(ctx.business_id, client_id, attrs) |> Repo.insert(),
-         :ok <- replace_groups(ctx, row, encode(attrs)["groups"] || [], if(source, do: source.groups, else: []), true) do
-      workout(ctx, client_id, row.id)
+    attrs = attrs |> encode() |> Content.fresh_ids()
+    row = %Workout{business_id: ctx.business_id, client_id: client_id}
+
+    with {:ok, changeset, video} <- prepare_workout(ctx, row, attrs, source) do
+      persist_content(ctx, changeset, :insert, video)
     end
   end
 
   defp edit_workout(ctx, row, attrs) do
-    attrs = encode(attrs)
-    cs = Workout.update_changeset(row, attrs)
-    next_groups = Map.get(attrs, "groups", row.groups)
-
-    with {:ok, next} <- Ecto.Changeset.apply_action(cs, :update),
-         :ok <- content_shape(next.type, next_groups),
-         {:ok, saved} <- Repo.update(cs) do
-      if Map.has_key?(attrs, "groups"), do: unwrap_ok(replace_groups(ctx, saved, attrs["groups"], row.groups))
-      workout(ctx, row.client_id, saved.id)
+    with {:ok, changeset, video} <- prepare_workout(ctx, row, encode(attrs), row) do
+      if Content.same?(Ecto.Changeset.apply_changes(changeset), row), do: {:ok, row}, else: persist_content(ctx, changeset, :update, video)
     end
   end
 
-  defp content_shape(:prescribed, _groups), do: :ok
-  defp content_shape(_type, []), do: :ok
-  defp content_shape(_type, _groups), do: {:error, :invalid_prescription}
+  defp prepare_workout(ctx, row, attrs, retained) do
+    with {:ok, attrs, video} <- prepare_video(ctx, row, Map.delete(attrs, "video_id")) do
+      old_ids = if retained, do: exercise_ids(content(retained)["groups"]), else: []
+      groups = Map.get(attrs, "groups", content(row)["groups"])
+      lookup = Content.exercises_by_id(ctx.business_id, exercise_ids(groups) ++ old_ids)
+      changeset = Workout.update_changeset(row, attrs, lookup)
 
-  defp unwrap_ok(:ok), do: :ok
-  defp unwrap_ok({:error, reason}), do: Repo.rollback(reason)
+      changeset =
+        if Enum.any?(exercise_ids(groups) -- old_ids, &archived?(lookup[&1])),
+          do: Ecto.Changeset.add_error(changeset, :groups, "cannot select an archived exercise"),
+          else: changeset
 
-  defp replace_groups(ctx, row, groups, old, fresh \\ false) do
+      if changeset.valid?, do: {:ok, changeset, video}, else: {:error, changeset}
+    end
+  end
+
+  defp archived?(nil), do: false
+  defp archived?(exercise), do: not is_nil(exercise.archived_at)
+
+  defp prepare_video(ctx, row, %{"video_url" => url} = attrs) do
     cond do
-      not is_list(groups) ->
-        {:error, :invalid_prescription}
+      is_nil(url) ->
+        {:ok, Map.put(attrs, "video_id", nil), nil}
 
-      row.type != :prescribed and groups != [] ->
-        {:error, :invalid_prescription}
+      row.video_id && row.video.external_url == url ->
+        {:ok, Map.put(attrs, "video_id", row.video_id), nil}
 
       true ->
-        Repo.delete_all(from(g in ExerciseGroup, where: g.business_id == ^ctx.business_id and g.workout_id == ^row.id))
+        changeset = Attachment.external_link_changeset(ctx.business_id, url, {:coach, ctx.coach_id})
 
-        Enum.with_index(groups)
-        |> Enum.each(fn {attrs, position} ->
-          insert_group(ctx, row, Map.put(attrs, "position", position), old, fresh)
-        end)
-
-        :ok
+        with {:ok, video} <- Ecto.Changeset.apply_action(changeset, :insert),
+             do: {:ok, Map.put(attrs, "video_id", video.id), changeset}
     end
   end
 
-  defp insert_group(ctx, workout, attrs, old, fresh) do
-    prior = Enum.find(old, &(&1.id == attrs["id"]))
-    group = ExerciseGroup.insert_changeset(ctx.business_id, workout.id, attrs)
-    group = if prior && not fresh, do: Ecto.Changeset.put_change(group, :id, prior.id), else: group
-    group = unwrap(Repo.insert(group))
-    exercises = attrs["exercises"] || []
-    if exercises == [], do: Repo.rollback(:invalid_prescription)
+  defp prepare_video(_ctx, _row, attrs), do: {:ok, attrs, nil}
 
-    Enum.with_index(exercises)
-    |> Enum.each(fn {item, position} ->
-      insert_item(ctx, group, Map.put(item, "position", position), Enum.flat_map(old, & &1.exercises), fresh)
-    end)
-  end
-
-  defp insert_item(ctx, group, attrs, old, fresh) do
-    exercise = unwrap(Exercise.visible(ctx.business_id) |> Repo.get(attrs["exercise_id"]) |> found())
-    prior = Enum.find(old, &(&1.id == attrs["id"] and &1.exercise_id == exercise.id))
-    snapshot = if prior, do: prior.exercise_snapshot, else: exercise_snapshot(exercise)
-
-    cs =
-      WorkoutExercise.insert_changeset(ctx.business_id, group.id, attrs)
-      |> Ecto.Changeset.put_change(:exercise_snapshot, snapshot)
-
-    cs = if prior && not fresh, do: Ecto.Changeset.put_change(cs, :id, prior.id), else: cs
-
-    with {:ok, item} <- Ecto.Changeset.apply_action(cs, :insert),
-         true <- Targets.valid?(item, snapshot, group.rounds) || {:error, :invalid_prescription} do
-      unwrap(Repo.insert(cs))
-    else
-      {:error, reason} -> Repo.rollback(reason)
+  defp persist_content(ctx, changeset, operation, video) do
+    with :ok <- insert_video(video),
+         {:ok, row} <- apply(Repo, operation, [changeset]) do
+      :ok = Content.sync_references(row)
+      workout(ctx, row.client_id, row.id)
     end
   end
 
-  defp exercise_snapshot(row),
-    do:
-      row
-      |> Map.take([
-        :id,
-        :name,
-        :kind,
-        :goals,
-        :places,
-        :metrics,
-        :count_label,
-        :grade_scale,
-        :unilateral,
-        :equipment,
-        :muscles,
-        :media
-      ])
-      |> Map.put(:is_builtin, is_nil(row.business_id))
-      |> encode()
+  defp insert_video(nil), do: :ok
+  defp insert_video(changeset), do: with({:ok, _} <- Repo.insert(changeset), do: :ok)
 
   defp content(row) do
-    groups =
-      Enum.map(row.groups, fn g ->
-        %{
-          id: g.id,
-          name: g.name,
-          rounds: g.rounds,
-          exercises: Enum.map(g.exercises, &Map.take(&1, [:id, :exercise_id, :targets_mode, :targets, :rest]))
-        }
-      end)
-
-    row |> Map.take([:name, :description, :type, :video]) |> Map.put(:groups, groups) |> encode()
+    %{
+      "name" => row.name,
+      "description" => row.description,
+      "type" => row.type,
+      "groups" => Enum.map(row.groups, &Ecto.embedded_dump(&1, :json)) |> encode(),
+      "video_url" => if(row.video_id, do: row.video.external_url, else: nil)
+    }
   end
 
-  defp update_owned(ctx, client_id, id, attrs, today) do
-    with {:ok, row} <- workout(ctx, client_id, id) do
-      rows = schedules(ctx, client_id, id, today)
+  defp exercise_ids(groups) when is_list(groups) do
+    groups
+    |> Enum.flat_map(&group_entries/1)
+    |> Enum.flat_map(fn
+      %{"exercise_id" => id} when is_binary(id) -> [id]
+      _ -> []
+    end)
+    |> Enum.uniq()
+  end
 
-      if Enum.any?(rows, &Timing.last_fact(&1, today)) or logged?(ctx, row.id),
-        do: copy_owned(ctx, row, rows, attrs, today),
-        else: edit_workout(ctx, row, attrs)
+  defp exercise_ids(_), do: []
+  defp group_entries(%{"exercises" => entries}) when is_list(entries), do: entries
+  defp group_entries(_), do: []
+
+  defp update_owned(ctx, client_id, id, attrs, today) do
+    with {:ok, row} <- workout(ctx, client_id, id),
+         {:ok, changeset, video} <- prepare_workout(ctx, row, encode(attrs), row) do
+      if Content.same?(Ecto.Changeset.apply_changes(changeset), row),
+        do: {:ok, row},
+        else: persist_owned_edit(ctx, row, changeset, video, today)
+    end
+  end
+
+  defp persist_owned_edit(ctx, row, changeset, video, today) do
+    rows = schedules(ctx, row.client_id, row.id, today)
+    changeset = if Enum.any?(rows, &Timing.future?(&1, today)), do: Workout.validate_content_for_schedule(changeset), else: changeset
+
+    cond do
+      not changeset.valid? ->
+        {:error, changeset}
+
+      Enum.any?(rows, &Timing.last_fact(&1, today)) or logged?(ctx, row.id) ->
+        copy_owned(ctx, row, rows, changeset, video, today)
+
+      true ->
+        persist_content(ctx, changeset, :update, video)
     end
   end
 
   defp logged?(ctx, id), do: Repo.exists?(from(l in Easy.Workouts.WorkoutLog, where: l.business_id == ^ctx.business_id and l.workout_id == ^id))
 
-  defp copy_owned(ctx, row, rows, attrs, today) do
-    with {:ok, copy} <- insert_workout(ctx, row.client_id, Map.merge(content(row), encode(attrs)), row) do
+  defp copy_owned(ctx, row, rows, changeset, video, today) do
+    candidate = Ecto.Changeset.apply_changes(changeset)
+    video = if is_nil(video) and candidate.video_id, do: Attachment.external_link_changeset(ctx.business_id, row.video.external_url, {:coach, ctx.coach_id}), else: video
+
+    attrs =
+      %{name: candidate.name, description: candidate.description, type: candidate.type, groups: Enum.map(candidate.groups, &Ecto.embedded_dump(&1, :json))}
+      |> Content.fresh_ids()
+      |> Map.put(:video_id, if(video, do: Ecto.Changeset.get_field(video, :id), else: nil))
+
+    lookup = Content.exercises_by_id(ctx.business_id, exercise_ids(encode(attrs)["groups"]))
+    copy_changeset = Workout.insert_changeset(ctx.business_id, row.client_id, attrs, lookup)
+
+    with {:ok, copy} <- persist_content(ctx, copy_changeset, :insert, video) do
       Enum.each(rows, &move_schedule(&1, copy.id, today))
       save(Ecto.Changeset.change(row, archived_at: DateTime.utc_now(:second)))
       {:ok, copy}
@@ -445,6 +548,12 @@ defmodule Easy.Workouts do
   defp chosen_workout(ctx, client_id, %{"workout_id" => id}), do: workout(ctx, client_id, id)
   defp chosen_workout(_, _, _), do: {:error, :invalid_prescription}
 
+  defp scheduling_content(ctx, row) do
+    lookup = Content.exercises_by_id(ctx.business_id, exercise_ids(content(row)["groups"]))
+    changeset = row |> Workout.update_changeset(%{}, lookup) |> Workout.validate_content_for_schedule()
+    if changeset.valid?, do: :ok, else: {:error, changeset}
+  end
+
   defp validate_schedule(ctx, row, attrs) do
     cs = WorkoutSchedule.update_changeset(row, attrs)
     id = Ecto.Changeset.get_field(cs, :coach_id)
@@ -455,13 +564,19 @@ defmodule Easy.Workouts do
   end
 
   defp merge_schedule(ctx, client_id, workout_id, attrs, today) do
-    cs = WorkoutSchedule.insert_changeset(ctx.business_id, client_id, workout_id, attrs)
+    cs = WorkoutSchedule.insert_changeset(ctx.business_id, client_id, workout_id, attrs, today)
+
+    cs =
+      case Ecto.Changeset.get_field(cs, :from_date) do
+        %Date{} = date -> if Date.before?(date, today), do: Ecto.Changeset.add_error(cs, :from_date, "must not be before today"), else: cs
+        _ -> cs
+      end
 
     with {:ok, desired} <- Ecto.Changeset.apply_action(cs, :insert),
          {:ok, _} <- validate_schedule(ctx, desired, attrs) do
       existing =
         schedules(ctx, client_id, workout_id, today)
-        |> Enum.find(&(Timing.future?(&1, today) and occasion(&1) == occasion(desired)))
+        |> Enum.find(&(Timing.future?(&1, today) and occasion(&1, today) == occasion(desired, today)))
 
       if existing,
         do:
@@ -478,7 +593,7 @@ defmodule Easy.Workouts do
   defp merge_changed_schedule(ctx, row, desired, attrs, today) do
     other =
       schedules(ctx, row.client_id, row.workout_id, today)
-      |> Enum.find(&(&1.id != row.id and Timing.future?(&1, today) and occasion(&1) == occasion(desired)))
+      |> Enum.find(&(&1.id != row.id and Timing.future?(&1, today) and occasion(&1, today) == occasion(desired, today)))
 
     if other do
       end_schedule(row, today)
@@ -493,7 +608,11 @@ defmodule Easy.Workouts do
     end
   end
 
-  defp occasion(row), do: Map.take(row, [:time, :place, :meeting_url, :coach_id])
+  defp occasion(row, today) do
+    row
+    |> Map.take([:until_date, :time, :place, :meeting_url, :coach_id])
+    |> Map.put(:from_date, if(Date.before?(row.from_date, today), do: today, else: row.from_date))
+  end
 
   defp end_schedule(row, today) do
     case Timing.last_fact(row, today) do
@@ -510,7 +629,8 @@ defmodule Easy.Workouts do
         row.business_id,
         row.client_id,
         row.workout_id,
-        Map.put(attrs, "from_date", next_date(row, today))
+        Map.put(attrs, "from_date", next_date(row, today)),
+        today
       )
       |> Repo.insert()
       |> unwrap()
@@ -528,7 +648,8 @@ defmodule Easy.Workouts do
           row.business_id,
           row.client_id,
           workout_id,
-          Map.put(timing_attrs(row), "from_date", next_date(row, today))
+          Map.put(timing_attrs(row), "from_date", next_date(row, today)),
+          today
         )
         |> Repo.insert()
         |> unwrap()
@@ -559,7 +680,7 @@ defmodule Easy.Workouts do
         do: Workout.active(workouts),
         else: where(workouts, [w], w.id in ^Enum.map(schedules, & &1.workout_id))
 
-    workouts = Repo.all(workouts)
+    workouts = workouts |> Repo.all() |> Content.load_exercises(ctx.business_id)
     active_ids = Enum.map(workouts, & &1.id)
     schedules = if current, do: Enum.filter(schedules, &(&1.workout_id in active_ids)), else: schedules
 

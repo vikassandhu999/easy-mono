@@ -154,6 +154,8 @@ defmodule EasyWeb.Router do
     patch "/exercises/:id", ExerciseController, :update
     delete "/exercises/:id", ExerciseController, :delete
     post "/exercises/:id/copy", ExerciseController, :copy
+    post "/exercises/:id/archive", ExerciseController, :archive
+    post "/exercises/:id/restore", ExerciseController, :restore
     get "/workouts", WorkoutController, :index
     post "/workouts", WorkoutController, :create
     get "/workouts/:id", WorkoutController, :show
@@ -172,6 +174,23 @@ defmodule EasyWeb.Router do
     patch "/clients/:client_id/workout-schedules/:id", WorkoutWeekController, :update_schedule
     delete "/clients/:client_id/workout-schedules/:id", WorkoutWeekController, :remove_schedule
     post "/clients/:client_id/workout-undo", WorkoutWeekController, :undo
+
+    get "/clients/:client_id/workout-logs", ClientWorkoutLogController, :index
+    post "/clients/:client_id/workout-logs", ClientWorkoutLogController, :start
+    get "/clients/:client_id/workout-logs/:id", ClientWorkoutLogController, :show
+    patch "/clients/:client_id/workout-logs/:id", ClientWorkoutLogController, :update
+    post "/clients/:client_id/workout-logs/:id/finish", ClientWorkoutLogController, :finish
+    post "/clients/:client_id/workout-logs/:id/discard", ClientWorkoutLogController, :discard
+    post "/clients/:client_id/workout-logs/:id/reopen", ClientWorkoutLogController, :reopen
+    post "/clients/:client_id/workout-logs/:id/exercise-logs", ClientWorkoutLogController, :start_activity
+    patch "/clients/:client_id/workout-logs/:id/exercise-logs/:activity_id", ClientWorkoutLogController, :update_activity
+    post "/clients/:client_id/workout-logs/:id/exercise-logs/:activity_id/complete", ClientWorkoutLogController, :complete_activity
+    post "/clients/:client_id/workout-logs/:id/exercise-logs/:activity_id/skip", ClientWorkoutLogController, :skip_activity
+    post "/clients/:client_id/workout-logs/:id/exercise-logs/:activity_id/reopen", ClientWorkoutLogController, :reopen_activity
+    post "/clients/:client_id/workout-logs/:id/exercise-logs/:activity_id/replace", ClientWorkoutLogController, :replace_activity
+    post "/clients/:client_id/workout-logs/:id/exercise-logs/:activity_id/sets", ClientWorkoutLogController, :record_set
+    patch "/clients/:client_id/workout-logs/:id/exercise-logs/:activity_id/sets/:set_id", ClientWorkoutLogController, :correct_set
+    delete "/clients/:client_id/workout-logs/:id/exercise-logs/:activity_id/sets/:set_id", ClientWorkoutLogController, :remove_set
 
     # Client-scoped plan lists
 
@@ -218,14 +237,23 @@ defmodule EasyWeb.Router do
     get "/nutrition-logs/:id", NutritionLogController, :show
     patch "/nutrition-logs/:id", NutritionLogController, :update
     delete "/nutrition-logs/:id", NutritionLogController, :delete
-    post "/workout-logs/restore", WorkoutLogController, :restore
+
+    get "/workout-logs", WorkoutLogController, :index
     post "/workout-logs", WorkoutLogController, :start
     get "/workout-logs/:id", WorkoutLogController, :show
     patch "/workout-logs/:id", WorkoutLogController, :update
     post "/workout-logs/:id/finish", WorkoutLogController, :finish
     post "/workout-logs/:id/discard", WorkoutLogController, :discard
     post "/workout-logs/:id/reopen", WorkoutLogController, :reopen
-    delete "/workout-logs/:id", WorkoutLogController, :delete
+    post "/workout-logs/:id/exercise-logs", WorkoutLogController, :start_activity
+    patch "/workout-logs/:id/exercise-logs/:activity_id", WorkoutLogController, :update_activity
+    post "/workout-logs/:id/exercise-logs/:activity_id/complete", WorkoutLogController, :complete_activity
+    post "/workout-logs/:id/exercise-logs/:activity_id/skip", WorkoutLogController, :skip_activity
+    post "/workout-logs/:id/exercise-logs/:activity_id/reopen", WorkoutLogController, :reopen_activity
+    post "/workout-logs/:id/exercise-logs/:activity_id/replace", WorkoutLogController, :replace_activity
+    post "/workout-logs/:id/exercise-logs/:activity_id/sets", WorkoutLogController, :record_set
+    patch "/workout-logs/:id/exercise-logs/:activity_id/sets/:set_id", WorkoutLogController, :correct_set
+    delete "/workout-logs/:id/exercise-logs/:activity_id/sets/:set_id", WorkoutLogController, :remove_set
 
     get "/review-replies", ReviewReplyController, :index
     get "/trackers", TrackerController, :index

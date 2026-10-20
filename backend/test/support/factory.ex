@@ -14,6 +14,7 @@ defmodule Easy.Factory do
   alias Easy.Trackers.Content
   alias Easy.Trackers.Template
   alias Easy.Workouts.Exercise
+  alias Easy.Workouts.ExerciseMetric
 
   def user_factory do
     %User{
@@ -140,15 +141,16 @@ defmodule Easy.Factory do
     %Exercise{
       name: sequence(:exercise_name, &"Exercise #{&1}"),
       kind: :movement,
-      goals: ["strength"],
-      places: ["gym"],
-      metrics: ["reps", "weight"],
+      goals: [:strength],
+      places: [:gym],
+      metrics: [%ExerciseMetric{key: :reps}, %ExerciseMetric{key: :weight}],
+      equipment: nil,
       business: build(:business)
     }
   end
 
   def exercise_attrs_factory do
-    %{name: sequence(:exercise_attr_name, &"Exercise #{&1}"), kind: "movement", goals: ["strength"], places: ["gym"], metrics: ["reps", "weight"]}
+    %{name: sequence(:exercise_attr_name, &"Exercise #{&1}"), kind: "movement", goals: ["strength"], places: ["gym"], metrics: [%{key: "reps"}, %{key: "weight"}]}
   end
 
   def tracker_template_factory do

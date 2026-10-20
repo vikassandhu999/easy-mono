@@ -34,6 +34,7 @@ export function Field({
   inputClassName?: string;
   type?: string;
   inputMode?: 'decimal' | 'numeric' | 'search' | 'text';
+  placeholder?: string;
   isDisabled?: boolean;
   autoFocus?: boolean;
 }) {
@@ -57,6 +58,7 @@ export function Field({
       <Input
         {...(input.type ? {type: input.type} : {})}
         {...(input.inputMode ? {inputMode: input.inputMode} : {})}
+        {...(input.placeholder ? {placeholder: input.placeholder} : {})}
         {...(inputClassName ? {className: inputClassName} : {})}
       />
       {description && (

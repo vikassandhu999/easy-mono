@@ -4,6 +4,7 @@ import type {RecordingSet} from '../src/recording.ts';
 import {
   acknowledgeCommand,
   activityCommands,
+  columnLabel,
   copyTargets,
   createRecordingController,
   effortLabel,
@@ -19,6 +20,7 @@ import {
   parseWorkoutDraft,
   planDraft,
   planTargets,
+  plural,
   prepareActivity,
   queueCommands,
   restBody,
@@ -37,6 +39,8 @@ import {
   slotView,
   swapCommands,
   targetLine,
+  targetSummary,
+  unrecordedCount,
   type WorkoutDraft,
 } from '../src/session.ts';
 
@@ -186,7 +190,7 @@ test('shared input and target labels keep canonical units and custom metric labe
   assert.equal(inputLabel({key: 'power', label: 'Average output'}), 'Average output (W)');
   assert.equal(
     targetLine({metrics: [{key: 'reps', label: 'Laps'}]}, {reps: {mode: 'exact', value: 5}, rest: {mode: 'none'}}),
-    'Laps 5 · Rest None',
+    'Laps 5 · No rest',
   );
   assert.equal(effortLabel(4), 'Hard');
   assert.equal(effortLabel(null), '');
@@ -446,4 +450,51 @@ test('removing an absent set delegates idempotence to the server', async () => {
   assert.equal(calls, 1);
   assert.equal(state.draft().pending, null);
   assert.deepEqual(state.log().exercise_logs[0]?.sets, []);
+});
+
+test('target lines omit client-chosen rest and the summary appears only when every round shares a target', () => {
+  const exercise = {metrics: [{key: 'reps' as const, label: null}]};
+  assert.equal(targetLine(exercise, {reps: {mode: 'exact', value: 8}, rest: {mode: 'client_chooses'}}), 'Reps 8');
+  assert.equal(
+    targetLine(exercise, {reps: {mode: 'exact', value: 8}, rest: {mode: 'exact', value_s: 60}}),
+    'Reps 8 · Rest 1:00',
+  );
+  assert.equal(targetSummary(exercise, [{rest: {mode: 'none'}}], 'same_for_all'), 'Reps Any · No rest');
+  assert.equal(targetSummary(exercise, [{rest: {mode: 'none'}}, {rest: {mode: 'none'}}], 'per_round'), null);
+  assert.equal(plural(1, 'round'), '1 round');
+  assert.equal(plural(3, 'round'), '3 rounds');
+});
+
+test('column labels prefer the coach label, then the unit for weight and distance', () => {
+  assert.equal(columnLabel({key: 'weight', label: null}), 'kg');
+  assert.equal(columnLabel({key: 'distance', label: null}), 'm');
+  assert.equal(columnLabel({key: 'reps', label: 'Moves'}), 'Moves');
+  assert.equal(columnLabel({key: 'duration', label: null}), 'Time');
+});
+
+test('unrecorded count covers planned slots without an outcome and ignores finished activities', () => {
+  const set = (round: number, state: 'completed' | 'skipped'): RecordingSet => ({
+    id: `s${round}`,
+    round,
+    side: null,
+    state,
+  });
+  const activity = (state: 'active' | 'completed', sets: RecordingSet[]) => ({
+    id: 'a1',
+    workout_exercise_id: 'e1',
+    state,
+    side_mode: 'combined' as const,
+    rounds: 3,
+    sets,
+  });
+  const row = (a: ReturnType<typeof activity>) => ({
+    entry: {id: 'e1', exercise_id: 'x', side_mode: 'combined' as const},
+    activities: [a],
+    current: a.state === 'active' ? a : null,
+    slots: [1, 2, 3].map((round) => ({round, side: null})),
+  });
+  const open = activity('active', [set(1, 'completed'), set(2, 'skipped')]);
+  assert.equal(unrecordedCount({exercise_logs: [open]}, [row(open)]), 1);
+  const done = activity('completed', [set(1, 'completed')]);
+  assert.equal(unrecordedCount({exercise_logs: [done]}, [row(done)]), 0);
 });

@@ -256,7 +256,7 @@ try {
   let finish = page.getByRole('dialog', {name: 'Finish workout', exact: true});
   await expect(finish.getByRole('radio', {checked: true})).toHaveCount(0);
   await shot('workout-finish-optional');
-  const finished = await write('POST', `${logPath}/finish`, () => button('Save workout', finish).click());
+  const finished = await write('POST', `${logPath}/finish`, () => button('Finish workout', finish).click());
   expect([finished.data.state, finished.data.effort, finished.data.pain, finished.data.text]).toEqual([
     'completed',
     null,
@@ -281,7 +281,7 @@ try {
   await button('Finish workout').click();
   finish = page.getByRole('dialog', {name: 'Finish workout', exact: true});
   await finish.getByRole('radio', {name: 'Hard', exact: true}).locator('xpath=ancestor::label').click();
-  const hard = await write('POST', `${logPath}/finish`, () => button('Save workout', finish).click());
+  const hard = await write('POST', `${logPath}/finish`, () => button('Finish workout', finish).click());
   expect(hard.data.effort).toBe(4);
   assertRecording(hard.data);
   await home();

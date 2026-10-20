@@ -213,3 +213,14 @@ export function mealSeed(
     })),
   };
 }
+
+// Why another workout cannot start: a coach recording the client's session is not the client's to finish.
+export function activeWorkoutReason(
+  active: {recorded_by: 'client' | 'coach'; recorder_name: string; workout_id: string | null},
+  workouts: readonly {id: string; name: string}[],
+) {
+  const name = workouts.find((row) => row.id === active.workout_id)?.name ?? 'your workout in progress';
+  return active.recorded_by === 'coach'
+    ? `${active.recorder_name} is recording ${name}. You can start this after it's finished.`
+    : `Finish ${name} first.`;
+}

@@ -2,27 +2,35 @@ import {measurementFields, parseMeasurement} from '@easy/workouts/measurements';
 import {type MetricKey, metricKeys, metricLabel} from '@easy/workouts/metrics';
 import {mismatch, type RecordingRow, rowsFor, type Slot} from '@easy/workouts/recording';
 import {
+  columnLabel,
   effortLabel,
   effortLabels,
   feedbackBody,
+  hasOverallResult,
   hasRecordedWork,
   inputLabel,
   type MetricInputs,
   measurementBody,
   overallInputKey,
   planDraft,
+  plural,
   restModes,
   roundsFor,
   savedInput,
   selectedActivity,
   slotModel,
   targetLine,
+  targetSummary,
+  unrecordedCount,
   type WorkoutDraft,
 } from '@easy/workouts/session';
-import {type ReactNode, useEffect, useId, useRef, useState} from 'react';
+import {targetPlaceholder} from '@easy/workouts/targets';
+import {Check, Repeat} from 'lucide-react';
+import {type CSSProperties, type ReactNode, useEffect, useId, useRef, useState} from 'react';
 import {useParams} from 'react-router-dom';
 import {useProfile} from '../api/auth';
 import {errorMessage} from '../api/client';
+import {useClient} from '../api/clients';
 import {type Exercise, useExercises} from '../api/exercises';
 import {getSession} from '../api/session';
 import {
@@ -89,6 +97,7 @@ export function WorkoutSession() {
 function SessionEditor({clientId, initial}: {clientId: string; initial: WorkoutLog}) {
   const prescribed = useWorkout(initial.workout_id ?? '', clientId);
   const profile = useProfile();
+  const person = useClient(clientId).data?.data;
   const {local, busy, error, saved, durable, session} = useSessionRecording({initial, clientId});
   const draft = durable.draft;
   const workout: Workout | undefined = local.workout_id
@@ -139,17 +148,23 @@ function SessionEditor({clientId, initial}: {clientId: string; initial: WorkoutL
       draft={draft}
       error={error || durable.loadError}
       draftStatus={
-        <p
-          role="status"
-          className="text-sm font-medium text-muted-foreground"
-        >
-          {saved
-            ? 'All changes saved.'
-            : durable.state === 'saving'
-              ? 'Keeping changes on this device…'
-              : 'Changes are kept on this device.'}
-        </p>
+        durable.state === 'error' ? (
+          <p
+            role="alert"
+            className="text-sm font-medium text-destructive"
+          >
+            Changes could not be kept on this device. Keep this screen open until they are saved.
+          </p>
+        ) : saved ? (
+          <p
+            role="status"
+            className="text-sm font-medium text-muted-foreground"
+          >
+            All changes saved.
+          </p>
+        ) : null
       }
+      clientName={person?.preferred_name || person?.full_name || 'the client'}
       {...(profile.data ? {viewerCoachId: profile.data.data.id} : {})}
       session={session}
     />
@@ -331,8 +346,17 @@ type Props = {
   draft: WorkoutDraft;
   error: string;
   draftStatus: ReactNode;
+  clientName: string;
   session: Session;
 };
+
+const sessionDate = (date: string) =>
+  new Date(`${date}T12:00:00Z`).toLocaleDateString('en-GB', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+    timeZone: 'UTC',
+  });
 
 function RecordingView(props: Props & {viewerCoachId?: string}) {
   const {workout, log, pending, blocked} = props;
@@ -350,9 +374,9 @@ function RecordingView(props: Props & {viewerCoachId?: string}) {
       <PageHeader
         title={workout.name}
         back={{to: props.back, label: 'Training week'}}
-        description={`${props.date} · ${log.state === 'completed' ? 'Completed' : log.state === 'discarded' ? 'Discarded' : 'In progress'}`}
+        description={`${sessionDate(props.date)} · ${log.state === 'completed' ? 'Completed' : log.state === 'discarded' ? 'Discarded' : 'In progress'}`}
       />
-      {(editable || pending || props.error || blocked) && (
+      {(pending || props.error || blocked || props.draftStatus) && (
         <div
           role="region"
           aria-label="Workout save status"
@@ -389,7 +413,13 @@ function RecordingView(props: Props & {viewerCoachId?: string}) {
         </div>
       )}
       {workout.description && (
-        <p className="mb-5 rounded-2xl bg-[var(--coach)] p-4 font-medium">{workout.description}</p>
+        <section
+          aria-label="Instructions for the client"
+          className="mb-5 rounded-2xl bg-muted p-4"
+        >
+          <p className="text-sm font-semibold text-muted-foreground">Instructions for the client</p>
+          <p className="whitespace-pre-wrap font-medium">{workout.description}</p>
+        </section>
       )}
       {workout.video && (
         <a
@@ -431,21 +461,28 @@ function RecordingView(props: Props & {viewerCoachId?: string}) {
           const overall = measurementBody(exercise, overallInputs, 'overall', true);
           const warning = selected ? mismatch(selected) : null;
           const activitySkipped = selected?.state === 'skipped';
+          const swapped = Boolean(row.entry && exercise.id !== row.entry.exercise_id);
+          const targets = selected?.targets ?? row.entry?.targets ?? [];
+          const summary = targetSummary(
+            exercise,
+            targets,
+            selected?.targets_mode ?? row.entry?.targets_mode ?? 'same_for_all',
+          );
+          const hasOverall = Boolean(selected && hasOverallResult(selected));
           return (
             <section
               key={sourceId}
               aria-label={`Activity ${exercise.name}`}
-              className="min-w-0 space-y-3"
+              className="min-w-0 space-y-3 border-t border-border pt-5"
             >
-              <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
-                <div>
+              <div className="flex flex-wrap items-start justify-between gap-2">
+                <div className="min-w-0">
                   <h2 className="editor-section-title">{exercise.name}</h2>
                   <p className="text-sm font-medium text-muted-foreground">
-                    {row.entry && exercise.id !== row.entry.exercise_id
-                      ? `Instead of ${row.entry.exercise.name} · `
-                      : ''}
+                    {swapped && row.entry ? `Instead of ${row.entry.exercise.name} · ` : ''}
                     {row.slots.some((slot) => slot.side !== null) ? 'Each side · ' : ''}
-                    {roundsFor(workout, row)} rounds
+                    {plural(roundsFor(workout, row), 'round')}
+                    {summary ? ` · Target: ${summary}` : ''}
                     {activitySkipped
                       ? ' · Activity skipped'
                       : selected?.state === 'completed'
@@ -454,18 +491,71 @@ function RecordingView(props: Props & {viewerCoachId?: string}) {
                   </p>
                 </div>
                 {editable && (
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    aria-label={`Swap ${exercise.name}`}
-                    isDisabled={locked}
-                    onPress={() => setSwap(row)}
-                  >
-                    Swap
-                  </Button>
+                  <div className="flex flex-wrap gap-1">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      aria-label={`Swap ${exercise.name}`}
+                      isDisabled={locked}
+                      onPress={() => setSwap(row)}
+                    >
+                      <Repeat />
+                      Swap
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      isDisabled={locked}
+                      onPress={() => setPlan(row)}
+                    >
+                      Edit plan
+                    </Button>
+                    {selected && swapped && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        isDisabled={locked || activitySkipped}
+                        onPress={() => props.session.copyTargets(row)}
+                      >
+                        Copy original targets
+                      </Button>
+                    )}
+                    {selected?.state === 'completed' || activitySkipped ? (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        isDisabled={locked}
+                        onPress={() => props.session.activityOutcome(row, 'reopenActivity')}
+                      >
+                        Reopen activity
+                      </Button>
+                    ) : (
+                      <>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          isDisabled={locked}
+                          onPress={() => props.session.activityOutcome(row, 'completeActivity')}
+                        >
+                          Complete activity
+                        </Button>
+                        {!hasRecordedWork(selected) && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            isDisabled={locked}
+                            onPress={() => props.session.activityOutcome(row, 'skipActivity')}
+                          >
+                            Skip activity
+                          </Button>
+                        )}
+                      </>
+                    )}
+                  </div>
                 )}
               </div>
-              <div className="grid gap-3">
+              <SetTableHeader exercise={exercise} />
+              <div className="grid gap-1.5">
                 {row.slots.map((slot) => (
                   <SlotRow
                     key={`${slot.round}.${slot.side}`}
@@ -474,19 +564,21 @@ function RecordingView(props: Props & {viewerCoachId?: string}) {
                     log={log}
                     fallback={exercise}
                     draft={draft}
+                    perRound={summary === null}
                     editable={editable && !activitySkipped}
                     locked={locked}
                     onInput={props.session.input}
                     onSave={props.session.saveSlot}
-                    onRemove={(activityId, setId) => setRemove({activityId, setId})}
+                    onClear={(activityId, setId) => setRemove({activityId, setId})}
+                    onUndoSkip={props.session.removeSet}
                   />
                 ))}
               </div>
               <details
-                open={exercise.kind === 'activity'}
-                className="mt-4 border-t border-border pt-3"
+                open={hasOverall || (exercise.kind === 'activity' && !row.slots.length)}
+                className="border-t border-border pt-2"
               >
-                <summary className="min-h-11 cursor-pointer py-2 font-bold">Overall result</summary>
+                <summary className="min-h-11 cursor-pointer py-2 font-semibold">Overall result</summary>
                 <fieldset
                   aria-label={`Overall result for ${exercise.name}`}
                   className="mt-2 grid gap-3"
@@ -508,11 +600,12 @@ function RecordingView(props: Props & {viewerCoachId?: string}) {
                       {warning}
                     </p>
                   )}
-                  {editable && !activitySkipped && (
+                  {editable && !activitySkipped && Object.keys(overallInputs).length > 0 && (
                     <Button
                       size="sm"
                       variant="outline"
-                      isDisabled={locked || !overall.ok || !Object.keys(overallInputs).length}
+                      className="justify-self-start"
+                      isDisabled={locked || !overall.ok}
                       onPress={() => {
                         if (overall.ok) {
                           props.session.saveActivity(row, overall.body, overallKey);
@@ -524,57 +617,6 @@ function RecordingView(props: Props & {viewerCoachId?: string}) {
                   )}
                 </fieldset>
               </details>
-              {editable && (
-                <div className="mt-4 flex flex-wrap gap-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    isDisabled={locked}
-                    onPress={() => setPlan(row)}
-                  >
-                    Edit rounds and rest
-                  </Button>
-                  {selected && row.entry && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      isDisabled={locked || activitySkipped}
-                      onPress={() => props.session.copyTargets(row)}
-                    >
-                      Copy targets
-                    </Button>
-                  )}
-                  {selected?.state === 'completed' || activitySkipped ? (
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      isDisabled={locked}
-                      onPress={() => props.session.activityOutcome(row, 'reopenActivity')}
-                    >
-                      Reopen activity
-                    </Button>
-                  ) : (
-                    <>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        isDisabled={locked}
-                        onPress={() => props.session.activityOutcome(row, 'completeActivity')}
-                      >
-                        Complete activity
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        isDisabled={locked || hasRecordedWork(selected)}
-                        onPress={() => props.session.activityOutcome(row, 'skipActivity')}
-                      >
-                        Skip activity
-                      </Button>
-                    </>
-                  )}
-                </div>
-              )}
             </section>
           );
         })}
@@ -651,6 +693,8 @@ function RecordingView(props: Props & {viewerCoachId?: string}) {
       {finish && log.state === 'active' && (
         <FinishSheet
           log={log}
+          clientName={props.clientName}
+          unrecorded={unrecordedCount(log, rows)}
           pending={pending || blocked}
           error={props.error}
           onClose={() => setFinish(false)}
@@ -672,8 +716,8 @@ function RecordingView(props: Props & {viewerCoachId?: string}) {
       )}
       {remove && (
         <Confirm
-          title="Remove this set?"
-          action="Remove set"
+          title="Clear this set?"
+          action="Clear set"
           cancel="Keep set"
           destructive
           pending={pending}
@@ -683,10 +727,48 @@ function RecordingView(props: Props & {viewerCoachId?: string}) {
             setRemove(null);
           }}
         >
-          This removes only this set's outcome and measurements. Its slot becomes unrecorded.
+          Its values are removed and the set shows as not recorded.
         </Confirm>
       )}
     </Page>
+  );
+}
+
+// One header for the metric names, then one short row per set (the client prototype's set table).
+const setGrid =
+  'grid grid-cols-[2.75rem_minmax(0,1fr)_6.5rem] items-center gap-2 md:grid-cols-[3.5rem_max-content_9.5rem] md:justify-start md:gap-4';
+// Columns share one fixed width on desktop so every row's actions line up, including skipped rows.
+const metricColumns = (count: number) => ({'--metric-columns': Math.min(count, 4)}) as CSSProperties;
+const metricGrid =
+  'grid gap-2 grid-cols-[repeat(var(--metric-columns),minmax(0,1fr))] md:grid-cols-[repeat(var(--metric-columns),8rem)]';
+
+function detailMetrics(exercise: Exercise) {
+  return exercise.metrics.filter((metric) => measurementFields[metric.key]);
+}
+
+function SetTableHeader({exercise}: {exercise: Exercise}) {
+  const metrics = detailMetrics(exercise);
+  return (
+    <div
+      aria-hidden="true"
+      className={`${setGrid} px-2 text-sm font-semibold text-muted-foreground`}
+    >
+      <span>Set</span>
+      <span
+        className={metricGrid}
+        style={metricColumns(metrics.length)}
+      >
+        {metrics.map((metric) => (
+          <span
+            key={metric.key}
+            className="truncate"
+          >
+            {columnLabel(metric)}
+          </span>
+        ))}
+      </span>
+      <span />
+    </div>
   );
 }
 
@@ -696,131 +778,221 @@ function SlotRow({
   log,
   fallback,
   draft,
+  perRound,
   editable,
   locked,
   onInput,
   onSave,
-  onRemove,
+  onClear,
+  onUndoSkip,
 }: {
   row: WorkoutRow;
   slot: Slot;
   log: WorkoutLog;
   fallback: Exercise;
   draft: WorkoutDraft;
+  perRound: boolean;
   editable: boolean;
   locked: boolean;
   onInput: Session['input'];
   onSave: Session['saveSlot'];
-  onRemove: (activityId: string, setId: string) => void;
+  onClear: (activityId: string, setId: string) => void;
+  onUndoSkip: (activityId: string, setId: string) => void;
 }) {
-  const firstAction = useRef<HTMLButtonElement>(null);
-  const legend = useRef<HTMLLegendElement>(null);
+  const group = useRef<HTMLDivElement>(null);
   const focusAfterSave = useRef(false);
   useEffect(() => {
     if (!locked && focusAfterSave.current) {
       focusAfterSave.current = false;
-      const action = firstAction.current;
-      if (editable && action && !action.disabled && action.getAttribute('aria-disabled') !== 'true') {
-        action.focus();
-      } else {
-        legend.current?.focus();
-      }
+      group.current?.focus({preventScroll: true});
     }
-  }, [locked, editable]);
+  }, [locked]);
+  const fieldId = useId();
   const model = slotModel(log, row, slot, draft, fallback);
   if (!model) {
     return null;
   }
   const {view, exercise, key, inputs, body, label, name, target} = model;
+  const dirty = Object.keys(inputs).length > 0;
+  const short = `${slot.round}${slot.side ? ` ${slot.side === 'left' ? 'L' : 'R'}` : ''}`;
+  const metrics = detailMetrics(exercise);
+  const save = (state: 'completed' | 'skipped', values: Parameters<Session['saveSlot']>[3]) => {
+    focusAfterSave.current = true;
+    onSave(row, slot, state, values, key);
+  };
+  const errors = metrics.flatMap((metric) => {
+    const parsed = parseMeasurement(metric.key, inputs[metric.key] ?? savedInput(view.set, metric.key));
+    return parsed.ok ? [] : [`${metricLabel(metric.key, metric)}: ${parsed.message}`];
+  });
   return (
-    <fieldset
+    <div
+      ref={group}
+      role="group"
       aria-label={name}
-      className="min-w-0 rounded-xl bg-muted/40 p-3 lg:grid lg:grid-cols-[minmax(10rem,1fr)_minmax(0,2fr)_auto] lg:items-start lg:gap-4"
+      tabIndex={-1}
+      className={cn(
+        'rounded-xl px-2 py-1.5 outline-none focus-visible:ring-2 focus-visible:ring-ring',
+        view.kind === 'completed' && 'bg-muted',
+        view.kind === 'skipped' && 'text-muted-foreground',
+      )}
     >
-      <legend
-        ref={legend}
-        tabIndex={-1}
-        className="max-w-full break-words font-bold"
-      >
-        {name}
-      </legend>
-      <p className="mb-2 text-sm font-medium text-muted-foreground lg:col-start-1 lg:row-start-1 lg:pt-8">
-        Target: {targetLine(exercise, target)}
-      </p>
-      <p
-        className="mb-2 font-semibold lg:col-start-1 lg:row-start-2"
-        role="status"
-      >
-        {view.kind === 'completed' ? 'Done' : view.kind === 'skipped' ? 'Skipped' : 'Unrecorded'}
-      </p>
-      <MeasurementInputs
-        exercise={exercise}
-        scope="detail"
-        row={view.set}
-        inputs={inputs}
-        prefix={name}
-        disabled={!editable || locked}
-        onInput={(metric, value) => onInput(key, metric, value)}
-      />
+      <div className={setGrid}>
+        <span className="font-semibold tabular-nums">
+          <span aria-hidden="true">{short}</span>
+          <span className="sr-only">
+            Set {label}: {view.kind === 'completed' ? 'Done' : view.kind === 'skipped' ? 'Skipped' : 'Unrecorded'}
+          </span>
+        </span>
+        {view.kind === 'skipped' ? (
+          <div
+            className={metricGrid}
+            style={metricColumns(metrics.length)}
+          >
+            <span className="col-span-full justify-self-start rounded-full border border-dashed border-muted-foreground px-3 py-1 text-sm font-semibold">
+              Skipped
+            </span>
+          </div>
+        ) : (
+          <div
+            className={metricGrid}
+            style={metricColumns(metrics.length)}
+          >
+            {metrics.map((metric) => {
+              const value = inputs[metric.key] ?? savedInput(view.set, metric.key);
+              return metric.key === 'result' ? (
+                <SelectField
+                  key={metric.key}
+                  aria-label={`${name} ${inputLabel(metric)}`}
+                  value={value}
+                  isDisabled={!editable || locked}
+                  onChange={(next) => onInput(key, metric.key, next)}
+                >
+                  <SelectItem id="">–</SelectItem>
+                  <SelectItem id="win">Win</SelectItem>
+                  <SelectItem id="draw">Draw</SelectItem>
+                  <SelectItem id="loss">Loss</SelectItem>
+                </SelectField>
+              ) : (
+                <Input
+                  key={metric.key}
+                  aria-label={`${name} ${inputLabel(metric)}`}
+                  aria-invalid={!parseMeasurement(metric.key, value).ok}
+                  aria-describedby={errors.length ? `${fieldId}-error` : undefined}
+                  className="text-center font-semibold tabular-nums placeholder:font-normal placeholder:text-muted-foreground/45"
+                  inputMode={metric.key === 'duration' ? 'text' : 'decimal'}
+                  placeholder={targetPlaceholder(metric.key, target?.[metric.key])}
+                  value={value}
+                  disabled={!editable || locked}
+                  onChange={(event) => onInput(key, metric.key, event.target.value)}
+                />
+              );
+            })}
+          </div>
+        )}
+        <div className="flex items-center justify-end gap-1">
+          {editable && view.kind === 'unrecorded' && (
+            <>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="px-3"
+                isDisabled={locked}
+                aria-label={`Skip set ${label} of ${exercise.name}`}
+                onPress={() => save('skipped', {})}
+              >
+                Skip
+              </Button>
+              <Button
+                size="icon-sm"
+                variant="outline"
+                isDisabled={locked || !body.ok}
+                aria-label={`Done set ${label} of ${exercise.name}`}
+                onPress={() => {
+                  if (body.ok) {
+                    save('completed', body.body);
+                  }
+                }}
+              >
+                <Check />
+              </Button>
+            </>
+          )}
+          {view.kind === 'completed' &&
+            (editable && dirty ? (
+              <Button
+                size="sm"
+                variant="outline"
+                isDisabled={locked || !body.ok}
+                aria-label={`Save changes to set ${label} of ${exercise.name}`}
+                onPress={() => {
+                  if (body.ok) {
+                    save('completed', body.body);
+                  }
+                }}
+              >
+                Save
+              </Button>
+            ) : (
+              <>
+                {editable && view.set && view.activity && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="px-3 font-medium text-muted-foreground"
+                    isDisabled={locked}
+                    aria-label={`Clear set ${label} of ${exercise.name}`}
+                    onPress={() => {
+                      if (view.activity && view.set) {
+                        onClear(view.activity.id, view.set.id);
+                      }
+                    }}
+                  >
+                    Clear
+                  </Button>
+                )}
+                <span className="grid size-11 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground">
+                  <Check aria-hidden="true" />
+                </span>
+              </>
+            ))}
+          {editable && view.kind === 'skipped' && view.set && view.activity && (
+            <Button
+              size="sm"
+              variant="ghost"
+              isDisabled={locked}
+              aria-label={`Undo skip set ${label} of ${exercise.name}`}
+              onPress={() => {
+                if (view.activity && view.set) {
+                  focusAfterSave.current = true;
+                  onUndoSkip(view.activity.id, view.set.id);
+                }
+              }}
+            >
+              Undo skip
+            </Button>
+          )}
+        </div>
+      </div>
+      {errors.length > 0 && (
+        <p
+          id={`${fieldId}-error`}
+          className="mt-1 pl-[4.25rem] text-sm font-medium text-destructive"
+        >
+          {errors.join(' · ')}
+        </p>
+      )}
+      {perRound && target && view.kind === 'unrecorded' && (
+        <p className="mt-1 pl-[4.25rem] text-sm font-medium text-muted-foreground">
+          Target: {targetLine(exercise, target)}
+        </p>
+      )}
       {view.set && (
         <SavedExtraValues
           exercise={exercise}
           set={view.set}
         />
       )}
-      {editable && (
-        <div className="mt-3 flex flex-wrap gap-2 lg:col-start-3 lg:row-start-1 lg:mt-0 lg:max-w-52">
-          <Button
-            ref={firstAction}
-            size="sm"
-            variant={view.kind === 'completed' ? 'outline' : 'default'}
-            isDisabled={locked || !body.ok}
-            aria-label={
-              view.kind === 'completed'
-                ? `Save changes to set ${label} of ${exercise.name}`
-                : `Done set ${label} of ${exercise.name}`
-            }
-            onPress={() => {
-              if (body.ok) {
-                focusAfterSave.current = true;
-                onSave(row, slot, 'completed', body.body, key);
-              }
-            }}
-          >
-            {view.kind === 'completed' ? 'Save changes' : 'Done'}
-          </Button>
-          {view.kind === 'unrecorded' && (
-            <Button
-              size="sm"
-              variant="outline"
-              isDisabled={locked}
-              aria-label={`Skip set ${label} of ${exercise.name}`}
-              onPress={() => {
-                focusAfterSave.current = true;
-                onSave(row, slot, 'skipped', {}, key);
-              }}
-            >
-              Skip
-            </Button>
-          )}
-          {view.set && view.activity && (
-            <Button
-              size="sm"
-              variant="ghost"
-              isDisabled={locked}
-              aria-label={`Remove set ${label} of ${exercise.name}`}
-              onPress={() => {
-                if (view.activity && view.set) {
-                  onRemove(view.activity.id, view.set.id);
-                }
-              }}
-            >
-              Remove
-            </Button>
-          )}
-        </div>
-      )}
-    </fieldset>
+    </div>
   );
 }
 
@@ -956,12 +1128,16 @@ function ExerciseChoices({onPick}: {onPick: (exercise: Exercise) => void}) {
 
 function FinishSheet({
   log,
+  clientName,
+  unrecorded,
   pending,
   error,
   onSave,
   onClose,
 }: {
   log: WorkoutLog;
+  clientName: string;
+  unrecorded: number;
   pending: boolean;
   error: string;
   onSave: Session['finish'];
@@ -980,10 +1156,9 @@ function FinishSheet({
         disabled={pending}
         className="grid gap-5"
       >
+        <p className="text-sm font-medium text-muted-foreground">Enter {clientName}'s answers, or leave them blank.</p>
         <fieldset>
-          <legend className="mb-2 font-semibold lg:col-start-1 lg:row-start-2">
-            How hard was this session? (optional)
-          </legend>
+          <legend className="mb-2 font-semibold">How hard was this session? (optional)</legend>
           <Choice
             label="How hard was this session?"
             value={effort || undefined}
@@ -992,9 +1167,7 @@ function FinishSheet({
           />
         </fieldset>
         <fieldset>
-          <legend className="mb-2 font-semibold lg:col-start-1 lg:row-start-2">
-            Any pain or discomfort? (optional)
-          </legend>
+          <legend className="mb-2 font-semibold">Any pain or discomfort? (optional)</legend>
           <Choice
             label="Any pain or discomfort?"
             value={pain || undefined}
@@ -1011,6 +1184,11 @@ function FinishSheet({
           value={text}
           onChange={setText}
         />
+        {unrecorded > 0 && (
+          <p className="text-sm font-medium text-muted-foreground">
+            {plural(unrecorded, 'set')} not recorded. They stay empty.
+          </p>
+        )}
         {error && (
           <p
             role="alert"
@@ -1025,7 +1203,7 @@ function FinishSheet({
             onSave(feedbackBody(log, {effort, pain, text}));
           }}
         >
-          Save workout
+          Finish workout
         </Button>
       </fieldset>
     </SessionDialog>
@@ -1062,7 +1240,7 @@ function PlanEditor({
             key={index}
             className="grid gap-3"
           >
-            <legend className="mb-2 font-semibold lg:col-start-1 lg:row-start-2">
+            <legend className="mb-2 font-semibold">
               {mode === 'same_for_all' ? 'Rest after each round' : `Rest after round ${index + 1}`}
             </legend>
             <SelectField

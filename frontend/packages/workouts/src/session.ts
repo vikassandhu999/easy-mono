@@ -284,6 +284,13 @@ export function inputLabel(metric: {key: MetricKey; label: string | null}) {
   const unit = metric.key === 'reps' ? '' : metric.key === 'duration' ? 's or m:ss' : metricCatalogue[metric.key].unit;
   return `${metricLabel(metric.key, metric)}${unit ? ` (${unit})` : ''}`;
 }
+// A set-table column heading: the coach's label, else the unit for weight and distance, else the metric name.
+export function columnLabel(metric: {key: MetricKey; label: string | null}) {
+  if (metric.label) {
+    return metric.label;
+  }
+  return metric.key === 'weight' ? 'kg' : metric.key === 'distance' ? 'm' : metricLabel(metric.key);
+}
 export function targetLine(exercise: Pick<SessionExercise, 'metrics'>, target: RoundTargets | undefined) {
   if (!target) {
     return 'Any';
@@ -294,8 +301,21 @@ export function targetLine(exercise: Pick<SessionExercise, 'metrics'>, target: R
   if (target.grade) {
     metrics.push(`Grade ${formatTarget('grade', target.grade)}`);
   }
-  return [...metrics, `Rest ${formatRest(target.rest)}`].join(' · ');
+  const rest =
+    target.rest.mode === 'client_chooses'
+      ? []
+      : [target.rest.mode === 'none' ? 'No rest' : `Rest ${formatRest(target.rest)}`];
+  return [...metrics, ...rest].join(' · ');
 }
+// One line for the activity header when every round has the same target; per-round targets stay on their rows.
+export function targetSummary(
+  exercise: Pick<SessionExercise, 'metrics'>,
+  targets: readonly RoundTargets[],
+  mode: 'same_for_all' | 'per_round',
+): string | null {
+  return mode === 'same_for_all' ? targetLine(exercise, targets[0]) : null;
+}
+export const plural = (count: number, word: string) => `${count} ${word}${count === 1 ? '' : 's'}`;
 export type RestDraft = {mode: RestTarget['mode']; value: string; min: string; max: string};
 export const restDraft = (rest: RestTarget): RestDraft => ({
   mode: rest.mode,
@@ -366,15 +386,34 @@ export function roundsFor<E extends RecordingEntry, A extends SessionActivity>(
   );
 }
 
+export function hasOverallResult(activity: SessionActivity & MeasurementBody): boolean {
+  return Object.values(measurementFields).some(
+    (field) => field && field.scope !== 'detail' && activity[field.field] != null,
+  );
+}
+
 export function hasRecordedWork(activity: (SessionActivity & MeasurementBody) | undefined): boolean {
   return Boolean(
     activity &&
       (activity.state === 'completed' ||
         activity.sets.some((set) => set.state === 'completed') ||
-        Object.values(measurementFields).some(
-          (field) => field && field.scope !== 'detail' && activity[field.field] != null,
-        )),
+        hasOverallResult(activity)),
   );
+}
+
+// Planned slots with no outcome yet. Finishing leaves them empty; it never records them.
+export function unrecordedCount<E extends RecordingEntry, A extends SessionActivity>(
+  log: RecordingLog<A>,
+  rows: readonly RecordingRow<E, A>[],
+): number {
+  return rows.reduce((count, row) => {
+    const selected = selectedActivity(row);
+    const source = row.entry ? {id: row.entry.id, workout_exercise_id: row.entry.id} : selected;
+    if (!source || selected?.state === 'skipped' || selected?.state === 'completed') {
+      return count;
+    }
+    return count + row.slots.filter((slot) => slotView(log, source, slot).kind === 'unrecorded').length;
+  }, 0);
 }
 
 export function slotModel<E extends SessionEntry, A extends SessionActivity, X extends SessionExercise>(

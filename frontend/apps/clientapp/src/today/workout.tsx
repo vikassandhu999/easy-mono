@@ -7,7 +7,7 @@ import {DraftStatus} from '../ui/draft-status';
 import {Page} from '../ui/page';
 import {ReadState} from '../ui/read-state';
 import {useUndoMessage} from '../ui/undo-message';
-import {dayName, nowTime} from './model';
+import {activeWorkoutReason, dayName, nowTime} from './model';
 import {useWorkoutRecording} from './use-workout-recording';
 import {WorkoutLogger} from './workout-logger';
 
@@ -110,14 +110,14 @@ function WorkoutEditor({
         day.date > day.today
           ? 'You can start this on the day.'
           : day.active_workout
-            ? 'Finish your workout in progress first.'
+            ? activeWorkoutReason(day.active_workout, day.workouts)
             : 'This workout is available to read.'
       }
       pending={busy}
       blocked={Boolean(durable.draft.pending)}
       draft={durable.draft}
       error={error || durable.loadError}
-      draftStatus={<DraftStatus state={durable.state} />}
+      draftStatus={durable.state === 'error' ? <DraftStatus state="error" /> : null}
       onClose={async () => {
         await session.flushInputs();
         back();

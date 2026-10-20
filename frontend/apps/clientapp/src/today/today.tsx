@@ -1,4 +1,4 @@
-import {effortLabel} from '@easy/workouts/session';
+import {effortLabel, plural} from '@easy/workouts/session';
 import {ChevronRight, Dumbbell, Pill, Plus, Utensils} from 'lucide-react';
 import {type ReactNode, useEffect, useState} from 'react';
 import {useLocation, useNavigate, useSearchParams} from 'react-router-dom';
@@ -15,6 +15,7 @@ import {CoachingEnded, useCoaching} from '../ui/coaching';
 import {ReadState} from '../ui/read-state';
 import {useUndoMessage} from '../ui/undo-message';
 import {
+  activeWorkoutReason,
   amountText,
   asNutritionLog,
   asPreset,
@@ -359,7 +360,10 @@ function DayView({day, onDate, children}: {day: ClientDay; onDate: (date: string
           const elsewhere = active && active.id !== log?.id;
           const detail = [
             workout.type === 'prescribed'
-              ? `${workout.groups.reduce((n, group) => n + group.exercises.length, 0)} exercises`
+              ? plural(
+                  workout.groups.reduce((n, group) => n + group.exercises.length, 0),
+                  'exercise',
+                )
               : workout.type === 'video'
                 ? 'Video workout'
                 : 'Session',
@@ -376,7 +380,7 @@ function DayView({day, onDate, children}: {day: ClientDay; onDate: (date: string
                   ? `${log.recorder_name} is recording this session`
                   : 'Session in progress'
                 : elsewhere && !future
-                  ? 'Finish your workout in progress first.'
+                  ? activeWorkoutReason(active, day.workouts)
                   : past
                     ? 'Not recorded'
                     : null;

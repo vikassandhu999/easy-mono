@@ -64,7 +64,9 @@ async function responsivePicker(page) {
 }
 
 async function recover(page, inputName, actionName, name) {
-  await page.getByLabel(inputName, {exact: true}).fill('11');
+  // Save appears only for a real change, so always type a value different from the saved one.
+  const input = page.getByLabel(inputName, {exact: true});
+  await input.fill((await input.inputValue()) === '11' ? '12' : '11');
   const routePattern = /\/workout-logs\/[^/]+\/exercise-logs\/[^/]+\/sets(?:\/[^/?]+)?(?:\?.*)?$/;
   let fail;
   const held = new Promise((resolve) => {
@@ -100,7 +102,8 @@ async function recover(page, inputName, actionName, name) {
   await page.unroute(routePattern);
   await button(page, 'Retry saving').click();
   await expect(page.getByRole('alert')).toHaveCount(0);
-  await expect(button(page, actionName)).toBeEnabled();
+  // Saved again, so the row offers Clear instead of Save.
+  await expect(button(page, actionName.replace('Save changes to', 'Clear'))).toBeEnabled();
 }
 
 try {
@@ -116,12 +119,14 @@ try {
     .getByRole('button', {name: /Lower A/})
     .first()
     .click();
+  // A recorded set offers Clear; Save appears only after its values change.
   const clientSave = 'Save changes to set 1 left of Bulgarian split squat';
-  await expect(button(client, 'Reopen').or(button(client, clientSave))).toBeVisible();
+  const clientClear = 'Clear set 1 left of Bulgarian split squat';
+  await expect(button(client, 'Reopen').or(button(client, clientClear))).toBeVisible();
   if (await button(client, 'Reopen').count()) {
     await button(client, 'Reopen').click();
   }
-  await expect(button(client, clientSave)).toBeEnabled();
+  await expect(button(client, clientClear)).toBeEnabled();
   if (phase === 'after') {
     const reps = await client.getByLabel('Bulgarian split squat set 1 left Reps', {exact: true}).boundingBox();
     const weight = await client.getByLabel('Bulgarian split squat set 1 left Weight (kg)', {exact: true}).boundingBox();
@@ -194,9 +199,13 @@ try {
       .first()
       .click();
     await expect(coach.getByText('Alex is recording this session', {exact: true})).toBeVisible();
-    await expect(button(coach, clientSave)).toBeEnabled();
+    await expect(button(coach, clientClear)).toBeEnabled();
     if (phase === 'after') {
       const overall = coach.getByRole('group', {name: 'Overall result for Run', exact: true});
+      if (!(await overall.isVisible())) {
+        await coach.getByText('Overall result', {exact: true}).last().click();
+      }
+      await overall.getByLabel('Run overall Distance (m)', {exact: true}).fill('5100');
       const distance = await overall.getByLabel('Run overall Distance (m)', {exact: true}).boundingBox();
       const save = await button(overall, 'Save overall result').boundingBox();
       expect(save.y).toBeGreaterThanOrEqual(distance.y + distance.height);
@@ -213,7 +222,7 @@ try {
     await context.close();
   }
   await button(client, 'Finish workout').click();
-  await button(client.getByRole('dialog'), 'Save workout').click();
+  await button(client.getByRole('dialog'), 'Finish workout').click();
   await expect(client.getByRole('heading', {name: 'Today', exact: true})).toBeVisible();
   await clientContext.close();
   expect(errors).toEqual([]);

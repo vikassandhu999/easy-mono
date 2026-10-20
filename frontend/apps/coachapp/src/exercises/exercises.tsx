@@ -106,14 +106,18 @@ export function Exercises() {
             state={{listSearch: location.search}}
             className="block space-y-1 px-5 py-4 hover:bg-muted focus-visible:-outline-offset-4"
           >
-            <p className="break-words font-semibold">{exercise.name}</p>
+            <p className="flex flex-wrap items-center gap-2 break-words font-semibold">
+              {exercise.name}
+              {(exercise.is_builtin || exercise.archived_at) && (
+                <span className="rounded-md bg-muted px-1.5 py-0.5 text-xs font-medium text-muted-foreground">
+                  {exercise.is_builtin ? 'Shared · read-only' : 'Archived'}
+                </span>
+              )}
+            </p>
             <p className="text-sm font-medium text-muted-foreground">
               {kindLabels[exercise.kind]}
               {exercise.metrics.length > 0 ? ' · ' : ''}
               {exercise.metrics.map((metric) => metricLabel(metric.key, metric)).join(' · ')}
-            </p>
-            <p className="text-sm font-medium text-muted-foreground">
-              {exercise.is_builtin ? 'Shared · Read-only' : exercise.archived_at ? 'Archived' : 'Your exercise'}
             </p>
           </Link>
         )}

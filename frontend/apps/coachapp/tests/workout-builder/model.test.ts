@@ -6,6 +6,7 @@ import {
   actions,
   bodyOf,
   draftOf,
+  groupSummary,
   labelFor,
   problemsOf,
   restoreRemoval,
@@ -359,4 +360,17 @@ test('stored drafts validate side modes, labelled metrics, media and rest modes'
   assert.equal(readDraft(withEntry({targets: {reps: {mode: 'none'}}})), null);
   assert.equal(readDraft(withEntry({source: {...bench, metrics: ['reps']}})), null);
   assert.equal(readDraft(withEntry({source: {...bench, media: [{id: 'media', url: 7, caption: null}]}})), null);
+});
+
+test('group summaries read naturally for no rest and client-chosen rest', () => {
+  const single = (rest: Parameters<typeof actions.putTarget>[2]) => {
+    const empty: Workout = {id: 'w', name: 'Summary', description: '', type: 'prescribed', video: '', groups: []};
+    const added = actions.addExercise(empty, 'new', bench);
+    const group = actions.putTarget(added, {group: 0, exercise: 0, key: 'rest', round: null}, rest).groups[0];
+    assert.ok(group);
+    return groupSummary(group, 0);
+  };
+  assert.equal(single({mode: 'none'}), 'No rest between rounds');
+  assert.equal(single({mode: 'choose'}), 'Client-chosen rest between rounds');
+  assert.equal(single({mode: 'exact', v: '1:30'}), 'Rest 1:30 between rounds');
 });

@@ -69,7 +69,14 @@ export function groupSummary(group: Group, index: number) {
   if (!last) {
     return '';
   }
-  const rest = last.perRound ? 'rest varies by round' : `rest ${targetLabel('rest', last.targets.rest)}`;
+  const restText = targetLabel('rest', last.targets.rest);
+  const rest = last.perRound
+    ? 'rest varies by round'
+    : restText === 'None'
+      ? 'no rest'
+      : restText === 'Any'
+        ? 'client-chosen rest'
+        : `rest ${restText}`;
   return group.exercises.length === 1
     ? `${rest[0]?.toUpperCase()}${rest.slice(1)} between rounds`
     : `${group.exercises.map((_, i) => `${letterOf(index)}${i + 1}`).join(' → ')}, then ${rest}`;

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
-import {formatRest, formatTarget, targetModes} from '../src/targets.ts';
+import {formatRest, formatTarget, targetModes, targetPlaceholder} from '../src/targets.ts';
 
 test('rest none is None and client-chosen rest is Any', () => {
   assert.equal(formatRest({mode: 'none'}), 'None');
@@ -34,4 +34,23 @@ test('result and tempo allow exact or client choice while numeric metrics allow 
   assert.deepEqual(targetModes('result'), ['client_chooses', 'exact']);
   assert.deepEqual(targetModes('tempo'), ['client_chooses', 'exact']);
   assert.deepEqual(targetModes('reps'), ['client_chooses', 'exact', 'range', 'max']);
+});
+
+test('distance reads in km from 1 km and in metres below it', () => {
+  assert.equal(formatTarget('distance', {mode: 'exact', value: 5000}), '5 km');
+  assert.equal(formatTarget('distance', {mode: 'exact', value: 1500}), '1.5 km');
+  assert.equal(formatTarget('distance', {mode: 'exact', value: 400}), '400 m');
+  assert.equal(formatTarget('distance', {mode: 'range', min: 3000, max: 5000}), '3–5 km');
+  assert.equal(formatTarget('distance', {mode: 'range', min: 800, max: 1200}), '800–1200 m');
+});
+
+test('placeholders hint the target in the input unit and are empty when the client chooses', () => {
+  assert.equal(targetPlaceholder('reps', {mode: 'exact', value: 10}), '10');
+  assert.equal(targetPlaceholder('distance', {mode: 'exact', value: 5000}), '5000');
+  assert.equal(targetPlaceholder('duration', {mode: 'exact', value: 90}), '1:30');
+  assert.equal(targetPlaceholder('duration', {mode: 'exact', value: 45}), '45');
+  assert.equal(targetPlaceholder('reps', {mode: 'range', min: 8, max: 12}), '8–12');
+  assert.equal(targetPlaceholder('reps', {mode: 'max'}), 'Max');
+  assert.equal(targetPlaceholder('reps', {mode: 'client_chooses'}), '');
+  assert.equal(targetPlaceholder('reps', undefined), '');
 });

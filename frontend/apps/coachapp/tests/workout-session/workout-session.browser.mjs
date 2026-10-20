@@ -364,7 +364,7 @@ async function journey(width) {
     await button(coach, 'Finish workout').click();
     const finish = coach.getByRole('dialog', {name: 'Finish workout', exact: true});
     const finished = await write(coach, 'POST', `${base}/workout-logs/${logId}/finish`, () =>
-      button(finish, 'Save workout').click(),
+      button(finish, 'Finish workout').click(),
     );
     expect([finished.data.state, finished.data.recorded_by, finished.data.recorder_name]).toEqual([
       'completed',

@@ -137,7 +137,7 @@ function Editor({initial}: {initial?: Exercise}) {
         </p>
       )}
       <form
-        className="has-mobile-actions space-y-6"
+        className="has-mobile-actions max-w-3xl space-y-6"
         onSubmit={form.handleSubmit(async (values) => {
           if (readOnly || pending) {
             return;
@@ -205,6 +205,17 @@ function Editor({initial}: {initial?: Exercise}) {
             label="Instructions (optional)"
             multiline
           />
+          <FormField
+            control={form.control}
+            name="equipment"
+            label="Equipment (optional)"
+            multiline
+          />
+          <Tags
+            label="Muscles"
+            value={body.muscles ?? []}
+            onChange={(value) => set('muscles', value)}
+          />
           <Facet
             label="Goals"
             options={goals}
@@ -220,17 +231,6 @@ function Editor({initial}: {initial?: Exercise}) {
           <MetricRows
             value={body.metrics ?? []}
             onChange={(value) => set('metrics', value)}
-          />
-          <FormField
-            control={form.control}
-            name="equipment"
-            label="Equipment (optional)"
-            multiline
-          />
-          <Tags
-            label="Muscles"
-            value={body.muscles ?? []}
-            onChange={(value) => set('muscles', value)}
           />
           <section
             className="space-y-3"
@@ -296,37 +296,6 @@ function Editor({initial}: {initial?: Exercise}) {
             />
           </section>
         </fieldset>
-        {initial && !readOnly && (
-          <div className="flex flex-wrap gap-2 border-t border-border pt-5">
-            <Button
-              variant="outline"
-              isDisabled={pending || form.formState.isDirty}
-              isPending={archive.isPending || restore.isPending}
-              onPress={async () => {
-                try {
-                  if (initial.archived_at) {
-                    await restore.mutateAsync(initial.id);
-                  } else {
-                    await archive.mutateAsync(initial.id);
-                  }
-                  setNotice(initial.archived_at ? 'Exercise restored.' : 'Exercise archived.');
-                  setError(undefined);
-                } catch (cause) {
-                  setError(errorMessage(cause, 'Could not change the archive state. Try again.'));
-                }
-              }}
-            >
-              {initial.archived_at ? 'Restore exercise' : 'Archive exercise'}
-            </Button>
-            <Button
-              variant="ghost"
-              isDisabled={pending}
-              onPress={() => setDeleting(true)}
-            >
-              Delete exercise
-            </Button>
-          </div>
-        )}
         <FormError message={error} />
         <p role="status">{notice}</p>
         {!readOnly && (
@@ -339,6 +308,48 @@ function Editor({initial}: {initial?: Exercise}) {
               Save exercise
             </Button>
           </FormActions>
+        )}
+        {initial && !readOnly && (
+          <section
+            aria-labelledby="exercise-manage"
+            className="space-y-3 border-t border-border pt-5"
+          >
+            <h2
+              id="exercise-manage"
+              className="editor-section-title"
+            >
+              Manage exercise
+            </h2>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant="outline"
+                isDisabled={pending || form.formState.isDirty}
+                isPending={archive.isPending || restore.isPending}
+                onPress={async () => {
+                  try {
+                    if (initial.archived_at) {
+                      await restore.mutateAsync(initial.id);
+                    } else {
+                      await archive.mutateAsync(initial.id);
+                    }
+                    setNotice(initial.archived_at ? 'Exercise restored.' : 'Exercise archived.');
+                    setError(undefined);
+                  } catch (cause) {
+                    setError(errorMessage(cause, 'Could not change the archive state. Try again.'));
+                  }
+                }}
+              >
+                {initial.archived_at ? 'Restore exercise' : 'Archive exercise'}
+              </Button>
+              <Button
+                variant="ghost"
+                isDisabled={pending}
+                onPress={() => setDeleting(true)}
+              >
+                Delete exercise
+              </Button>
+            </div>
+          </section>
         )}
       </form>
       {deleting && initial && (
@@ -390,19 +401,28 @@ function MetricRows({value, onChange}: {value: Metrics; onChange: (value: Metric
         id="exercise-metrics"
         className="editor-section-title"
       >
-        Metrics in display order
+        What the client records
       </h2>
       <p className="text-sm font-medium text-muted-foreground">
-        Each metric can have its own label. Leave the label empty to use its name.
+        In the order the client sees them. A label replaces the metric's name; leave it empty to use the name.
       </p>
-      <ol className="space-y-4">
+      {value.length > 0 && (
+        <div
+          aria-hidden="true"
+          className="hidden gap-3 text-sm font-medium sm:grid sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_8.5rem]"
+        >
+          <span>Metric</span>
+          <span>Label shown to the client</span>
+        </div>
+      )}
+      <ol className="space-y-4 sm:space-y-2">
         {value.map((metric, index) => (
           <li
             key={metric.key}
-            className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] sm:items-end"
+            className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_8.5rem] sm:items-end"
           >
             <label className="grid gap-1">
-              <span className="text-sm font-medium">Metric {index + 1}</span>
+              <span className="text-sm font-medium sm:sr-only">Metric {index + 1}</span>
               <select
                 className={selectClass}
                 value={metric.key}
@@ -429,7 +449,7 @@ function MetricRows({value, onChange}: {value: Metrics; onChange: (value: Metric
               htmlFor={`${id}-${metric.key}-label`}
               className="grid gap-1"
             >
-              <span className="text-sm font-medium">Metric {index + 1} label</span>
+              <span className="text-sm font-medium sm:sr-only">Metric {index + 1} label</span>
               <Input
                 id={`${id}-${metric.key}-label`}
                 value={metric.label ?? ''}

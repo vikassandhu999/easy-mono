@@ -205,7 +205,10 @@ function WeekScreen({clientId}: {clientId: string}) {
         )}
         {!state && query.isPending && <p role="status">Loading training week…</p>}
         {state && (
-          <WeekColumns defaultDay={todayBit}>
+          <WeekColumns
+            defaultDay={todayBit}
+            today={todayBit}
+          >
             {(day) => {
               const items = state.schedules.filter((row) => row.weekdays_mask & day.bit).sort(byTime);
               return (
@@ -216,37 +219,46 @@ function WeekScreen({clientId}: {clientId: string}) {
                     const existingLog = occurrences.data?.data.find(
                       (log) => log.schedule_id === row.id && log.state !== 'discarded',
                     );
+                    const sessionToday = day.bit === todayBit && occursOn(row, state.today);
                     return (
+                      // One card: the schedule opens the editor; today's session action sits inside the same card.
                       <div
                         key={row.id}
-                        className="min-w-0 space-y-1"
+                        className="min-w-0 rounded-xl bg-surface"
                       >
                         <Button
                           id={cardId(row, day)}
-                          variant="outline"
+                          variant="ghost"
                           isDisabled={write.pending || write.blocked}
                           data-workout-schedule
-                          className="h-auto w-full flex-col items-start gap-1 whitespace-normal border-transparent px-3 py-3 text-left"
+                          className="h-auto w-full flex-col items-start gap-1 whitespace-normal px-3 py-3 text-left"
                           onPress={() => setOpen({schedule: row, day})}
                         >
                           <span className="font-semibold">{workout?.name ?? 'Workout'}</span>
                           {occasion && <span className="text-sm font-medium text-muted-foreground">{occasion}</span>}
-                          {Boolean(row.weekdays_mask & ~day.bit) && (
-                            <span className="text-sm font-medium text-muted-foreground">
-                              Also {daysLabel(row.weekdays_mask & ~day.bit)}
-                            </span>
+                          {row.weekdays_mask === everyDay ? (
+                            <span className="text-sm font-medium text-muted-foreground">Every day</span>
+                          ) : (
+                            Boolean(row.weekdays_mask & ~day.bit) && (
+                              <span className="text-sm font-medium text-muted-foreground">
+                                Also {daysLabel(row.weekdays_mask & ~day.bit)}
+                              </span>
+                            )
                           )}
                         </Button>
-                        {day.bit === todayBit && occursOn(row, state.today) && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            isPending={start.isPending}
-                            isDisabled={write.pending || write.blocked || active.isFetching || occurrences.isFetching}
-                            onPress={() => openSession(row)}
-                          >
-                            {existingLog ? 'Open' : row.coach_id ? 'Start session' : 'Record session'}
-                          </Button>
+                        {sessionToday && (
+                          <div className="px-3 pb-3">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="w-full"
+                              isPending={start.isPending}
+                              isDisabled={write.pending || write.blocked || active.isFetching || occurrences.isFetching}
+                              onPress={() => openSession(row)}
+                            >
+                              {existingLog ? 'Open' : row.coach_id ? 'Start session' : 'Record session'}
+                            </Button>
+                          </div>
                         )}
                       </div>
                     );
@@ -380,6 +392,15 @@ function WeekScreen({clientId}: {clientId: string}) {
   );
 }
 
+const everyDay = 127;
+const sessionDate = (date: string) =>
+  new Date(`${date}T12:00:00Z`).toLocaleDateString('en-GB', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+    timeZone: 'UTC',
+  });
+
 const sessionPath = (clientId: string, logId: string) =>
   generatePath(routes.clientWorkoutSession, {id: clientId, logId});
 
@@ -421,7 +442,8 @@ function SessionLink({clientId, log, name}: {clientId: string; log: WorkoutLog; 
     >
       <p className="break-words font-semibold">{name}</p>
       <p className="text-sm font-medium text-muted-foreground">
-        {log.date} · {log.state === 'active' ? 'In progress' : log.state === 'completed' ? 'Completed' : 'Discarded'} ·{' '}
+        {sessionDate(log.date)} ·{' '}
+        {log.state === 'active' ? 'In progress' : log.state === 'completed' ? 'Completed' : 'Discarded'} ·{' '}
         {log.recorder_name}
         {log.effort === null ? '' : ` · ${effortLabel(log.effort)}`}
       </p>

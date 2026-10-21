@@ -6,7 +6,7 @@ defmodule EasyWeb.Plugs.Authenticate do
   alias Easy.Utils
   alias EasyWeb.FallbackController
 
-  @allowed_roles ["owner", "coach", "client", "guest"]
+  @allowed_roles [:owner, :coach, :client, :guest]
 
   @spec init(term()) :: term()
   def init(opts), do: opts
@@ -14,7 +14,7 @@ defmodule EasyWeb.Plugs.Authenticate do
   @spec call(Plug.Conn.t(), term()) :: Plug.Conn.t()
   def call(conn, _opts) do
     with ["Bearer " <> token] <- get_req_header(conn, "authorization"),
-         {:ok, %{} = claims} <- Token.verify_access_token(token),
+         {:ok, %{} = claims} <- Token.authenticate_access_token(token),
          role when not is_nil(role) <- Utils.safe_to_atom(claims["role"], @allowed_roles) do
       conn
       |> assign(:claims, %{

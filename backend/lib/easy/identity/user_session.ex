@@ -7,6 +7,11 @@ defmodule Easy.Identity.UserSession do
 
   @type role :: :owner | :coach | :client | :guest
 
+  @type scope ::
+          %{role: :coach, business_id: binary(), coach_id: binary(), is_owner: boolean()}
+          | %{role: :client, business_id: binary()}
+          | %{role: :guest, business_id: nil}
+
   @roles [:owner, :coach, :client, :guest]
 
   @primary_key {:id, :binary_id, autogenerate: true}
@@ -30,9 +35,8 @@ defmodule Easy.Identity.UserSession do
     timestamps(type: :utc_datetime)
   end
 
-  @spec insert_changeset(binary() | nil, binary(), role(), binary() | nil, boolean(), map()) ::
-          Ecto.Changeset.t()
-  def insert_changeset(business_id, user_id, role, coach_id, owner?, attrs) do
+  @spec insert_changeset(binary(), scope(), map()) :: Ecto.Changeset.t()
+  def insert_changeset(user_id, scope, attrs) do
     %__MODULE__{}
     |> cast(attrs, [
       :ip,
@@ -43,29 +47,30 @@ defmodule Easy.Identity.UserSession do
       :refreshed_at
     ])
     |> put_change(:user_id, user_id)
-    |> put_change(:business_id, business_id)
-    |> put_change(:role, role)
-    |> put_change(:coach_id, coach_id)
-    |> put_change(:is_owner, owner?)
+    |> put_scope(scope)
     |> validate_required([:refresh_token, :expires_at, :user_id, :role])
     |> unique_constraint(:refresh_token)
   end
 
-  @spec update_changeset(t(), binary() | nil, role(), binary() | nil, boolean(), map()) ::
-          Ecto.Changeset.t()
-  def update_changeset(%__MODULE__{} = session, business_id, role, coach_id, owner?, attrs) do
+  @spec update_changeset(t(), scope(), DateTime.t(), map()) :: Ecto.Changeset.t()
+  def update_changeset(%__MODULE__{} = session, scope, refreshed_at, attrs) do
     session
-    |> cast(attrs, [:ip, :user_agent, :refreshed_at])
-    |> put_change(:business_id, business_id)
-    |> put_change(:role, role)
-    |> put_change(:coach_id, coach_id)
-    |> put_change(:is_owner, owner?)
-    |> put_change(:refreshed_at, DateTime.utc_now(:second))
+    |> cast(attrs, [:ip, :user_agent])
+    |> put_scope(scope)
+    |> put_change(:refreshed_at, refreshed_at)
   end
 
-  @spec expired?(t()) :: boolean()
-  def expired?(%__MODULE__{expires_at: expires_at}) do
-    DateTime.compare(DateTime.utc_now(), expires_at) == :gt
+  defp put_scope(changeset, %{business_id: business_id, role: role} = scope) do
+    changeset
+    |> put_change(:business_id, business_id)
+    |> put_change(:role, role)
+    |> put_change(:coach_id, scope[:coach_id])
+    |> put_change(:is_owner, scope[:is_owner] || false)
+  end
+
+  @spec expired?(t(), DateTime.t()) :: boolean()
+  def expired?(%__MODULE__{expires_at: expires_at}, now) do
+    DateTime.compare(now, expires_at) == :gt
   end
 
   @spec revoked?(t()) :: boolean()

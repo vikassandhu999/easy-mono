@@ -1,0 +1,62 @@
+diff --git a/android/src/main/java/com/aparajita/capacitor/securestorage/SecureStorage.java b/android/src/main/java/com/aparajita/capacitor/securestorage/SecureStorage.java
+index 4961b797e01c7b0a55d101bde836b66065abd75b..d952d6281a84fb21d937dcbf7681b137b510bcca 100644
+--- a/android/src/main/java/com/aparajita/capacitor/securestorage/SecureStorage.java
++++ b/android/src/main/java/com/aparajita/capacitor/securestorage/SecureStorage.java
+@@ -123,10 +123,12 @@ public class SecureStorage extends Plugin {
+   private void storeDataInKeyStore(String prefixedKey, String data)
+     throws GeneralSecurityException, IOException {
+     // When we get here, we know that the values are not null
+-    getPrefs()
++    if (!getPrefs()
+       .edit()
+       .putString(prefixedKey, encryptString(data, prefixedKey))
+-      .apply();
++      .commit()) {
++      throw new IOException("The encrypted value could not be saved.");
++    }
+   }
+ 
+   private String getDataFromKeyStore(String prefixedKey)
+@@ -154,10 +156,12 @@ public class SecureStorage extends Plugin {
+   }
+ 
+   private boolean removeAlias(KeyStore keyStore, String alias)
+-    throws java.security.KeyStoreException {
++    throws java.security.KeyStoreException, IOException {
+     if (keyStore.containsAlias(alias)) {
+       keyStore.deleteEntry(alias);
+-      getPrefs().edit().remove(alias).apply();
++      if (!getPrefs().edit().remove(alias).commit()) {
++        throw new IOException("The encrypted value could not be removed.");
++      }
+       return true;
+     }
+ 
+diff --git a/ios/Sources/SecureStoragePlugin/Plugin.swift b/ios/Sources/SecureStoragePlugin/Plugin.swift
+index f7758dff74018ae54256fb1e782d5a157e436bbf..2e16204f04f7b93a181a01d38b524952e6ad713e 100644
+--- a/ios/Sources/SecureStoragePlugin/Plugin.swift
++++ b/ios/Sources/SecureStoragePlugin/Plugin.swift
+@@ -47,7 +47,7 @@ public class SecureStorage: CAPPlugin, CAPBridgedPlugin {
+     }
+ 
+     tryKeychainOp(call, getSyncParam(from: call)) {
+-      let data = getData(withKey: key)
++      let data = try getData(withKey: key)
+       call.resolve(["data": data])
+     }
+   }
+@@ -160,8 +160,12 @@ public class SecureStorage: CAPPlugin, CAPBridgedPlugin {
+     }
+   }
+ 
+-  func getData(withKey key: String) -> Any {
+-    keychain.get(key) as Any
++  func getData(withKey key: String) throws -> Any {
++    let data = keychain.get(key)
++    if keychain.lastResultCode != errSecSuccess && keychain.lastResultCode != errSecItemNotFound {
++      throw KeychainError(.osError, status: keychain.lastResultCode)
++    }
++    return data as Any
+   }
+ 
+   func deleteData(withKey key: String) throws -> Bool {

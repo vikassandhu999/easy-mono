@@ -1,85 +1,90 @@
 defmodule EasyWeb.BusinessControllerTest do
-  use Easy.ConnCase
+  use Easy.ConnCase, async: true
+  alias Easy.Billing.BusinessBilling
+  alias Easy.Identity.{AuthTokens, SessionFactory, Token}
+  alias Easy.Orgs.Coach
 
-  import OpenApiSpex.TestAssertions
+  setup %{conn: conn} do
+    business = insert(:business, billing: build(:business_billing, business: nil, free_seats: 3))
+    coach = insert(:coach, business: business, user: business.owner)
+    %{conn: authenticate_coach(conn, coach), business: business}
+  end
 
-  setup do
-    owner_user = insert(:user)
-    business = insert(:business, owner: owner_user)
-    owner_coach = insert(:coach, user: owner_user, business: business)
+  test "business responses include handle and current term seat counts", %{conn: conn, business: business} do
+    insert(:client, business: business)
+    insert(:client, business: business, user: nil)
+    assert %{"data" => data} = get(conn, "/v1/businesses/me") |> json_response(200)
+    assert data["seats"] == %{"limit" => 3, "used" => 1}
+    assert %{"data" => updated} = patch(conn, "/v1/businesses/me", %{handle: "new-studio", name: "Studio", timezone: "Europe/London"}) |> json_response(200)
+    assert updated["handle"] == "new-studio"
+    assert updated["timezone"] == "Europe/London"
+  end
+
+  test "availability checks validate syntax and ignore the owner's own handle", %{conn: conn, business: business} do
+    assert %{"available" => true} = get(conn, "/v1/businesses/handle-availability", %{handle: business.handle}) |> json_response(200)
+
+    for handle <- ["admin", "UPPER", "a--b", insert(:business).handle] do
+      assert %{"available" => false} = get(conn, "/v1/businesses/handle-availability", %{handle: handle}) |> json_response(200)
+    end
+  end
+
+  test "a signed-in guest can check handles before creating a business", %{business: business} do
+    user = insert(:user)
+    {:ok, session} = SessionFactory.create_session(user, %{role: :guest})
+    token = Token.generate_access_token(user, session)
+    conn = build_conn() |> put_req_header("authorization", "Bearer #{token}")
+    assert %{"available" => true} = get(conn, "/v1/businesses/handle-availability", %{handle: "new-guest-studio"}) |> json_response(200)
+    assert %{"available" => false} = get(conn, "/v1/businesses/handle-availability", %{handle: business.handle}) |> json_response(200)
+  end
+
+  test "trainers can see seats but only owner can edit business", %{business: business} do
     trainer = insert(:coach, business: business)
-
-    owner_conn =
-      build_conn()
-      |> authenticate_coach(owner_coach)
-      |> put_req_header("content-type", "application/json")
-
-    trainer_conn =
-      build_conn()
-      |> authenticate_coach(trainer)
-      |> put_req_header("content-type", "application/json")
-
-    %{business: business, owner_conn: owner_conn, trainer_conn: trainer_conn}
+    conn = build_conn() |> authenticate_coach(trainer)
+    assert %{"data" => %{"seats" => %{"limit" => 3}}} = get(conn, "/v1/businesses/me") |> json_response(200)
+    assert patch(conn, "/v1/businesses/me", %{name: "No"}) |> json_response(403)
+    assert patch(conn, "/v1/businesses/me", %{business_id: insert(:business).id}) |> json_response(422)
   end
 
-  describe "PATCH /v1/businesses/me/dashboard-setup" do
-    test "stores the terminal state and renders the updated business", %{owner_conn: conn} do
-      conn =
-        patch(conn, "/v1/businesses/me/dashboard-setup", %{
-          "dashboard_setup_hidden_reason" => "dismissed"
-        })
+  test "onboarding accepts an unnamed account and creates the submitted coach profile with ten seats" do
+    user = insert(:user, full_name: "")
+    conn = guest_conn(user)
 
-      assert %{"data" => data} = json_response(conn, 200)
-      assert data["dashboard_setup_hidden_reason"] == "dismissed"
-      assert data["dashboard_setup_hidden_at"]
-      assert_schema(data, "Business", EasyWeb.ApiSpec.spec())
-    end
+    assert %{"data" => business} =
+             post(conn, "/v1/businesses", %{name: "Studio", handle: "http-owner-setup", full_name: "Jordan Coach", preferred_name: "Jo"}) |> json_response(201)
 
-    test "rejects non-owners", %{trainer_conn: conn} do
-      conn =
-        patch(conn, "/v1/businesses/me/dashboard-setup", %{
-          "dashboard_setup_hidden_reason" => "dismissed"
-        })
+    assert business["seats"] == %{"limit" => 10, "used" => 0}
+    coach = Easy.Repo.get_by!(Coach, business_id: business["id"], user_id: user.id)
+    assert coach.full_name == "Jordan Coach"
+    assert coach.preferred_name == "Jo"
+    assert Easy.Repo.get_by!(BusinessBilling, business_id: business["id"]).free_seats == 10
+  end
 
-      assert json_response(conn, 403)
-    end
+  test "onboarding rejects missing, blank and overlong coach names without creating a business" do
+    user = insert(:user, full_name: "Existing Name")
 
-    test "validates the reason at the request boundary", %{owner_conn: conn} do
-      conn =
-        patch(conn, "/v1/businesses/me/dashboard-setup", %{
-          "dashboard_setup_hidden_reason" => "later"
-        })
+    invalid_profiles = [
+      %{},
+      %{full_name: ""},
+      %{full_name: String.duplicate("x", 256)},
+      %{full_name: "Coach", preferred_name: String.duplicate("x", 256)}
+    ]
 
-      assert json_response(conn, 422)
+    for profile <- invalid_profiles do
+      params = Map.merge(%{name: "Studio", handle: "http-invalid-name"}, profile)
+      assert guest_conn(user) |> post("/v1/businesses", params) |> json_response(422)
+      refute Easy.Repo.get_by(Easy.Orgs.Business, owner_user_id: user.id)
     end
   end
 
-  describe "GET /v1/coach/me" do
-    test "exposes owner and dashboard setup state", %{business: business, owner_conn: conn} do
-      business
-      |> Ecto.Changeset.change(%{
-        dashboard_setup_hidden_at: DateTime.utc_now(:second),
-        dashboard_setup_hidden_reason: :completed
-      })
-      |> Easy.Repo.update!()
-
-      conn = get(conn, "/v1/coach/me")
-
-      assert %{"data" => data} = json_response(conn, 200)
-      assert data["is_owner"] == true
-      assert data["business"]["dashboard_setup_hidden_reason"] == "completed"
-      assert data["business"]["dashboard_setup_hidden_at"]
-      assert_schema(data, "CoachProfile", EasyWeb.ApiSpec.spec())
-    end
+  test "authenticated responses include the existing user's full name for setup" do
+    user = insert(:user, full_name: "Existing Name")
+    {:ok, session} = SessionFactory.create_session(user, %{role: :guest})
+    assert AuthTokens.build(user, session).full_name == "Existing Name"
   end
 
-  describe "PATCH /v1/businesses/me" do
-    test "updates the default weight unit", %{owner_conn: conn} do
-      conn = patch(conn, "/v1/businesses/me", %{"default_weight_unit" => "lbs"})
-
-      assert %{"data" => data} = json_response(conn, 200)
-      assert data["default_weight_unit"] == "lbs"
-      assert_schema(data, "Business", EasyWeb.ApiSpec.spec())
-    end
+  defp guest_conn(user) do
+    {:ok, session} = SessionFactory.create_session(user, %{role: :guest})
+    token = Token.generate_access_token(user, session)
+    build_conn() |> put_req_header("authorization", "Bearer #{token}")
   end
 end

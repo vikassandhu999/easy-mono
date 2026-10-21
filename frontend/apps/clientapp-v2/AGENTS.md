@@ -15,10 +15,9 @@ model are different, and several coachapp rules deliberately do NOT apply here (
 - Type-check: `pnpm -C apps/clientapp-v2 typecheck`. Build: `... build` (runs the same
   type-check first).
   **Always pass `-p tsconfig.app.json`.** The root `tsconfig.json` is a solution file
-  (`"files": []`), so a bare `tsc --noEmit` compiles nothing and exits 0. It did exactly
-  that for months while 183 errors accumulated (RM-202).
+  (`"files": []`), so a bare `tsc --noEmit` compiles nothing and exits 0.
 - Lint/format: `pnpm -C apps/clientapp-v2 lint` — Biome with `--write`, so expect edits.
-- Unit suite: sibling `*.check.ts` files. `pnpm -C apps/clientapp-v2 check` globs `src`, `scripts`, and `@easy/utils`. A new mapper, predicate, or lifecycle helper ships with its `.check.ts` in the same change. Verify UI at a phone width.
+- Unit tests: see `frontend/AGENTS.md` §Verify. Nutrition suites live in `tests/nutrition/`. Verify UI at a phone width.
 - Native: `pnpm native` (build + `cap sync`), then `cap open ios|android`.
 
 ## Source Layout
@@ -31,19 +30,19 @@ src/
   pwa.ts  index.css
   api/     the server contract — flat
   ui/      feature-agnostic components and hooks — flat
-  today/  training/  workout/  nutrition/  progress/  checkins/  messages/
+  today/  training/  workout/  nutrition/  messages/
   history/  settings/  auth/
 ```
 
 - **Component one feature uses**: `src/{feature}/name.tsx`. **Two or more**: `src/ui/name.tsx`.
-- **Pure helpers**: a `.ts` beside the screen that owns them, with a sibling `.check.ts`. Product-agnostic ones go in `@easy/utils` — `formatDateISO`, `addDays`, `getInitials`, `formatDuration`, `formatMacroValue`, `moveItem`, `MEAL_SLOTS`, `TRAINING_WEEKDAYS` are already there.
+- **Feature logic**: keep related operations together in the owning screen or model. Product-agnostic ones go in `@easy/utils` — `formatDateISO`, `addDays`, `getInitials`, `formatDuration`, `formatMacroValue`, `moveItem`, `MEAL_SLOTS`, `TRAINING_WEEKDAYS` are already there.
 - **Never** a directory named `components`, `lib`, `utils`, `helpers`, `domain`, or one starting with `@`. **Never** a `.ts` sharing a basename with a `.tsx`.
 
 **Arrows point one way: feature → ui → api.** `ui/` never imports a feature; a feature never imports another feature's `.tsx`. A feature's root-level `.ts` files are its public surface — workout owns the session model (`workout/session-utils.ts`, which history and training import), nutrition owns adherence and targets (`nutrition/nutrition-utils.ts`, which today imports). `router.tsx` and `app-shell.tsx` are the composition root and are exempt.
 
-A screen that composes cards owns those cards: `today/` holds its own home-screen nudges rather than reaching into `checkins/` for them. Enforced by `scripts/check-frontend-shape.mjs` via `just check-rm` (RM-144).
+A screen that composes cards owns those cards: `today/` holds its own home-screen cards.
 
-Anything a `.check.ts` reaches must use relative imports carrying the `.ts` extension, not `@/` aliases — the suite runs under bare `node --experimental-strip-types`, which resolves neither aliases nor extensionless specifiers. The same reason keeps `api/` split between hook modules (React Query, `client.ts`) and pure ones (request builders, mappers): merging the two kinds kills the pure module's suite on `import.meta.env`.
+Pure model tests use relative imports with the `.ts` extension for Node’s type stripping. Exercise React and API integration through browser scenarios. Keep production logic together even when it needs browser coverage.
 
 Files are kebab-case. Use direct `@/...` imports; no barrel files.
 
@@ -52,8 +51,8 @@ Files are kebab-case. Use direct `@/...` imports; no barrel files.
 Identical in shape to coachapp — see `frontend/AGENTS.md` § API for the full
 contract. The parts that bite:
 
-- `src/api/schema.ts` is generated from `frontend/openapi/client.openapi.json` by
-  `just gen-api`. Never hand-edit.
+- `src/api/schema.ts` is generated from typed routes and the remaining auth OpenAPI
+  operations by `rtk just gen-api`. Never hand-edit.
 - Requests go through `call(client.VERB(path, ...))` from `@/api/client` — never raw
   fetch. Non-2xx throws `ApiError {status, data}`, which is what the `@/api/shared`
   helpers read.
@@ -66,7 +65,7 @@ contract. The parts that bite:
   performed-set routes), the mutation takes it as an extra variable instead of pushing a
   `refetch()` to the caller. The only cache calls outside `src/api/` are the socket
   handlers in `use-chat-realtime.ts` and the `queryClient.clear()` session resets.
-- List-shaped keys nest under their domain's `lists()` prefix (RM-143) — see
+- List-shaped keys nest under their domain's `lists()` prefix — see
   `nutritionPlanKeys.today()`. A sibling key is invisible to every existing invalidation.
 - `conversationKeys.detail()` and `.messages()` are SIBLINGS on purpose: sending a
   message must not refetch the loaded infinite chat history out from under the optimistic
@@ -109,7 +108,6 @@ One component per job — don't hand-roll these:
   `--success-secondary` does not make `text-success-secondary` resolve; HeroUI ships the
   alias for most vars but not all, and a missing one is a SILENT no-op that renders as
   inherited colour. Add `--color-x: var(--x);` to the `@theme inline` block.
-  `just lint` runs `scripts/check-color-utilities.sh` to catch this (RM-142).
 - Prefer theme tokens over hex. A hex that duplicates a token (`#0485f7` for `--accent`)
   is a drift risk; a genuinely app-specific chart colour is fine but belongs in one
   named place, not scattered across screens.
@@ -123,10 +121,7 @@ One component per job — don't hand-roll these:
 
 These are deliberate, not drift. Don't "fix" them toward coachapp without a reason:
 
-- **Loading is a centred `Spinner`, not a skeleton**, except the form-assignment
-  detail route (`fill-checkin.tsx`): that screen is a form, so it keeps a
-  content-shaped skeleton and the shared `ErrorState` with Retry (RM-217).
-  Other screens stay on the spinner. Changing the rest is a design decision, not a cleanup.
+- **Loading uses a centred `Spinner`.** Changing this pattern is a design decision.
 - **Type sizes are arbitrary values (`text-[13px]`)**, because this app has no `type-*`
   scale. coachapp's "never `text-*` for size" rule does not apply until one exists.
 - **Light mode only.** There is no dark block in `index.css`.
@@ -135,6 +130,7 @@ These are deliberate, not drift. Don't "fix" them toward coachapp without a reas
 
 ## Verification
 
+- After frontend changes, run `rtk pnpm -C frontend lint:ci` from the repo root.
 - Type or data-flow changes: `pnpm -C apps/clientapp-v2 build`.
 - UI changes: run the app and check the touched flow at 375px.
 - Theme or colour changes: verify with `getComputedStyle` on the live element, not by

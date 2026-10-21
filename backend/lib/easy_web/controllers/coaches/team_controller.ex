@@ -1,123 +1,44 @@
 defmodule EasyWeb.Coaches.TeamController do
-  use EasyWeb, :controller
-  use OpenApiSpex.ControllerSpecs
+  use EasyWeb, :typed_controller
 
   alias Easy.Coaches
-  alias OpenApiSpex.Operation
+  alias Easy.CoachInvitations
+  alias EasyWeb.Types.TeamMember
+  alias EasyWeb.Types.TeamMemberIndex
 
-  alias EasyWeb.OpenApi.Schemas.{
-    ErrorResponse,
-    TeamMemberResponse,
-    TeamResponse,
-    TrainerInviteRequest
-  }
-
-  plug OpenApiSpex.Plug.CastAndValidate,
-       [json_render_error_v2: true]
-       when action in [:invite, :resend_invite, :revoke_invite, :deactivate, :reactivate]
-
-  tags ["coach team"]
-
-  operation :index,
-    summary: "List team",
-    description: "Owner-only: lists every trainer on the authenticated business, invited or active.",
-    operation_id: "getTeam",
-    security: [%{"bearerAuth" => []}],
-    responses: [
-      ok: {"Team", "application/json", TeamResponse},
-      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
-      forbidden: {"Not the business owner", "application/json", ErrorResponse},
-      unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
-    ]
-
-  operation :invite,
-    summary: "Invite trainer",
-    description: "Owner-only: invites a trainer to join the authenticated business.",
-    operation_id: "inviteTrainer",
-    security: [%{"bearerAuth" => []}],
-    request_body: {"Trainer invite request", "application/json", TrainerInviteRequest, required: true},
-    responses: [
-      ok: {"Trainer invited", "application/json", TeamMemberResponse},
-      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
-      forbidden: {"Not the business owner", "application/json", ErrorResponse},
-      unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
-    ]
-
-  operation :resend_invite,
-    summary: "Resend trainer invitation",
-    description: "Owner-only: refreshes and resends a pending trainer invitation.",
-    operation_id: "resendTrainerInvite",
-    security: [%{"bearerAuth" => []}],
-    parameters: [
-      Operation.parameter(:id, :path, :string, "Coach id")
-    ],
-    responses: [
-      ok: {"Trainer", "application/json", TeamMemberResponse},
-      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
-      forbidden: {"Not the business owner", "application/json", ErrorResponse},
-      not_found: {"Not found", "application/json", ErrorResponse},
-      unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
-    ]
-
-  operation :revoke_invite,
-    summary: "Revoke trainer invitation",
-    description: "Owner-only: deletes a pending trainer invitation.",
-    operation_id: "revokeTrainerInvite",
-    security: [%{"bearerAuth" => []}],
-    parameters: [
-      Operation.parameter(:id, :path, :string, "Coach id")
-    ],
-    responses: [
-      ok: {"Trainer invitation revoked", "application/json", TeamMemberResponse},
-      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
-      forbidden: {"Not the business owner", "application/json", ErrorResponse},
-      not_found: {"Not found", "application/json", ErrorResponse},
-      unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
-    ]
-
-  operation :deactivate,
-    summary: "Deactivate trainer",
-    description: "Owner-only: deactivates an active trainer and reassigns their clients to the owner.",
-    operation_id: "deactivateTrainer",
-    security: [%{"bearerAuth" => []}],
-    parameters: [
-      Operation.parameter(:id, :path, :string, "Coach id")
-    ],
-    responses: [
-      ok: {"Trainer deactivated", "application/json", TeamMemberResponse},
-      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
-      forbidden: {"Not the business owner", "application/json", ErrorResponse},
-      not_found: {"Not found", "application/json", ErrorResponse},
-      unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
-    ]
-
-  operation :reactivate,
-    summary: "Reactivate trainer",
-    description: "Owner-only: reactivates an inactive trainer. Previously reassigned clients stay with the owner until redistributed.",
-    operation_id: "reactivateTrainer",
-    security: [%{"bearerAuth" => []}],
-    parameters: [
-      Operation.parameter(:id, :path, :string, "Coach id")
-    ],
-    responses: [
-      ok: {"Trainer reactivated", "application/json", TeamMemberResponse},
-      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
-      forbidden: {"Not the business owner", "application/json", ErrorResponse},
-      not_found: {"Not found", "application/json", ErrorResponse},
-      unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
-    ]
+  typed(:index, query: TeamMember.list_query(), ok: {200, TeamMemberIndex.t()})
+  typed(:show, path: %{id: Ecto.UUID.t()}, ok: {200, data(TeamMember.t())})
+  typed(:invite, body: TeamMember.invite(), ok: {200, data(TeamMember.t())})
+  typed(:resend_invite, path: %{id: Ecto.UUID.t()}, ok: {200, data(TeamMember.t())})
+  typed(:revoke_invite, path: %{id: Ecto.UUID.t()}, ok: {200, data(TeamMember.t())})
+  typed(:remove, path: %{id: Ecto.UUID.t()}, ok: {200, data(TeamMember.t())})
 
   @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def index(conn, _params) do
-    with {:ok, %{coaches: coaches, owner_id: owner_id}} <- Coaches.list_team(conn.assigns.ctx) do
-      render(conn, :index, coaches: coaches, owner_id: owner_id)
+    opts = [
+      cursor: conn.query_params["cursor"],
+      limit: conn.query_params["limit"],
+      q: conn.query_params["q"],
+      state: conn.query_params["state"]
+    ]
+
+    with {:ok, page} <- Coaches.list_team(conn.assigns.ctx, opts) do
+      team = Enum.map(page.coaches, &team_member(&1, &1.user_id == page.owner_user_id))
+      ok(conn, %{data: team, count: page.count, next_cursor: page.next_cursor})
+    end
+  end
+
+  @spec show(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def show(conn, _params) do
+    with {:ok, coach} <- Coaches.get_team_member(conn.assigns.ctx, conn.path_params["id"]) do
+      ok(conn, %{data: team_member(coach, coach.user_id == conn.assigns.ctx.user_id)})
     end
   end
 
   @spec invite(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def invite(conn, _params) do
-    with {:ok, coach} <- Coaches.invite_trainer(conn.assigns.ctx, conn.body_params) do
-      render(conn, :show, coach: coach)
+    with {:ok, coach} <- CoachInvitations.invite_trainer(conn.assigns.ctx, conn.body_params) do
+      ok(conn, %{data: team_member(coach, false)})
     end
   end
 
@@ -125,8 +46,8 @@ defmodule EasyWeb.Coaches.TeamController do
   def resend_invite(conn, _params) do
     coach_id = conn.path_params["id"]
 
-    with {:ok, coach} <- Coaches.resend_invite(conn.assigns.ctx, coach_id) do
-      render(conn, :show, coach: coach)
+    with {:ok, coach} <- CoachInvitations.resend_invite(conn.assigns.ctx, coach_id) do
+      ok(conn, %{data: team_member(coach, false)})
     end
   end
 
@@ -134,26 +55,19 @@ defmodule EasyWeb.Coaches.TeamController do
   def revoke_invite(conn, _params) do
     coach_id = conn.path_params["id"]
 
-    with {:ok, coach} <- Coaches.revoke_invite(conn.assigns.ctx, coach_id) do
-      render(conn, :show, coach: coach)
+    with {:ok, coach} <- CoachInvitations.revoke_invite(conn.assigns.ctx, coach_id) do
+      ok(conn, %{data: team_member(coach, false)})
     end
   end
 
-  @spec deactivate(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def deactivate(conn, _params) do
+  @spec remove(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def remove(conn, _params) do
     coach_id = conn.path_params["id"]
 
-    with {:ok, coach} <- Coaches.deactivate_trainer(conn.assigns.ctx, coach_id) do
-      render(conn, :show, coach: coach)
+    with {:ok, coach} <- Coaches.remove_coach(conn.assigns.ctx, coach_id) do
+      ok(conn, %{data: team_member(coach, false)})
     end
   end
 
-  @spec reactivate(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def reactivate(conn, _params) do
-    coach_id = conn.path_params["id"]
-
-    with {:ok, coach} <- Coaches.reactivate_trainer(conn.assigns.ctx, coach_id) do
-      render(conn, :show, coach: coach)
-    end
-  end
+  defp team_member(coach, is_owner), do: %{coach: coach, is_owner: is_owner}
 end

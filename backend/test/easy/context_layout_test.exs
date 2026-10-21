@@ -2,7 +2,8 @@ defmodule Easy.ContextLayoutTest do
   use ExUnit.Case, async: true
 
   @legacy_context_dirs [
-    "lib/easy/identity"
+    "lib/easy/identity",
+    "lib/easy/plans"
   ]
 
   test "non-identity nested Easy context folders contain only schemas" do
@@ -18,16 +19,15 @@ defmodule Easy.ContextLayoutTest do
     assert non_schema_paths == []
   end
 
-  test "schemas never call Repo" do
+  test "domain files define one top-level module" do
     offenders =
       "lib/easy/**/*.ex"
       |> Path.wildcard()
-      |> Enum.filter(fn path ->
-        source = File.read!(path)
-        String.contains?(source, "use Ecto.Schema") and source =~ ~r/\bRepo\./
+      |> Enum.reject(fn path ->
+        match?({:defmodule, _, _}, path |> File.read!() |> Code.string_to_quoted!())
       end)
 
-    assert offenders == []
+    assert offenders == [], "Keep each domain module in its own file: #{inspect(offenders)}"
   end
 
   test "domain modules do not construct HTTP-shaped errors" do

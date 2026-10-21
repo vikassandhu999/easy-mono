@@ -150,6 +150,11 @@ Two App Platform domain gotchas:
 
 ## Day-to-day deploys
 
+The 2026-09-22 prototype baseline replaces the migration history and requires an
+empty database. Provision or reset the disposable prototype database before
+deploying across that boundary; the migrate job cannot upgrade a pre-baseline
+database. See [database baseline](../backend/README.md#database-baseline).
+
 Push to `main`. Vercel rebuilds the frontends; App Platform rebuilds the image, runs the migrate
 job, then swaps the service. Vercel usually finishes first, so for API-contract changes the
 frontends can briefly hit the older API. The delete-then-use convention keeps that window
@@ -163,9 +168,9 @@ Vite bakes it at build time; changing it requires a redeploy.
 
 * Logs: `doctl apps logs 41f68af9-... <component> --type run` (components: `easy-mono-backend`,
   `migrate`). Deployment forensics: `doctl apps list-deployments` + `doctl apps get-deployment`.
-* Rollback: App Platform keeps prior deployments (one click). Migrations are the constraint — the
-  drop-schedule-entries migration (`20260706140000`) raises on down; never point a pre-nutrition
-  build at this schema.
+* Rollback: App Platform keeps prior deployments (one click). Pair the application
+  revision with a compatible schema. Rolling back the initial migrations deletes
+  their tables; restore a matching backup to recover a populated database.
 * Grant more seats to a business: attach a console to the service
   (`doctl apps console 41f68af9-... easy-mono-backend`), then in IEx:
   `Easy.Billing.grant_free_seats(Easy.Ctx.new("<business-id>", "<owner-user-id>"), 20)`.

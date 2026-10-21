@@ -1,11 +1,9 @@
 defmodule EasyWeb.Clients.UploadControllerTest do
   use Easy.ConnCase
 
-  import OpenApiSpex.TestAssertions
-
   setup do
     coach = insert(:coach)
-    client = insert(:client, creator: coach, business: coach.business, user: insert(:user), status: :active)
+    client = insert(:client, coach: coach, business: coach.business, user: insert(:user))
     conn = build_conn() |> authenticate_client(client) |> put_req_header("content-type", "application/json")
     %{client: client, conn: conn}
   end
@@ -27,7 +25,17 @@ defmodule EasyWeb.Clients.UploadControllerTest do
     assert data["upload_url_expires_at"]
     assert data["upload_headers"] == %{"Content-Type" => "audio/mpeg"}
     assert Easy.Repo.get!(Easy.Attachments.Attachment, data["id"]).client_id == client.id
-    assert_schema(data, "AttachmentUpload", EasyWeb.ApiSpec.spec())
+  end
+
+  test "POST /v1/client/uploads rejects extra body keys", %{conn: conn} do
+    conn =
+      post(conn, "/v1/client/uploads", %{
+        "content_type" => "image/png",
+        "byte_size" => 2_048,
+        "unexpected" => true
+      })
+
+    assert json_response(conn, 422)
   end
 
   test "rejects invalid metadata", %{conn: conn} do
@@ -45,15 +53,16 @@ defmodule EasyWeb.Clients.UploadControllerTest do
     assert json_response(conn, 403)
   end
 
-  test "POST /v1/client/attachments/download-urls returns URLs in request order", %{
+  test "GET attachment downloads remain readable after coaching ends, in request order", %{
     conn: conn,
     client: client
   } do
+    client.terms |> hd() |> Ecto.Changeset.change(ends_on: Date.add(Date.utc_today(), -1)) |> Easy.Repo.update!()
     first = insert(:attachment, business: client.business, client: client)
     second = insert(:attachment, business: client.business, client: client)
 
     conn =
-      post(conn, "/v1/client/attachments/download-urls", %{
+      get(conn, "/v1/client/attachments/download-urls", %{
         "attachment_ids" => [second.id, first.id]
       })
 
@@ -61,6 +70,5 @@ defmodule EasyWeb.Clients.UploadControllerTest do
     assert second_download["id"] == second.id
     assert first_download["id"] == first.id
     refute Map.has_key?(second_download, "storage_key")
-    assert_schema(second_download, "AttachmentDownload", EasyWeb.ApiSpec.spec())
   end
 end

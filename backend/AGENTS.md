@@ -61,7 +61,7 @@ Case 1 stamps `creator_id = ctx.user_id`. Case 2 authorizes the client in `ctx.b
 
 HTTP adapters: read `conn.assigns.ctx`, take params, call one context function, set status, render. Workflows that need a comment belong in a context. Errors go to `FallbackController`.
 
-Writes use `OpenApiSpex.Plug.CastAndValidate` and a co-located `operation`. After the plug, the body is `conn.body_params` (RM-008). Nested object schemas that feed `cast_embed` / `cast_assoc` set `struct?: false` (RM-007).
+Use `EasyWeb, :typed_controller` with a co-located `typed` declaration and return success through `ok`. After casting, read atom-keyed bodies from `conn.body_params`; path and query params keep string keys. Auth retains `OpenApiSpex.Plug.CastAndValidate` and `operation`. Its nested object schemas that feed `cast_embed` / `cast_assoc` set `struct?: false`.
 
 Identity ids come from `conn.path_params` (strings) as explicit context args. The body carries only editable fields, which go to `cast/3`. `cast/3` is key-agnostic; do not probe `Map.get("x") || Map.get(:x)`.
 
@@ -69,7 +69,7 @@ Identity ids come from `conn.path_params` (strings) as explicit context args. Th
 
 Exception: `AuthController` (signup, OTP, token refresh) may render raw `json(%{...})`.
 
-New multi-word path segments are kebab-case (`/workout-sessions`). Existing snake_case paths stay until a coordinated OpenAPI + frontend cutover.
+New multi-word path segments are kebab-case (`/workout-sessions`). Existing snake_case paths stay until a coordinated contract and frontend cutover.
 
 ## Contexts
 
@@ -103,9 +103,9 @@ Pure, composable, `query \\ __MODULE__`, never `Repo`.
 
 Preload associations the JSON response includes. List endpoints that render children must preload them.
 
-## OpenAPI
+## API contract
 
-A public JSON endpoint is unfinished until implementation, generated spec, and Swagger UI agree. Operation lives next to the action. Schema and JSON view change together (RM-002). The cutover sequence is the root **API** skill.
+For a public JSON endpoint or field, follow `docs/types-phoenix/add-a-route.md` from the repo root. Keep the `EasyWeb.Types` type, formatter, controller declaration, generated frontend types, and consuming hooks aligned. Auth still uses OpenApiSpex: its operation, schema, rendered JSON, generated spec, and Swagger UI must agree.
 
 Map user-controlled strings explicitly; never `String.to_atom/1` on input. Outbound HTTP is `Req`, behind a small module with normalized errors.
 
@@ -115,7 +115,7 @@ Invariants that matter belong in Postgres too (unique, FK, check, non-null, tena
 
 `SchemaCase` for schemas. Factories, not hand-rolled persisted structs, unless the test requires it.
 
-Cover the rule: valid and invalid input, trusted ids not cast, tenant scope, cross-tenant denial, `{:error, reason}` for expected failures, controller status and rendered shape, `assert_schema` on write responses (RM-002, RM-005). Dates compared to today are derived from `Date.utc_today()`, not calendar literals (RM-016).
+Cover the rule: valid and invalid input, trusted ids not cast, tenant scope, cross-tenant denial, `{:error, reason}` for expected failures, controller status and rendered JSON values. Typed routes check response shape; use `assert_schema` for the remaining auth OpenAPI responses. Dates compared to today are derived from `Date.utc_today()`, not calendar literals.
 
 ## Finish
 

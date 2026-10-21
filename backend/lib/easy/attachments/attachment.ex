@@ -2,7 +2,9 @@ defmodule Easy.Attachments.Attachment do
   use Ecto.Schema
 
   alias Easy.Clients.Client
+  alias Easy.MediaType
   alias Easy.Orgs.Business
+  alias Easy.Result
 
   import Ecto.Changeset
   import Ecto.Query
@@ -18,12 +20,15 @@ defmodule Easy.Attachments.Attachment do
   @type t :: %__MODULE__{}
 
   schema "attachments" do
+    field :source, Ecto.Enum, values: [:upload, :external_link], default: :upload
+    field :external_url, :string
     field :uploaded_by_type, Ecto.Enum, values: @actors
     field :uploaded_by_id, :binary_id
     field :storage_key, :string
     field :content_type, :string
     field :byte_size, :integer
     field :duration_ms, :integer
+    field :captured_on, :date
 
     belongs_to :business, Business
     belongs_to :client, Client
@@ -31,15 +36,17 @@ defmodule Easy.Attachments.Attachment do
     timestamps(type: :utc_datetime)
   end
 
-  @spec insert_changeset(String.t(), atom(), String.t(), String.t(), String.t(), map()) ::
+  @spec insert_changeset(String.t(), :coach | :client | :system, String.t(), String.t(), String.t(), map()) ::
           Ecto.Changeset.t()
   def insert_changeset(business_id, uploaded_by_type, uploaded_by_id, client_id, id, attrs) do
     %__MODULE__{id: id}
-    |> cast(attrs, [:storage_key, :content_type, :byte_size, :duration_ms])
+    |> cast(attrs, [:content_type, :byte_size, :duration_ms, :captured_on])
+    |> put_change(:source, :upload)
     |> put_change(:business_id, business_id)
     |> put_change(:client_id, client_id)
     |> put_change(:uploaded_by_type, uploaded_by_type)
     |> put_change(:uploaded_by_id, uploaded_by_id)
+    |> put_storage_key()
     |> validate_required([
       :business_id,
       :client_id,
@@ -57,6 +64,58 @@ defmodule Easy.Attachments.Attachment do
     |> unique_constraint(:storage_key)
     |> foreign_key_constraint(:business_id)
     |> foreign_key_constraint(:client_id, name: :attachments_client_business_id_fkey)
+  end
+
+  @spec external_link_changeset(String.t(), String.t(), {:coach, String.t()} | :system) :: Ecto.Changeset.t()
+  def external_link_changeset(business_id, url, uploader) do
+    {type, id} =
+      case uploader do
+        {:coach, coach_id} -> {:coach, coach_id}
+        :system -> {:system, nil}
+      end
+
+    %__MODULE__{id: Ecto.UUID.generate()}
+    |> cast(%{external_url: url}, [:external_url], empty_values: [])
+    |> put_change(:business_id, business_id)
+    |> put_change(:source, :external_link)
+    |> put_change(:uploaded_by_type, type)
+    |> put_change(:uploaded_by_id, id)
+    |> validate_required([:business_id, :source, :external_url, :uploaded_by_type])
+    |> validate_change(:external_url, fn :external_url, value ->
+      case URI.new(value) do
+        {:ok, %URI{scheme: scheme, host: host}} when scheme in ["http", "https"] and is_binary(host) and host != "" -> []
+        _ -> [external_url: "must be a full HTTP or HTTPS URL with a host"]
+      end
+    end)
+    |> foreign_key_constraint(:business_id)
+    |> check_constraint(:source, name: :attachments_source_valid)
+  end
+
+  defp put_storage_key(changeset) do
+    business_id = get_field(changeset, :business_id)
+    client_id = get_field(changeset, :client_id)
+    id = get_field(changeset, :id)
+    extension = MediaType.extension(get_field(changeset, :content_type))
+    put_change(changeset, :storage_key, "businesses/#{business_id}/clients/#{client_id}/attachments/#{id}.#{extension}")
+  end
+
+  @spec download_ids(term()) :: {:ok, [String.t()]} | {:error, :invalid_attachments}
+  def download_ids(ids) when is_list(ids) and ids != [] and length(ids) <= 50 do
+    with {:ok, ids} <- Result.traverse(ids, &cast_download_id/1),
+         true <- MapSet.size(MapSet.new(ids)) == length(ids) do
+      {:ok, ids}
+    else
+      _invalid -> {:error, :invalid_attachments}
+    end
+  end
+
+  def download_ids(_ids), do: {:error, :invalid_attachments}
+
+  defp cast_download_id(id) do
+    case is_binary(id) and Ecto.UUID.cast(id) do
+      {:ok, id} -> {:ok, id}
+      _invalid -> {:error, :invalid_attachments}
+    end
   end
 
   @spec for_business(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
@@ -78,7 +137,7 @@ defmodule Easy.Attachments.Attachment do
   def for_ids(query, ids), do: from(attachment in query, where: attachment.id in ^ids)
 
   @spec content_types() :: [String.t()]
-  def content_types, do: @image_content_types ++ @video_content_types ++ @audio_content_types
+  def content_types, do: @image_content_types ++ @video_content_types ++ @audio_content_types ++ ["application/pdf"]
 
   @spec image_content_types() :: [String.t()]
   def image_content_types, do: @image_content_types
@@ -86,6 +145,7 @@ defmodule Easy.Attachments.Attachment do
   defp max_byte_size(type) when type in @image_content_types, do: 15 * 1024 * 1024
   defp max_byte_size(type) when type in @video_content_types, do: 50 * 1024 * 1024
   defp max_byte_size(type) when type in @audio_content_types, do: 10 * 1024 * 1024
+  defp max_byte_size("application/pdf"), do: 15 * 1024 * 1024
   defp max_byte_size(_type), do: nil
 
   defp validate_byte_size(changeset) do

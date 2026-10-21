@@ -13,13 +13,14 @@
     "./api-error": "./src/api-error.ts",
     "./closed-vocabulary": "./src/closed-vocabulary.ts",
     "./meal-slots": "./src/meal-slots.ts",
-    "./nutrition-item-ref": "./src/nutrition-item-ref.ts",
-    "./nutrition-portion": "./src/nutrition-portion.ts",
-    "./parse-api-error": "./src/parse-api-error.ts"
+    "./parse-api-error": "./src/parse-api-error.ts",
+    "./use-durable-draft": "./src/use-durable-draft.ts",
+    "./use-draft-controller": "./src/use-draft-controller.ts"
   },
   "scripts": {
     "build": "tsc && vite build",
-    "lint": "biome check --write ."
+    "lint": "biome check --write .",
+    "check": "node ../../scripts/run-checks.mjs tests"
   },
   "devDependencies": {
     "@biomejs/biome": "2.4.15",

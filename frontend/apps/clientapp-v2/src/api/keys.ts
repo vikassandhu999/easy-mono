@@ -65,12 +65,6 @@ export const nutritionDayKeys = domain('nutrition-days');
 export const foodKeys = domain('nutrition-foods');
 export const recipeKeys = domain('nutrition-recipes');
 
-/** Old tags: FormAssignment/{id,LIST}. */
-export const formAssignmentKeys = domain('form-assignments');
-
-/** Old tag: WeightEntry/LIST. */
-export const weightEntryKeys = domain('weight-entries');
-
 export const authKeys = {
   all: ['auth'] as const,
   invitation: (token: string) => ['auth', 'invitation', token] as const,

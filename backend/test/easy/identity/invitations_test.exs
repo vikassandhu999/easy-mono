@@ -18,12 +18,10 @@ defmodule Easy.Identity.InvitationsTest do
     insert(:coach,
       business: business,
       user: nil,
-      status: :invited,
       email: "trainer-#{System.unique_integer([:positive])}@test.com",
-      first_name: "Tara",
-      last_name: "Trainer",
-      invitation_token: "tok-#{System.unique_integer([:positive])}",
-      invitation_sent_at: DateTime.utc_now(:second)
+      full_name: "Tara Trainer",
+      invite_token: "tok-#{System.unique_integer([:positive])}",
+      invited_at: DateTime.utc_now(:second)
     )
   end
 
@@ -34,7 +32,7 @@ defmodule Easy.Identity.InvitationsTest do
 
       assert {:ok, :otp_sent} =
                Invitations.accept_trainer_invite(%{
-                 "invitation_token" => coach.invitation_token,
+                 "invitation_token" => coach.invite_token,
                  "email" => coach.email
                })
 
@@ -57,14 +55,14 @@ defmodule Easy.Identity.InvitationsTest do
 
       assert {:ok, :otp_sent} =
                Invitations.accept_trainer_invite(%{
-                 "invitation_token" => coach.invitation_token,
+                 "invitation_token" => coach.invite_token,
                  "email" => coach.email
                })
 
       assert {:ok, tokens} =
                Invitations.verify_accept_trainer_invite(
                  %{
-                   "invitation_token" => coach.invitation_token,
+                   "invitation_token" => coach.invite_token,
                    "email" => coach.email,
                    "otp" => "123456"
                  },
@@ -76,9 +74,9 @@ defmodule Easy.Identity.InvitationsTest do
       assert tokens.refresh_token
 
       updated = Repo.get!(Coach, coach.id)
-      assert updated.status == :active
+      assert Coach.state(updated) == :active
       assert updated.user_id
-      assert updated.invitation_token == nil
+      assert updated.invite_token == nil
     end
 
     test "rejects a wrong OTP" do
@@ -87,14 +85,14 @@ defmodule Easy.Identity.InvitationsTest do
 
       assert {:ok, :otp_sent} =
                Invitations.accept_trainer_invite(%{
-                 "invitation_token" => coach.invitation_token,
+                 "invitation_token" => coach.invite_token,
                  "email" => coach.email
                })
 
       assert {:error, :invalid_otp} =
                Invitations.verify_accept_trainer_invite(
                  %{
-                   "invitation_token" => coach.invitation_token,
+                   "invitation_token" => coach.invite_token,
                    "email" => coach.email,
                    "otp" => "000000"
                  },
@@ -108,7 +106,7 @@ defmodule Easy.Identity.InvitationsTest do
 
       assert {:ok, :otp_sent} =
                Invitations.accept_trainer_invite(%{
-                 "invitation_token" => coach.invitation_token,
+                 "invitation_token" => coach.invite_token,
                  "email" => coach.email
                })
 
@@ -118,7 +116,7 @@ defmodule Easy.Identity.InvitationsTest do
       assert {:error, :otp_expired} =
                Invitations.verify_accept_trainer_invite(
                  %{
-                   "invitation_token" => coach.invitation_token,
+                   "invitation_token" => coach.invite_token,
                    "email" => coach.email,
                    "otp" => "123456"
                  },

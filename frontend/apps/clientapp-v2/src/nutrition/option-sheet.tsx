@@ -1,5 +1,5 @@
 /**
- * Option sheet — docked bottom sheet listing a slot's meal options (name + kcal),
+ * Option sheet — docked bottom sheet listing a slot's offered options (name + kcal),
  * active one marked. Mirrors amount-sheet's hand-rolled bottom-sheet shell.
  */
 import {Check} from 'lucide-react';

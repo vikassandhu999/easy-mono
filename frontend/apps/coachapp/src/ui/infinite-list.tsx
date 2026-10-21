@@ -1,0 +1,171 @@
+import type {InfiniteData, UseInfiniteQueryResult} from '@tanstack/react-query';
+import {type ReactNode, useEffect, useRef} from 'react';
+import {ApiError, errorMessage} from '../api/client';
+import {type CursorPage, latestPageCount} from '../api/pagination';
+import {Button} from './button';
+import {FormError} from './form-error';
+import {Surface} from './page';
+
+type ListQuery<Item> = Pick<
+  UseInfiniteQueryResult<InfiniteData<CursorPage<Item>>, Error>,
+  | 'data'
+  | 'error'
+  | 'isPending'
+  | 'isPaused'
+  | 'isError'
+  | 'isFetching'
+  | 'isFetchingNextPage'
+  | 'isFetchNextPageError'
+  | 'hasNextPage'
+  | 'fetchNextPage'
+  | 'refetch'
+>;
+
+export function InfiniteList<Item extends {id: string}>({
+  query,
+  label,
+  singular,
+  empty,
+  children,
+}: {
+  query: ListQuery<Item>;
+  label: string;
+  singular: string;
+  empty: ReactNode;
+  children: (item: Item) => ReactNode;
+}) {
+  const sentinel = useRef<HTMLDivElement>(null);
+  const {hasNextPage, isFetching, isError, fetchNextPage} = query;
+  useEffect(() => {
+    const node = sentinel.current;
+    if (!node || !hasNextPage || isFetching || isError || !('IntersectionObserver' in window)) {
+      return;
+    }
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting) {
+          observer.disconnect();
+          fetchNextPage({cancelRefetch: false});
+        }
+      },
+      {rootMargin: '200px'},
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [hasNextPage, isFetching, isError, fetchNextPage]);
+
+  if (!query.data) {
+    return (
+      <Surface>
+        {query.isPending ? (
+          <p
+            role="status"
+            className="py-8 text-muted-foreground"
+          >
+            {query.isPaused ? 'Waiting for a connection…' : `Loading ${label}…`}
+          </p>
+        ) : (
+          <div className="space-y-4">
+            <FormError message={errorMessage(query.error, `We couldn't load your ${label}. Please try again.`)} />
+            <Button
+              variant="outline"
+              isPending={isFetching}
+              onPress={() => {
+                query.refetch();
+              }}
+            >
+              Try again
+            </Button>
+          </div>
+        )}
+      </Surface>
+    );
+  }
+
+  const restartPage = query.isFetchNextPageError && query.error instanceof ApiError && query.error.status === 422;
+  const count = latestPageCount(query.data.pages);
+  const items = [...new Map(query.data.pages.flatMap((page) => page.data).map((item) => [item.id, item])).values()];
+  return (
+    <div className="space-y-4">
+      <p
+        role="status"
+        className="text-sm text-muted-foreground"
+      >
+        {count === null ? 'Count unavailable' : `${count} ${count === 1 ? singular : label}`}
+        {isFetching && !query.isFetchingNextPage ? ' · Updating…' : ''}
+      </p>
+      {query.isPaused && (
+        <p
+          role="status"
+          className="text-sm text-muted-foreground"
+        >
+          Waiting for a connection… Your loaded results are still here.
+        </p>
+      )}
+      <p
+        role="status"
+        className="sr-only"
+      >
+        {query.isFetchingNextPage ? `Loading more ${label}…` : `Loaded results ready.`}
+      </p>
+      {items.length === 0 ? (
+        empty
+      ) : (
+        <ul
+          aria-label={label}
+          className="divide-y divide-border overflow-hidden rounded-2xl border border-border bg-surface"
+        >
+          {items.map((item) => (
+            <li key={item.id}>{children(item)}</li>
+          ))}
+        </ul>
+      )}
+      {query.isError && (
+        <FormError
+          message={
+            restartPage
+              ? 'This list has changed. Try again to load the latest results.'
+              : errorMessage(
+                  query.error,
+                  query.isFetchNextPageError
+                    ? `Couldn't load more ${label}. Your loaded results are still here.`
+                    : `Couldn't update ${label}. Showing the previous results.`,
+                )
+          }
+        />
+      )}
+      <div
+        ref={sentinel}
+        className={hasNextPage || query.isError ? 'flex justify-center py-2' : 'sr-only'}
+      >
+        {query.isError && (!query.isFetchNextPageError || restartPage) ? (
+          <Button
+            variant="outline"
+            isPending={isFetching}
+            onPress={() => {
+              query.refetch();
+            }}
+          >
+            Try again
+          </Button>
+        ) : (
+          hasNextPage && (
+            <Button
+              variant="outline"
+              isPending={isFetching}
+              onPress={() => {
+                fetchNextPage({cancelRefetch: false});
+              }}
+            >
+              {query.isFetchingNextPage
+                ? 'Loading more…'
+                : query.isFetchNextPageError
+                  ? 'Retry loading more'
+                  : 'Load more'}
+            </Button>
+          )
+        )}
+      </div>
+    </div>
+  );
+}

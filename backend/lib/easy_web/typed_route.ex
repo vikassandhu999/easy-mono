@@ -1,0 +1,158 @@
+defmodule EasyWeb.TypedRoute do
+  alias EasyWeb.TypedRoute.{Check, Dump, Type}
+
+  @spec __using__(keyword()) :: Macro.t()
+  defmacro __using__(opts) do
+    adapter = opts |> Keyword.fetch!(:adapter) |> Macro.expand(__CALLER__)
+
+    quote do
+      import EasyWeb.TypedRoute, only: [typed: 2, ok: 1, ok: 2]
+      plug EasyWeb.TypedRoute.Plug, adapter: unquote(adapter)
+      @typed_routes %{}
+      @typed_route_adapter unquote(adapter)
+      @before_compile EasyWeb.TypedRoute
+    end
+  end
+
+  @spec typed(atom(), keyword()) :: Macro.t()
+  defmacro typed(action, opts) do
+    route = compile_route(action, opts, __CALLER__)
+
+    quote do
+      @typed_routes Map.put(@typed_routes, unquote(action), unquote(Macro.escape(route)))
+    end
+  end
+
+  @spec __before_compile__(Macro.Env.t()) :: Macro.t()
+  defmacro __before_compile__(env) do
+    routes = env.module |> Module.get_attribute(:typed_routes) |> List.wrap() |> List.first() || %{}
+    plugs = Module.get_attribute(env.module, :plugs) || []
+    adapter = Module.get_attribute(env.module, :typed_route_adapter)
+    routes = adapter.enrich_routes(routes, plugs, env)
+    source = File.read!(env.file)
+    reject_openapi!(env.module, env)
+    reject_forbidden!(source, env)
+    reject_untyped_actions!(env.module, routes, env)
+
+    quote do
+      @spec __typed_route__(atom()) :: map() | nil
+      def __typed_route__(action), do: Map.get(unquote(Macro.escape(routes)), action)
+
+      @spec __typed_route_adapter__() :: module()
+      def __typed_route_adapter__, do: unquote(adapter)
+    end
+  end
+
+  @spec ok(Plug.Conn.t()) :: Plug.Conn.t()
+  def ok(conn) do
+    case route!(conn).ok do
+      {204, nil} ->
+        Plug.Conn.send_resp(conn, 204, "")
+
+      other ->
+        raise ArgumentError, "ok/1 requires ok: {204, nil}, got #{inspect(other)}"
+    end
+  end
+
+  @spec ok(Plug.Conn.t(), term()) :: Plug.Conn.t()
+  def ok(conn, {:replay, payload}) do
+    route = route!(conn)
+
+    case route[:replay_status] do
+      nil -> raise ArgumentError, "action does not declare a replay response"
+      status -> respond(conn, payload, status, elem(route.ok, 1))
+    end
+  end
+
+  def ok(conn, payload) do
+    {status, ir} = route!(conn).ok
+    respond(conn, payload, status, ir)
+  end
+
+  defp respond(conn, payload, status, ir) do
+    formatted = Dump.dump(payload, ir)
+    if Application.get_env(:easy, :check_typed_responses, false), do: Check.assert!(formatted, ir)
+
+    conn
+    |> Plug.Conn.put_resp_content_type("application/json")
+    |> Plug.Conn.send_resp(status, Jason.encode!(formatted))
+  end
+
+  defp compile_route(action, opts, env) when is_atom(action) and is_list(opts) do
+    extras = Keyword.keys(opts) -- [:body, :query, :path, :ok, :replay_status]
+
+    if extras != [] do
+      raise ArgumentError, "unknown typed keys #{inspect(extras)} on #{action}"
+    end
+
+    {status, body_type} = Keyword.get(opts, :ok) || raise ArgumentError, "typed #{action} is missing ok:"
+
+    unless is_integer(status) do
+      raise ArgumentError, "typed #{action} ok status must be an integer, got #{inspect(status)}"
+    end
+
+    replay_status = Keyword.get(opts, :replay_status)
+
+    unless is_nil(replay_status) or (status == 201 and replay_status == 200),
+      do: raise(ArgumentError, "replay_status supports 200 for a 201 create response")
+
+    %{
+      action: action,
+      replay_status: replay_status,
+      body: expand_opt(Keyword.get(opts, :body), env),
+      query: expand_opt(Keyword.get(opts, :query), env),
+      path: expand_opt(Keyword.get(opts, :path), env),
+      ok: {status, expand_opt(body_type, env)}
+    }
+  end
+
+  defp expand_opt(nil, _env), do: nil
+  defp expand_opt(ast, env), do: Type.expand(ast, env)
+
+  defp route!(conn) do
+    controller = conn.private.phoenix_controller
+    action = conn.private.phoenix_action
+
+    controller.__typed_route__(action) ||
+      raise ArgumentError, "#{inspect(controller)} has no type #{action}"
+  end
+
+  defp reject_openapi!(module, env) do
+    if Module.defines?(module, {:open_api_operation, 1}) do
+      raise CompileError,
+        file: env.file,
+        line: env.line,
+        description: "#{inspect(module)} cannot mix typed and OpenApiSpex operation"
+    end
+  end
+
+  defp reject_forbidden!(source, env) do
+    if source =~ ~r/\b(?:render|json|put_view|put_status|send_resp)\(/ do
+      raise CompileError,
+        file: env.file,
+        line: env.line,
+        description: "#{inspect(env.module)} typed actions must return through ok/1 or ok/2"
+    end
+  end
+
+  defp reject_untyped_actions!(module, routes, env) do
+    skip = MapSet.new([:action, :call, :init, :__typed_route__, :__typed_route_adapter__])
+
+    missing =
+      module
+      |> Module.definitions_in(:def)
+      |> Enum.map(&elem(&1, 0))
+      |> Enum.uniq()
+      |> Enum.reject(fn name ->
+        String.starts_with?(Atom.to_string(name), "__") or MapSet.member?(skip, name) or
+          Map.has_key?(routes, name)
+      end)
+
+    if missing != [] do
+      raise CompileError,
+        file: env.file,
+        line: env.line,
+        description: "#{inspect(module)} public actions missing typed: #{inspect(missing)}"
+    end
+  end
+end

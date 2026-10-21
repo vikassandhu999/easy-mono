@@ -22,7 +22,7 @@
   "files": [],
   "references": [
     {
-      "path": "apps/coachapp-v2/tsconfig.json"
+      "path": "apps/coachapp/tsconfig.json"
     },
     {
       "path": "apps/website/tsconfig.json"

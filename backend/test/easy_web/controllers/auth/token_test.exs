@@ -3,6 +3,8 @@ defmodule EasyWeb.Auth.TokenTest do
 
   import Ecto.Query
 
+  alias Easy.Identity.{OneTimeToken, OneTimeTokens, Users, UserSession}
+  alias Easy.Repo
   alias EasyWeb.OpenApi.Schemas.{TokenRequest, VerifyRequest}
 
   describe "TokenRequest" do
@@ -35,6 +37,8 @@ defmodule EasyWeb.Auth.TokenTest do
   describe "POST /v1/auth/token" do
     test "refreshes a valid session", %{conn: conn} do
       session = insert(:user_session, role: :guest)
+      conn = %{conn | remote_ip: {0x2001, 0xDB8, 0, 0, 0, 0, 0, 1}}
+      conn = put_req_header(conn, "user-agent", "Token test client")
 
       conn =
         post(conn, "/v1/auth/token", %{
@@ -51,6 +55,9 @@ defmodule EasyWeb.Auth.TokenTest do
 
       assert is_binary(access_token)
       assert is_binary(refresh_token)
+      refreshed = Repo.get!(UserSession, session.id)
+      assert refreshed.ip == "2001:db8::1"
+      assert refreshed.user_agent == "Token test client"
     end
 
     test "rejects a garbage body with a 4xx response", %{conn: conn} do
@@ -92,6 +99,9 @@ defmodule EasyWeb.Auth.TokenTest do
         })
 
       assert %{"access_token" => _, "scope" => "guest"} = json_response(conn, 200)
+      session = Repo.get_by!(UserSession, user_id: user.id)
+      assert session.ip == "127.0.0.1"
+      assert session.user_agent == "unknown"
     end
 
     # Regression: only invitation-acceptance codes were checked for freshness, so
@@ -115,16 +125,16 @@ defmodule EasyWeb.Auth.TokenTest do
 
   defp confirmed_user_with_otp(otp) do
     user = insert(:user)
-    {:ok, user} = Easy.Identity.Users.confirm_user_email(user)
-    {:ok, _} = Easy.Identity.OneTimeTokens.create_token(user, :authentication, otp)
+    {:ok, user} = Users.confirm_user_email(user)
+    {:ok, _} = OneTimeTokens.create_token(user, :authentication, otp)
     user
   end
 
   defp backdate_tokens(user, minutes: minutes) do
     stale = NaiveDateTime.utc_now() |> NaiveDateTime.add(-minutes * 60) |> NaiveDateTime.truncate(:second)
 
-    Easy.Repo.update_all(
-      from(t in Easy.Identity.OneTimeToken, where: t.user_id == ^user.id),
+    Repo.update_all(
+      from(t in OneTimeToken, where: t.user_id == ^user.id),
       set: [inserted_at: stale]
     )
   end

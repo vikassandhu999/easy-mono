@@ -9,6 +9,7 @@ config :easy, Easy.Repo,
   username: "admin",
   password: "L2KjxOH9al",
   hostname: "localhost",
+  port: String.to_integer(System.get_env("TEST_DATABASE_PORT", "5432")),
   database: "easy_test#{System.get_env("MIX_TEST_PARTITION")}",
   pool: Ecto.Adapters.SQL.Sandbox,
   pool_size: System.schedulers_online() * 2
@@ -23,9 +24,14 @@ config :easy, EasyWeb.Endpoint,
 # In test we don't send emails
 config :easy, Easy.Mailer, adapter: Swoosh.Adapters.Test
 
-config :easy, start_client_subscription_sweeper: false
-config :easy, start_check_in_sweeper: false
-config :easy, start_nutrition_diary_ledger_sweeper: false
+# Real browser tests use ordinary connections in a disposable, fixed database.
+# This override exists only in MIX_ENV=test; dev and production cannot enable it.
+if System.get_env("EASY_E2E") == "true" do
+  config :easy, Easy.Repo, database: "easy_test_e2e", pool: DBConnection.ConnectionPool
+  config :easy, EasyWeb.Endpoint, http: [ip: {127, 0, 0, 1}, port: 4400]
+  config :easy, Easy.Mailer, adapter: Swoosh.Adapters.Local
+  config :easy, :fixed_otp, "123456"
+end
 
 config :easy, Easy.Storage,
   endpoint: "https://storage.example.test",
@@ -55,3 +61,5 @@ config :easy, Easy.Razorpay,
   plan_id: "plan_test",
   seat_price_inr: 499,
   req_options: [plug: {Req.Test, Easy.Razorpay}]
+
+config :easy, :check_typed_responses, true

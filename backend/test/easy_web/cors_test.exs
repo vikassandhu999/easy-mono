@@ -1,16 +1,13 @@
 defmodule EasyWeb.CorsTest do
   use Easy.ConnCase, async: true
 
-  test "client Diary writes allow the Idempotency-Key header", %{conn: conn} do
+  test "client tracker saves allow authenticated PATCH requests", %{conn: conn} do
     conn =
       conn
       |> put_req_header("origin", "http://localhost:1314")
-      |> put_req_header("access-control-request-method", "POST")
-      |> put_req_header(
-        "access-control-request-headers",
-        "authorization,content-type,idempotency-key"
-      )
-      |> options("/v1/client/nutrition-days/2026-08-21/extras")
+      |> put_req_header("access-control-request-method", "PATCH")
+      |> put_req_header("access-control-request-headers", "authorization,content-type")
+      |> options("/v1/client/tracker-entries/example")
 
     assert response(conn, 204)
 
@@ -21,6 +18,8 @@ defmodule EasyWeb.CorsTest do
       |> String.downcase()
       |> String.split(",")
 
-    assert "idempotency-key" in allowed_headers
+    assert "authorization" in allowed_headers
+    assert "content-type" in allowed_headers
+    refute "idempotency-key" in allowed_headers
   end
 end

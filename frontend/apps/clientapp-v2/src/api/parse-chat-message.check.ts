@@ -16,6 +16,8 @@ const message = {
   inserted_at: '2026-08-02T10:00:00Z',
   sender_id: '00000000-0000-4000-8000-000000000003',
   sender_type: 'coach',
+  sender_name: 'Coach',
+  request_id: null,
 } satisfies ChatMessage;
 
 assert(parseChatMessage(message)?.id === message.id, 'valid socket payloads must parse');

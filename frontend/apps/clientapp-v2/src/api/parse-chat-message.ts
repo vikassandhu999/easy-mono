@@ -1,6 +1,6 @@
-import type {components} from './schema.ts';
+import type {ChatMessage} from './schema.ts';
 
-export type ChatMessage = components['schemas']['ChatMessage'];
+export type {ChatMessage} from './schema.ts';
 
 const CHAT_SENDER_TYPES = ['coach', 'client'] as const;
 
@@ -14,7 +14,8 @@ export function parseChatMessage(payload: unknown): ChatMessage | null {
     return null;
   }
 
-  const {attachments, body, conversation_id, embed, id, inserted_at, sender_id, sender_type} = payload;
+  const {attachments, body, conversation_id, embed, id, inserted_at, request_id, sender_id, sender_name, sender_type} =
+    payload;
   if (typeof id !== 'string' || typeof conversation_id !== 'string' || typeof sender_id !== 'string') {
     return null;
   }
@@ -22,6 +23,12 @@ export function parseChatMessage(payload: unknown): ChatMessage | null {
     return null;
   }
   if (body !== null && typeof body !== 'string') {
+    return null;
+  }
+  if (
+    (sender_name !== null && typeof sender_name !== 'string') ||
+    (request_id !== null && typeof request_id !== 'string')
+  ) {
     return null;
   }
   if (typeof inserted_at !== 'string') {
@@ -41,7 +48,9 @@ export function parseChatMessage(payload: unknown): ChatMessage | null {
     embed: embed as ChatMessage['embed'],
     id,
     inserted_at,
+    request_id,
     sender_id,
+    sender_name,
     sender_type: sender_type as ChatMessage['sender_type'],
   };
 }

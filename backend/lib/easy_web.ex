@@ -1,4 +1,5 @@
 defmodule EasyWeb do
+  @spec router() :: Macro.t()
   def router do
     quote do
       use Phoenix.Router, helpers: false
@@ -9,6 +10,7 @@ defmodule EasyWeb do
     end
   end
 
+  @spec controller() :: Macro.t()
   def controller do
     quote do
       use Phoenix.Controller, formats: [:json], renderer: EasyWeb.AppJSON
@@ -24,6 +26,15 @@ defmodule EasyWeb do
     end
   end
 
+  @spec typed_controller() :: Macro.t()
+  def typed_controller do
+    quote do
+      use EasyWeb, :controller
+      use EasyWeb.TypedRoute, adapter: EasyWeb.TypedRouteAdapter
+    end
+  end
+
+  @spec verified_routes() :: Macro.t()
   def verified_routes do
     quote do
       use Phoenix.VerifiedRoutes,
@@ -32,6 +43,7 @@ defmodule EasyWeb do
     end
   end
 
+  @spec __using__(atom()) :: Macro.t()
   defmacro __using__(which) when is_atom(which) do
     apply(__MODULE__, which, [])
   end

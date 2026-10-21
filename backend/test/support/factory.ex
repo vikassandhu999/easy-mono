@@ -5,39 +5,21 @@ defmodule Easy.Factory do
   alias Easy.Billing.BusinessBilling
   alias Easy.Chat.MessageAttachment
   alias Easy.Clients.Client
-  alias Easy.Fitness.WeightEntry
-  alias Easy.Forms.CheckInSchedule
-  alias Easy.Forms.FormAssignment
-  alias Easy.Forms.FormSubmission
-  alias Easy.Forms.FormTemplate
   alias Easy.Identity.User
   alias Easy.Identity.UserSession
   alias Easy.LibraryMedia.Media, as: LibraryMedia
-  alias Easy.Nutrition.DayPattern
   alias Easy.Nutrition.Food
-  alias Easy.Nutrition.Meal
-  alias Easy.Nutrition.MealItem
-  alias Easy.Nutrition.MealOption
-  alias Easy.Nutrition.Plan
-  alias Easy.Nutrition.Recipe
-  alias Easy.Nutrition.RecipeIngredient
   alias Easy.Orgs.Business
   alias Easy.Orgs.Coach
-  alias Easy.Training.TrainingEquipment
-  alias Easy.Training.TrainingExercise
-  alias Easy.Training.TrainingMuscle
-  alias Easy.Training.TrainingPlan
-  alias Easy.Training.TrainingPerformedSet
-  alias Easy.Training.TrainingSession
-  alias Easy.Training.PrescribedExercise
-  alias Easy.Training.TrainingWorkout, as: Workout
-  alias Easy.Training.WorkoutSchedule
+  alias Easy.Trackers.Content
+  alias Easy.Trackers.Template
+  alias Easy.Workouts.Exercise
+  alias Easy.Workouts.ExerciseMetric
 
   def user_factory do
     %User{
       email: sequence(:email, &unique_test_email("user", &1)),
-      first_name: "Test",
-      last_name: "User"
+      full_name: "Test User"
     }
   end
 
@@ -46,14 +28,15 @@ defmodule Easy.Factory do
       name: sequence(:business_name, &"Business #{&1}"),
       handle: sequence(:handle, &"biz-#{&1}-#{System.unique_integer([:positive])}"),
       timezone: Easy.LocalCalendar.default_timezone(),
-      owner: build(:user)
+      owner: build(:user),
+      billing: %BusinessBilling{}
     }
   end
 
   def business_billing_factory do
     %BusinessBilling{
-      business: build(:business),
-      free_seats: 2,
+      business: build(:business, billing: nil),
+      free_seats: 10,
       paid_seats: 0,
       status: :free
     }
@@ -61,10 +44,8 @@ defmodule Easy.Factory do
 
   def coach_factory do
     %Coach{
-      first_name: "Test",
-      last_name: "Coach",
+      full_name: "Test Coach",
       email: sequence(:coach_email, &unique_test_email("coach", &1)),
-      status: :active,
       user: build(:user),
       business: build(:business)
     }
@@ -79,132 +60,34 @@ defmodule Easy.Factory do
     }
   end
 
-  # Arity-1 so an overridden `creator:` also becomes the `assigned_coach:` default —
-  # ExMachina only merges attrs over the arity-0 return value, which would leave
-  # assigned_coach pointing at this factory's own throwaway coach instead of the
-  # caller's override.
   def client_factory(attrs) do
-    # `business` and `creator` are persisted (not merely built) because each is
-    # referenced from two belongs_to paths below (client.business/client.creator.business,
-    # and client.creator/client.assigned_coach). An unsaved struct shared across two
-    # paths gets cascade-inserted twice by Ecto, tripping the businesses/users/coaches
-    # unique constraints.
-    business =
-      attrs[:business] ||
-        insert(:business,
-          owner: build(:user, email: sequence(:business_owner_email, &unique_test_email("business-owner", &1)))
-        )
-
-    creator =
-      attrs[:creator] ||
-        insert(:coach,
-          business: business,
-          user: build(:user, email: sequence(:coach_user_email, &unique_test_email("coach-user", &1)))
-        )
+    business = attrs[:business] || insert(:business)
+    coach = attrs[:coach] || insert(:coach, business: business)
+    user = if Map.has_key?(attrs, :user), do: attrs[:user], else: build(:user)
 
     %Client{
       email: sequence(:client_email, &"client-#{&1}@test.com"),
-      first_name: "Test",
-      last_name: "Client",
+      full_name: "Test Client",
       phone: "123-456-7890",
       notes: "Test client",
-      status: :active,
-      timezone: Easy.LocalCalendar.default_timezone(),
-      user: build(:user, email: sequence(:client_user_email, &unique_test_email("client-user", &1))),
+      user: user,
       business: business,
-      creator: creator,
-      assigned_coach: creator
+      coach: coach,
+      terms: if(user, do: [build(:coaching_term, starts_on: Date.add(Date.utc_today(), -365))], else: [])
     }
     |> merge_attributes(attrs)
+  end
+
+  def coaching_term_factory do
+    %Easy.CoachingTerms.CoachingTerm{starts_on: Date.utc_today()}
   end
 
   def client_attrs_factory do
     %{
       "email" => sequence(:client_invite_email, &"invite-#{&1}@test.com"),
-      "first_name" => "Invited",
-      "last_name" => "Client",
+      "full_name" => "Invited Client",
       "phone" => "123-555-7890",
       "notes" => "Invited via test"
-    }
-  end
-
-  def form_template_factory do
-    %FormTemplate{
-      business: build(:business),
-      name: sequence(:form_template_name, &"Check-in #{&1}"),
-      purpose: "check_in",
-      sections: [
-        %{
-          "title" => "Nutrition",
-          "section" => "nutrition",
-          "questions" => [
-            %{
-              "id" => "meal_prep_ability",
-              "label" => "Meal prep ability",
-              "type" => "select",
-              "required" => true,
-              "options" => ["low", "medium", "high"]
-            }
-          ]
-        }
-      ],
-      status: "active"
-    }
-  end
-
-  def check_in_schedule_factory do
-    client = build(:client)
-    template = build(:form_template, business: client.business)
-
-    %CheckInSchedule{
-      business: client.business,
-      client: client,
-      form_template: template,
-      frequency: :weekly,
-      next_due_on: Date.utc_today(),
-      active: true
-    }
-  end
-
-  def form_assignment_factory do
-    client = build(:client)
-    template = build(:form_template, business: client.business)
-
-    %FormAssignment{
-      business: client.business,
-      client: client,
-      form_template: template,
-      purpose: "check_in",
-      priority: "high",
-      status: "assigned"
-    }
-  end
-
-  def form_submission_factory do
-    assignment = build(:form_assignment)
-
-    %FormSubmission{
-      business: assignment.business,
-      client: assignment.client,
-      form_assignment: assignment,
-      question_snapshot: assignment.form_template.sections,
-      answers: %{"meal_prep_ability" => "high"},
-      submitted_by_type: "client",
-      submitted_by_id: assignment.client_id,
-      submitted_at: DateTime.utc_now(:second)
-    }
-  end
-
-  def weight_entry_factory do
-    client = build(:client)
-
-    %WeightEntry{
-      date: ~D[2026-04-22],
-      value: Decimal.new("91.40"),
-      unit: :kg,
-      note: nil,
-      client: client,
-      business: client.business
     }
   end
 
@@ -236,396 +119,42 @@ defmodule Easy.Factory do
     }
   end
 
-  def inquiry_attrs_factory do
-    %{
-      "first_name" => "Vikas",
-      "last_name" => "Sandhu",
-      "email" => sequence(:inquiry_email, &"inquiry-#{&1}@test.com"),
-      "phone" => "+91 98765 43210"
-    }
-  end
+  def food_factory(attrs) do
+    business = attrs[:business] || insert(:business)
 
-  def food_factory do
     %Food{
       name: sequence(:food_name, &"Food #{&1}"),
-      source: :custom,
-      category: "protein",
-      calories_per_100g: 200.0,
-      protein_g_per_100g: 20.0,
-      carbs_g_per_100g: 30.0,
-      fat_g_per_100g: 5.0,
-      fiber_g_per_100g: 2.0,
-      allergens: [],
-      dietary_tags: ["high_protein"],
-      notes: "Test food",
-      serving_sizes: [],
-      revision: 1,
-      creator: build(:coach),
-      business: build(:business)
-    }
-  end
-
-  def food_attrs_factory do
-    %{
-      "name" => sequence(:food_attr_name, &"New Food #{&1}"),
-      "calories_per_100g" => 150.0,
-      "protein_g_per_100g" => 10.0,
-      "carbs_g_per_100g" => 20.0,
-      "fat_g_per_100g" => 3.0,
-      "fiber_g_per_100g" => 1.0,
-      "sugar_g_per_100g" => 6.0,
-      "serving_sizes" => [
-        %{"label" => "1 cup", "unit" => "cup", "weight_g" => 100.0, "amount" => 1.0, "is_default" => true}
-      ]
-    }
-  end
-
-  def recipe_factory do
-    %Recipe{
-      name: sequence(:recipe_name, &"Recipe #{&1}"),
-      description: "Test recipe",
-      instructions: "Mix and serve",
-      servings_count: 2,
-      cooked_weight_g: 400.0,
-      revision: 1,
-      allergens: [],
-      dietary_tags: [],
-      recipe_ingredients: [],
-      creator: build(:coach),
-      business: build(:business)
-    }
-  end
-
-  def recipe_ingredient_factory do
-    %RecipeIngredient{
-      food: build(:food),
-      amount: 1.0,
-      unit: "g",
-      weight_g: 50.0,
-      position: 0
-    }
-  end
-
-  def recipe_attrs_factory do
-    %{
-      "name" => sequence(:recipe_attr_name, &"New Recipe #{&1}"),
-      "description" => "New recipe",
-      "instructions" => "Cook",
-      "servings_count" => 2,
-      "cooked_weight_g" => 400.0
-    }
-  end
-
-  def plan_factory(attrs) do
-    attrs = Map.new(attrs)
-    {creator, attrs} = Map.pop(attrs, :creator)
-    {business, attrs} = Map.pop(attrs, :business)
-    {client, attrs} = Map.pop(attrs, :client)
-    {kind, attrs} = Map.pop(attrs, :kind)
-    {archived_at, attrs} = Map.pop(attrs, :archived_at)
-    {status, attrs} = Map.pop(attrs, :status)
-    {start_date, attrs} = Map.pop(attrs, :start_date)
-    {end_date, attrs} = Map.pop(attrs, :end_date)
-
-    business = business || insert(:business)
-    kind = kind || if(client || attrs[:client_id], do: :client_plan, else: :template)
-    period? = kind == :client_plan
-    archived_at = archived_at || if(status in [:archived, "archived"], do: DateTime.utc_now(:second))
-
-    %Plan{
-      kind: kind,
-      name: sequence(:plan_name, &"Plan #{&1}"),
-      description: "Weekly plan",
-      revision: 1,
-      archived_at: archived_at,
-      target_calories: 2000.0,
-      target_protein_g: 150.0,
-      target_carbs_g: 200.0,
-      target_fat_g: 60.0,
-      target_fiber_g: 30.0,
-      start_date: if(period?, do: start_date),
-      end_date: if(period?, do: end_date),
-      creator: unwrap_plan_creator(creator),
-      business: business,
-      client: client
-    }
-    |> merge_attributes(attrs)
-  end
-
-  defp unwrap_plan_creator(%Coach{user: %User{} = user}), do: user
-  defp unwrap_plan_creator(nil), do: build(:user)
-  defp unwrap_plan_creator(creator), do: creator
-
-  def plan_attrs_factory do
-    %{
-      "name" => sequence(:plan_attr_name, &"New Plan #{&1}"),
-      "description" => "Plan created via test",
-      "target_calories" => 1800.0,
-      "target_protein_g" => 120.0,
-      "target_carbs_g" => 180.0,
-      "target_fat_g" => 50.0,
-      "target_fiber_g" => 25.0
-    }
-  end
-
-  def meal_factory(attrs) do
-    attrs = Map.new(attrs)
-    {plan, attrs} = Map.pop(attrs, :plan)
-    {business, attrs} = Map.pop(attrs, :business)
-    {creator, attrs} = Map.pop(attrs, :creator)
-
-    business = business || (plan && plan.business) || insert(:business)
-    plan = plan || build(:plan, business: business, creator: creator || insert(:coach, business: business))
-
-    %Meal{
-      name: sequence(:meal_name, &"Meal #{&1}"),
-      notes: nil,
-      position: sequence(:meal_position, & &1),
-      business: business,
-      plan: plan
-    }
-    |> merge_attributes(attrs)
-  end
-
-  def day_pattern_factory do
-    plan = build(:plan)
-
-    %DayPattern{
-      name: "Everyday",
-      position: sequence(:day_pattern_position, & &1),
-      business: plan.business,
-      plan: plan
-    }
-  end
-
-  def meal_option_factory do
-    meal = build(:meal)
-    pattern = build(:day_pattern, plan: meal.plan, business: meal.business)
-
-    %MealOption{
-      meal_slot: :breakfast,
-      position: 0,
-      business: meal.business,
-      plan: meal.plan,
-      day_pattern: pattern,
-      meal: meal
-    }
-  end
-
-  def meal_item_factory(attrs) do
-    attrs = Map.new(attrs)
-    {meal, attrs} = Map.pop(attrs, :meal)
-    {business, attrs} = Map.pop(attrs, :business)
-    {plan, attrs} = Map.pop(attrs, :plan)
-    {food, attrs} = Map.pop(attrs, :food)
-    {recipe, attrs} = Map.pop(attrs, :recipe)
-    {portion, attrs} = pop_meal_item_portion(attrs)
-
-    meal = meal || build(:meal)
-    plan = plan || meal.plan
-    business = business || meal.business
-    food = food || unless(recipe, do: build(:food, business: business))
-
-    %MealItem{
-      portion_kind: portion.kind,
-      weight_g: portion.weight_g,
-      amount: portion.amount,
-      unit: portion.unit,
-      serving_label: portion.serving_label,
-      position: 0,
-      calories: nil,
-      protein: nil,
-      carbohydrates: nil,
-      fat: nil,
-      fiber: nil,
-      complete: false,
-      food: food,
-      recipe: recipe,
-      business: business,
-      plan: plan,
-      meal: meal
-    }
-    |> merge_attributes(attrs)
-  end
-
-  defp pop_meal_item_portion(attrs) do
-    {portion_kind, attrs} = Map.pop(attrs, :portion_kind)
-    {amount, attrs} = Map.pop(attrs, :amount)
-    {unit, attrs} = Map.pop(attrs, :unit)
-    {weight_g, attrs} = Map.pop(attrs, :weight_g)
-    {serving_label, attrs} = Map.pop(attrs, :serving_label)
-
-    portion =
-      if gram_meal_item?(portion_kind, amount, unit) do
-        %{kind: :gram, amount: nil, unit: nil, serving_label: nil, weight_g: weight_g || 100.0}
-      else
-        %{kind: :serving, amount: amount || 1.0, unit: unit || "serving", serving_label: serving_label, weight_g: weight_g}
-      end
-
-    {portion, attrs}
-  end
-
-  defp gram_meal_item?(:gram, _amount, _unit), do: true
-  defp gram_meal_item?(nil, amount, unit) when is_nil(amount) or unit in [nil, "g"], do: true
-  defp gram_meal_item?(_kind, _amount, _unit), do: false
-
-  def meal_item_attrs_factory do
-    %{
-      "weight_g" => 100.0,
-      "amount" => 1.0,
-      "unit" => "serving",
-      "position" => 0
-    }
-  end
-
-  def exercise_factory do
-    %TrainingExercise{
-      name: sequence(:exercise_name, &"Exercise #{&1}"),
-      description: "Exercise description",
-      instructions: "Exercise instructions",
-      source: "custom",
-      tracking_type: "weight_reps",
-      mechanics: "compound",
-      force: "push",
-      images: [],
-      business: build(:business)
-    }
-  end
-
-  def muscle_factory do
-    %TrainingMuscle{
-      name: sequence(:muscle_name, &"Muscle #{&1}"),
-      description: "Primary target"
-    }
-  end
-
-  def equipment_factory do
-    %TrainingEquipment{
-      name: sequence(:equipment_name, &"Equipment #{&1}"),
-      description: "Gym equipment"
-    }
-  end
-
-  def exercise_attrs_factory do
-    %{
-      "name" => sequence(:exercise_attr_name, &"Exercise Attr #{&1}"),
-      "description" => "Created via test",
-      "instructions" => "Do it with control",
-      "source" => "custom",
-      "tracking_type" => "weight_reps",
-      "mechanics" => "compound",
-      "force" => "push",
-      "images" => []
-    }
-  end
-
-  def training_plan_factory(attrs) do
-    attrs = Map.new(attrs)
-    {creator, attrs} = Map.pop(attrs, :creator)
-    {business, attrs} = Map.pop(attrs, :business)
-    {client, attrs} = Map.pop(attrs, :client)
-    {kind, attrs} = Map.pop(attrs, :kind)
-    {archived_at, attrs} = Map.pop(attrs, :archived_at)
-    {start_date, attrs} = Map.pop(attrs, :start_date)
-    {end_date, attrs} = Map.pop(attrs, :end_date)
-
-    business = business || build(:business)
-    kind = kind || if(client || attrs[:client_id], do: :client_plan, else: :template)
-    period? = kind == :client_plan
-
-    %TrainingPlan{
-      kind: kind,
-      name: sequence(:training_plan_name, &"Training Plan #{&1}"),
-      description: "Weekly strength plan",
-      revision: 1,
-      archived_at: archived_at,
-      start_date: if(period?, do: start_date),
-      end_date: if(period?, do: end_date),
-      creator: unwrap_training_plan_creator(creator),
-      business: business,
-      client: client
-    }
-    |> merge_attributes(attrs)
-  end
-
-  defp unwrap_training_plan_creator(%Coach{user: %User{} = user}), do: user
-  defp unwrap_training_plan_creator(nil), do: build(:user)
-  defp unwrap_training_plan_creator(creator), do: creator
-
-  def training_plan_attrs_factory do
-    %{
-      "name" => sequence(:training_plan_attr_name, &"Training Plan Attr #{&1}"),
-      "description" => "Created via test"
-    }
-  end
-
-  def workout_factory do
-    training_plan = build(:training_plan)
-
-    %Workout{
-      name: sequence(:workout_name, &"Workout #{&1}"),
-      position: 0,
-      plan: training_plan,
-      business: training_plan.business
-    }
-  end
-
-  def prescribed_exercise_factory do
-    workout = build(:workout)
-    exercise = build(:exercise, business: workout.business)
-
-    %PrescribedExercise{
-      position: 0,
-      workout: workout,
-      exercise: exercise,
-      business: workout.business,
-      prescribed_sets: []
-    }
-  end
-
-  def workout_schedule_factory do
-    workout = build(:workout)
-
-    %WorkoutSchedule{
-      weekday: :monday,
-      business: workout.business,
-      plan: workout.plan,
-      workout: workout
-    }
-  end
-
-  def workout_session_factory(attrs) do
-    attrs = Map.new(attrs)
-    business = attrs[:business] || build(:business)
-    creator = attrs[:creator] || build(:coach, business: business)
-    client = attrs[:client] || build(:client, business: business, creator: creator)
-    state = attrs[:state] || :active
-    started_at = attrs[:started_at] || DateTime.utc_now(:second)
-    closed_at = attrs[:closed_at] || if(state in [:completed, :discarded], do: started_at)
-
-    %TrainingSession{
-      kind: attrs[:kind] || :freestyle,
-      date: Date.utc_today(),
-      started_at: started_at,
-      closed_at: closed_at,
-      state: state,
-      notes: "Session note",
-      client: client,
+      kind: :food,
+      basis: :"100g",
+      nutrients: %{"energy_kcal" => 200.0, "protein_g" => 20.0},
+      servings: [],
       business: business
     }
     |> merge_attributes(attrs)
   end
 
-  def performed_set_factory do
-    session = build(:workout_session)
+  def food_attrs_factory do
+    %{"name" => sequence(:food_attr_name, &"New food #{&1}"), "kind" => "food", "basis" => "100g", "nutrients" => %{"energy_kcal" => 150.0}}
+  end
 
-    %TrainingPerformedSet{
-      position: 0,
-      exercise_name: "Freestyle exercise",
-      set_type: :working,
-      session: session,
-      business: session.business
+  def exercise_factory do
+    %Exercise{
+      name: sequence(:exercise_name, &"Exercise #{&1}"),
+      kind: :movement,
+      goals: [:strength],
+      places: [:gym],
+      metrics: [%ExerciseMetric{key: :reps}, %ExerciseMetric{key: :weight}],
+      equipment: nil,
+      business: build(:business)
     }
+  end
+
+  def exercise_attrs_factory do
+    %{name: sequence(:exercise_attr_name, &"Exercise #{&1}"), kind: "movement", goals: ["strength"], places: ["gym"], metrics: [%{key: "reps"}, %{key: "weight"}]}
+  end
+
+  def tracker_template_factory do
+    %Template{name: sequence(:template_name, &"Tracker template #{&1}"), domain: :trackers, content: Content.empty(), business: build(:business)}
   end
 
   def conversation_factory do
@@ -661,5 +190,5 @@ defmodule Easy.Factory do
     }
   end
 
-  defp unique_test_email(prefix, n), do: "#{prefix}-#{n}-#{System.unique_integer([:positive])}@test.com"
+  defp unique_test_email(prefix, n), do: "#{prefix}-#{n}-#{Ecto.UUID.generate()}@test.com"
 end

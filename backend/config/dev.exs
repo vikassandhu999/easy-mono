@@ -22,7 +22,7 @@ config :easy, Easy.Repo,
 config :easy, EasyWeb.Endpoint,
   # Binding to loopback ipv4 address prevents access from other machines.
   # Change to `ip: {0, 0, 0, 0}` to allow access from other machines.
-  http: [ip: {0, 0, 0, 0}, port: 4000],
+  http: [ip: {0, 0, 0, 0}, port: String.to_integer(System.get_env("PORT") || "4000")],
   check_origin: false,
   code_reloader: true,
   debug_errors: false,
@@ -43,12 +43,16 @@ config :phoenix, :stacktrace_depth, 20
 # Initialize plugs at runtime for faster development compilation
 config :phoenix, :plug_init_mode, :runtime
 
-# Disable swoosh api client as it is only required for production adapters.
-config :swoosh, :api_client, false
+# Resend uses the same HTTP client in development and production.
+config :swoosh, :api_client, Swoosh.ApiClient.Req
 
-config :easy, Easy.Mailer,
-  adapter: Resend.Swoosh.Adapter,
-  api_key: System.get_env("RESEND_API_KEY", "")
+case System.get_env("RESEND_API_KEY") do
+  key when is_binary(key) and key != "" ->
+    config :easy, Easy.Mailer, adapter: Swoosh.Adapters.Resend, api_key: key
+
+  _ ->
+    config :easy, Easy.Mailer, adapter: Swoosh.Adapters.Local
+end
 
 # Authentication and JWT configuration for development
 config :easy, :jwt_secret, "dev-secret-key-minimum-32-characters-long-for-hs256"
@@ -61,8 +65,8 @@ config :easy, EasyWeb.CookieHelper, secure: false
 
 # Frontend URLs for development
 config :easy,
-  frontend_url: "http://localhost:2020",
-  client_frontend_url: "http://localhost:1314"
+  frontend_url: "http://localhost:2022",
+  client_frontend_url: "http://localhost:1315"
 
 # Fixed OTP in dev — every login code is 123456, no email-reading needed.
 config :easy, fixed_otp: "123456"
@@ -98,3 +102,5 @@ config :easy, Easy.Razorpay,
 if File.exists?(Path.expand("dev.secret.exs", __DIR__)) do
   import_config "dev.secret.exs"
 end
+
+config :easy, :check_typed_responses, true

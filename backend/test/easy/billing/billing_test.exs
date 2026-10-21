@@ -9,7 +9,7 @@ defmodule Easy.BillingTest do
 
   @webhook_secret "test_webhook_secret"
 
-  defp ctx_for(business), do: Ctx.new(business.id, business.owner_id)
+  defp ctx_for(business), do: Ctx.new(business.id, business.owner_user_id)
 
   defp summary(ctx) do
     {:ok, summary} = Billing.get_billing(ctx)
@@ -17,7 +17,7 @@ defmodule Easy.BillingTest do
   end
 
   # Drives a signed subscription.charged event through the public webhook
-  # interface — the production trigger for waiting-client activation.
+  # interface.
   defp charged_webhook(sub_id, quantity) do
     body =
       Jason.encode!(%{
@@ -32,8 +32,86 @@ defmodule Easy.BillingTest do
     Billing.handle_razorpay_webhook(body, signature, "evt_#{System.unique_integer([:positive])}")
   end
 
+  test "quantity updates change subscribed accounts and leave free or cancelled accounts untouched" do
+    for status <- [:free, :active, :past_due, :cancel_at_period_end, :cancelled] do
+      subscription_id = "sub_quantity_#{status}"
+      paid_seats = if status in [:free, :cancelled], do: 0, else: 2
+
+      billing =
+        insert(:business_billing,
+          status: status,
+          paid_seats: paid_seats,
+          razorpay_subscription_id: subscription_id
+        )
+
+      before = Repo.get!(BusinessBilling, billing.id)
+
+      body =
+        Jason.encode!(%{
+          "event" => "subscription.updated",
+          "payload" => %{"subscription" => %{"entity" => %{"id" => subscription_id, "quantity" => 4}}}
+        })
+
+      signature = :crypto.mac(:hmac, :sha256, @webhook_secret, body) |> Base.encode16(case: :lower)
+      assert :ok = Billing.handle_razorpay_webhook(body, signature, "evt_quantity_#{status}")
+      updated = Repo.get!(BusinessBilling, billing.id)
+      events = Repo.all(Event.for_business(billing.business_id))
+
+      if status in [:free, :cancelled] do
+        assert updated == before
+        assert events == []
+      else
+        assert updated.status == status
+        assert updated.paid_seats == 4
+        assert updated.free_seats == before.free_seats
+        assert [%{kind: :seats_added, seat_delta: 2}] = events
+      end
+    end
+  end
+
+  test "failure and cancellation notifications preserve unaffected states and avoid duplicate events" do
+    for event <- ["subscription.pending", "subscription.halted", "subscription.cancelled"],
+        status <- [:free, :active, :past_due, :cancel_at_period_end, :cancelled] do
+      subscription_id = "sub_#{event}_#{status}"
+      paid_seats = if status in [:free, :cancelled], do: 0, else: 2
+
+      billing =
+        insert(:business_billing,
+          status: status,
+          paid_seats: paid_seats,
+          razorpay_subscription_id: subscription_id
+        )
+
+      expected =
+        case {event, status} do
+          {"subscription.cancelled", :cancelled} -> {status, paid_seats, []}
+          {"subscription.cancelled", _} -> {:cancelled, 0, [:subscription_cancelled]}
+          {_, state} when state in [:active, :cancel_at_period_end] -> {:past_due, paid_seats, [:payment_failed]}
+          _ -> {status, paid_seats, []}
+        end
+
+      {expected_status, expected_seats, expected_events} = expected
+
+      for attempt <- 1..2 do
+        body =
+          Jason.encode!(%{
+            "event" => event,
+            "payload" => %{"subscription" => %{"entity" => %{"id" => subscription_id}}}
+          })
+
+        signature = :crypto.mac(:hmac, :sha256, @webhook_secret, body) |> Base.encode16(case: :lower)
+        assert :ok = Billing.handle_razorpay_webhook(body, signature, "#{subscription_id}_#{attempt}")
+        updated = Repo.get!(BusinessBilling, billing.id)
+        assert updated.status == expected_status
+        assert updated.paid_seats == expected_seats
+        assert updated.free_seats == billing.free_seats
+        assert Enum.map(Repo.all(Event.for_business(billing.business_id)), & &1.kind) == expected_events
+      end
+    end
+  end
+
   describe "grant_free_seats/2" do
-    test "bumps free seats (creating the billing row) and the summary reflects it" do
+    test "changes free seats and the summary reflects it" do
       business = insert(:business)
 
       assert {:ok, _billing} = Billing.grant_free_seats(ctx_for(business), 10)
@@ -45,60 +123,36 @@ defmodule Easy.BillingTest do
     end
   end
 
-  describe "seat_summary/1" do
-    test "a new business has ten free seats and no billing row yet" do
-      business = insert(:business)
-
-      summary = summary(ctx_for(business))
-
-      assert summary.free_seats == 10
-      assert summary.paid_seats == 0
-      assert summary.seat_limit == 10
-      assert summary.used_seats == 0
-      assert summary.available_seats == 10
-      assert summary.status == :free
-      assert summary.is_owner == true
+  describe "term-based seats" do
+    test "only current terms count and billing grants never activate joined clients" do
+      business = insert(:business, billing: build(:business_billing, business: nil, free_seats: 1))
+      insert(:client, business: business)
+      joined = insert(:client, business: business, terms: [])
+      insert(:client, business: business, user: nil)
+      assert summary(ctx_for(business)).used_seats == 1
+      assert summary(ctx_for(business)).available_seats == 0
+      assert {:ok, _} = Billing.grant_free_seats(ctx_for(business), 5)
+      assert summary(ctx_for(business)).seat_limit == 5
+      assert Repo.preload(Repo.get!(Client, joined.id), :terms).terms == []
     end
 
-    test "active and pending clients count as used seats" do
-      business = insert(:business)
-      insert(:client, business: business, status: :active)
-      insert(:client, business: business, status: :pending)
+    test "provider downgrades reduce the billing seat limit without ending terms" do
+      business = insert(:business, billing: build(:business_billing, business: nil, free_seats: 2))
 
+      business.billing
+      |> Ecto.Changeset.change(
+        razorpay_subscription_id: "sub_downgrade",
+        free_seats: 0,
+        paid_seats: 2,
+        status: :active
+      )
+      |> Easy.Repo.update!()
+
+      insert_list(2, :client, business: business)
+      assert :ok = charged_webhook("sub_downgrade", 1)
+      assert summary(ctx_for(business)).seat_limit == 1
       assert summary(ctx_for(business)).used_seats == 2
-    end
-
-    test "awaiting_seat and manually inactive clients do not count" do
-      business = insert(:business)
-      insert(:client, business: business, status: :inactive, inactive_reason: :awaiting_seat)
-      insert(:client, business: business, status: :inactive, inactive_reason: :manual)
-
-      summary = summary(ctx_for(business))
-
-      assert summary.used_seats == 0
-      assert summary.awaiting_seat_count == 1
-    end
-
-    test "is_owner is false for a non-owner coach" do
-      business = insert(:business)
-      other_user = insert(:user)
-
-      refute summary(Ctx.new(business.id, other_user.id)).is_owner
-    end
-  end
-
-  describe "waiting-client activation (via subscription.charged webhook)" do
-    test "activates awaiting_seat rows but leaves manually-inactive rows" do
-      business = insert(:business)
-      insert(:business_billing, business: business, razorpay_subscription_id: "sub_act", free_seats: 5, status: :active)
-      waiting = insert(:client, business: business, status: :inactive, inactive_reason: :awaiting_seat)
-      paused = insert(:client, business: business, status: :inactive, inactive_reason: :manual)
-
-      assert :ok = charged_webhook("sub_act", 5)
-
-      assert Repo.get!(Client, waiting.id).status == :active
-      assert Repo.get!(Client, waiting.id).inactive_reason == nil
-      assert Repo.get!(Client, paused.id).status == :inactive
+      assert summary(ctx_for(business)).available_seats == -1
     end
   end
 
@@ -122,44 +176,10 @@ defmodule Easy.BillingTest do
     end
   end
 
-  describe "reserve_seat/2 atomicity" do
-    # Guards the transaction pattern shared by the payment paths (update_quantity /
-    # do_cancel): an earlier local write committed in the same transaction as a
-    # later step that fails must roll back together.
-    test "an earlier write rolls back when a later step in the same transaction fails" do
-      business = insert(:business)
-      before = Repo.aggregate(Event, :count, :id)
-
-      result =
-        Billing.reserve_seat(ctx_for(business), fn ->
-          Repo.insert!(%Event{business_id: business.id, kind: :seats_added, occurred_at: DateTime.utc_now(:second)})
-          {:error, :later_step_failed}
-        end)
-
-      assert result == {:error, :later_step_failed}
-      assert Repo.aggregate(Event, :count, :id) == before
-    end
-
-    test "the seat-consuming write is skipped entirely at the limit" do
-      business = insert(:business)
-      insert(:business_billing, business: business, free_seats: 2)
-      insert(:client, business: business, status: :active)
-      insert(:client, business: business, status: :active)
-
-      assert {:error, :seat_limit_reached} =
-               Billing.reserve_seat(ctx_for(business), fn ->
-                 send(self(), :ran)
-                 {:ok, :done}
-               end)
-
-      refute_received :ran
-    end
-  end
-
   describe "razorpay_subscription_id uniqueness" do
     test "the same subscription id can't be stored on two businesses" do
-      billing_one = insert(:business_billing, business: insert(:business))
-      billing_two = insert(:business_billing, business: insert(:business))
+      billing_one = insert(:business_billing)
+      billing_two = insert(:business_billing)
 
       assert {:ok, _} =
                billing_one |> BusinessBilling.update_changeset(%{razorpay_subscription_id: "sub_dup"}) |> Repo.update()

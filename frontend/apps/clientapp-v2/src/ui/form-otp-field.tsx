@@ -1,4 +1,5 @@
 import {InputOTP, Label, REGEXP_ONLY_DIGITS} from '@heroui/react';
+import {useId} from 'react';
 import {type Control, Controller, type FieldValues, type Path} from 'react-hook-form';
 
 type FormOtpFieldProps<T extends FieldValues> = {
@@ -9,14 +10,16 @@ type FormOtpFieldProps<T extends FieldValues> = {
 };
 
 export function FormOtpField<T extends FieldValues>({autoFocus, control, label, name}: FormOtpFieldProps<T>) {
+  const id = useId();
   return (
     <div className="flex flex-col gap-2">
-      <Label>{label}</Label>
+      <Label htmlFor={id}>{label}</Label>
       <Controller
         control={control}
         name={name}
         render={({field, fieldState, formState}) => (
           <InputOTP
+            id={id}
             autoFocus={autoFocus}
             isInvalid={!!fieldState.error || !!formState.errors.root}
             maxLength={6}

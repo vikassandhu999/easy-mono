@@ -8,8 +8,12 @@ defmodule Easy.Application do
       [
         Easy.Repo,
         {Phoenix.PubSub, name: Easy.PubSub},
-        {Task.Supervisor, name: Easy.TaskSupervisor}
-      ] ++ sweeper_children() ++ [EasyWeb.Endpoint]
+        {Task.Supervisor, name: Easy.TaskSupervisor},
+        Supervisor.child_spec(
+          {Task.Supervisor, name: Easy.MailerSupervisor, max_children: 20},
+          id: Easy.MailerSupervisor
+        )
+      ] ++ [EasyWeb.Endpoint]
 
     opts = [strategy: :one_for_one, name: Easy.Supervisor]
     Supervisor.start_link(children, opts)
@@ -20,16 +24,5 @@ defmodule Easy.Application do
   def config_change(changed, _new, removed) do
     EasyWeb.Endpoint.config_change(changed, removed)
     :ok
-  end
-
-  defp sweeper_children do
-    []
-    |> maybe_add_sweeper(:start_nutrition_diary_ledger_sweeper, Easy.Nutrition.DiaryLedgerSweeper)
-    |> maybe_add_sweeper(:start_client_subscription_sweeper, Easy.ClientSubscriptionSweeper)
-    |> maybe_add_sweeper(:start_check_in_sweeper, Easy.CheckInSweeper)
-  end
-
-  defp maybe_add_sweeper(children, config_key, module) do
-    if Application.get_env(:easy, config_key, true), do: children ++ [module], else: children
   end
 end

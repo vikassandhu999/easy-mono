@@ -1,0 +1,20 @@
+# Connected navigation
+
+Run `rtk proxy pnpm test:navigation` from the coachapp directory with the isolated API on 44000 and coachapp on 22022. Set `COACH_API_URL` and `COACH_APP_URL` to use another local server pair. The fixture uses `easy_browser_dev` and local mail delivery. It creates fresh owner/trainer accounts for each viewport and each role invites and accepts its own test client. Accepted clients and account/business records remain in this disposable database..
+
+The suite navigates with Tab, Shift+Tab, arrow keys and Enter. It covers all primary sections, account-menu entries, owner-only Team access, three library destinations and client tasks with their return links. It checks focused links fit fully in the viewport, navigation outlines have room around their labels, route changes focus the main content, destination loading resolves without alerts, active sections match the client task, and logout succeeds. Same-route navigation preserves the focused link. Both owner and trainer run at 375px and 1280px.
+
+Generated fixture details and screenshots stay in the ignored `artifacts/` directory. A failure captures the viewport and focused-element geometry.
+
+
+## Built application
+
+Run `rtk proxy pnpm test:production` with the normal API on port 4000. The command builds coachapp, starts its own Vite preview on a temporary localhost port, exercises only built assets, then closes that preview. It leaves the normal development servers running. No source-module import or injected session is used for authentication.
+
+At both widths, the browser signs up, recovers from an invalid code, creates a business, completes the welcome tour, resumes protected client creation, sends and reopens an invitation, visits the core sections, receives a real inbox WebSocket reply, and signs out and back in. The tour checks responsive images, heading focus, typography and overflow. Fixture accounts remain in the selected local test database. Screenshots stay in ignored artifacts.
+
+Use `rtk proxy env BROWSER_ENGINE=webkit pnpm test:production` for WebKit after installing that engine with `rtk proxy pnpm exec playwright install webkit`. The default engine is Chromium. This covers these production journeys in each engine, not every browser feature or physical device.
+
+## Startup measurement
+
+`rtk proxy pnpm test:startup` builds the app and serves the static output with gzip on a temporary localhost port. It measures three cold login loads at each width with a 200,000-byte/s download limit, 150ms latency and 4× CPU throttling. The measurement ends after the email field accepts text. It reports asset bytes and timings without enforcing an arbitrary time threshold. This simulated environment does not establish real-device performance or deployed hosting behavior.

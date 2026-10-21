@@ -1,137 +1,50 @@
-NimbleCSV.define(FoodsCSVParser, separator: ",", escape: "\"")
-
 defmodule Easy.Repo.Seeds.Foods do
-  alias Easy.Nutrition.{Food, ServingSize}
+  import Ecto.Query
+
+  alias Easy.Nutrition.Food
   alias Easy.Repo
-
-  @batch_size 500
-  @source :system
-  @food_categories ["I", "PF"]
-
-  @food_fields [
-    :name,
-    :calories_per_100g,
-    :protein_g_per_100g,
-    :carbs_g_per_100g,
-    :fat_g_per_100g,
-    :fiber_g_per_100g,
-    :serving_sizes,
-    :source,
-    :category,
-    :allergens,
-    :dietary_tags,
-    :notes,
-    :image_url,
-    :import_id
-  ]
 
   @spec run() :: :ok
   def run do
-    # Prefer the curated subset shipped in the release image; fall back to the full
-    # local-only database (foods_database.csv, excluded from the Docker image) when present.
-    seed_csv = Path.join(:code.priv_dir(:easy), "repo/foods_seed.csv")
-    full_csv = Path.join(:code.priv_dir(:easy), "repo/foods_database.csv")
-
-    cond do
-      File.exists?(full_csv) -> seed_foods(full_csv)
-      File.exists?(seed_csv) -> seed_foods(seed_csv)
-      true -> IO.puts("  Skipping foods — no foods CSV found")
-    end
-
-    :ok
+    Repo.all(Easy.Orgs.Business) |> Enum.each(&for_business/1)
   end
 
-  defp seed_foods(csv_path) do
-    IO.puts("  Importing foods from CSV...")
-
-    now = DateTime.utc_now() |> DateTime.truncate(:second)
-
-    count =
-      csv_path
-      |> File.stream!([:trim_bom])
-      |> FoodsCSVParser.parse_stream(skip_headers: true)
-      |> Stream.map(&parse_row/1)
-      |> Stream.reject(&is_nil/1)
-      |> Stream.filter(&(&1["food"]["food_category"] in @food_categories))
-      |> Stream.map(&build_food_entry(&1, now))
-      |> Stream.chunk_every(@batch_size)
-      |> Enum.reduce(0, fn batch, total ->
-        {count, _} =
-          Repo.insert_all(Food, batch,
-            on_conflict: {:replace, @food_fields ++ [:updated_at]},
-            conflict_target: {:unsafe_fragment, ~s|("import_id") WHERE import_id IS NOT NULL|},
-            timeout: 120_000
-          )
-
-        inserted = total + count
-        IO.write("\r  Upserted #{inserted} foods...")
-        inserted
-      end)
-
-    IO.puts("\r  Foods: #{count} upserted            ")
-  end
-
-  defp parse_row([_id, json_string]) do
-    case Jason.decode(json_string) do
-      {:ok, data} -> data
-      {:error, _} -> nil
-    end
-  end
-
-  defp parse_row(_), do: nil
-
-  defp build_food_entry(data, now) do
-    food = data["food"]
-    measures = data["food_measures"] || []
-
-    %{
-      id: Ecto.UUID.generate(),
-      import_id: to_string(food["food_id"]),
-      name: food["food_name"] |> String.trim(),
-      calories_per_100g: round_macro(food["calorie"]),
-      protein_g_per_100g: round_macro(food["proteins"]),
-      carbs_g_per_100g: round_macro(food["carbs"]),
-      fat_g_per_100g: round_macro(food["fats"]),
-      fiber_g_per_100g: round_macro(food["fibre"]),
-      serving_sizes: build_serving_sizes(measures),
-      source: @source,
-      category: map_category(food["food_category"]),
-      allergens: [],
-      dietary_tags: [],
-      notes: nil,
-      image_url: food["food_image_url"],
-      creator_id: nil,
-      business_id: nil,
-      inserted_at: now,
-      updated_at: now
-    }
-  end
-
-  defp build_serving_sizes(measures) do
-    measures
-    |> Enum.reject(fn m ->
-      m["measure_name"] == "grams" or round_macro(m["measure_weight"]) <= 0
+  @spec for_business(Easy.Orgs.Business.t()) :: %{String.t() => Food.t()}
+  def for_business(business) do
+    Map.new(catalogue(), fn attrs ->
+      row = Repo.one(from(f in Food, where: f.business_id == ^business.id and f.name == ^attrs.name, limit: 1))
+      food = row || business.id |> Food.insert_changeset(attrs) |> Repo.insert!()
+      {attrs.name, food}
     end)
-    |> Enum.sort_by(& &1["measure_rank"])
-    |> Enum.map(fn m ->
-      %ServingSize{
-        label: m["measure_name"],
-        unit: m["measure_name"],
-        weight_g: round_macro(m["measure_weight"]),
-        amount: 1.0,
-        is_default: false
-      }
-    end)
-    |> mark_first_default()
   end
 
-  defp mark_first_default([]), do: []
-  defp mark_first_default([first | rest]), do: [%{first | is_default: true} | rest]
+  @spec catalogue() :: [map()]
+  def catalogue do
+    [
+      food("Rolled oats", :"100g", [379, 13, 68, 6.5], [{"cup", 80}]),
+      food("Milk, semi-skimmed", :"100ml", [47, 3.4, 4.8, 1.7], [{"glass", 250}]),
+      food("Banana", :"100g", [89, 1.1, 23, 0.3], [{"medium banana", 118}]),
+      food("Egg", :"100g", [143, 12.6, 0.7, 9.5], [{"large egg", 50}]),
+      food("Wholegrain toast", :"100g", [247, 13, 41, 3.4], [{"slice", 30}]),
+      food("Greek yogurt 2%", :"100g", [73, 9.9, 3.9, 2], [{"pot", 170}]),
+      food("Mixed berries", :"100g", [50, 0.8, 12, 0.3]),
+      food("Basmati rice, cooked", :"100g", [121, 3.5, 25, 0.4], [{"cup", 160}]),
+      food("Chicken breast, cooked", :"100g", [165, 31, 0, 3.6]),
+      food("Salmon fillet, baked", :"100g", [206, 22, 0, 12], [{"fillet", 150}]),
+      food("Potatoes, boiled", :"100g", [87, 1.9, 20, nil]),
+      food("Whey protein", :"100g", [400, 80, 8, 6], [{"scoop", 30}]) |> Map.put(:kind, :supplement),
+      food("Creatine monohydrate", :"100g", [0, 0, 0, 0]) |> Map.put(:kind, :supplement),
+      %{name: "Vitamin D3 2000 IU", kind: :supplement, basis: :"1unit", unit_label: "capsule", nutrients: %{}, servings: []}
+    ]
+  end
 
-  defp map_category("I"), do: "ingredient"
-  defp map_category("PF"), do: "packaged"
+  defp food(name, basis, values, servings \\ []) do
+    nutrients =
+      ["energy_kcal", "protein_g", "carbs_g", "fat_g"]
+      |> Enum.zip(values)
+      |> Enum.reject(fn {_code, value} -> is_nil(value) end)
+      |> Map.new()
 
-  defp round_macro(nil), do: 0.0
-  defp round_macro(val) when is_number(val), do: Float.round(val / 1, 2)
-  defp round_macro(_), do: 0.0
+    %{name: name, kind: :food, basis: basis, nutrients: nutrients, servings: Enum.map(servings, fn {label, amount} -> %{label: label, amount: amount} end)}
+  end
 end

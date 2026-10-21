@@ -1,84 +1,71 @@
 defmodule Easy.Identity.SessionFactory do
+  require Ecto.Query
   alias Easy.Clients.Client
   alias Easy.Coaches
   alias Easy.Identity.User
   alias Easy.Identity.UserSession
   alias Easy.Identity.UserSessions
-  alias Easy.Orgs
+  alias Easy.Orgs.Business
   alias Easy.Orgs.Coach
   alias Easy.Repo
-  import Ecto.Query
 
   @type session_opts :: %{
-          required(:ip) => String.t() | nil,
-          required(:user_agent) => String.t() | nil,
-          optional(:role) => atom() | nil,
-          optional(atom()) => any()
+          optional(:ip) => String.t() | nil,
+          optional(:user_agent) => String.t() | nil,
+          optional(:role) => UserSession.role() | nil
         }
 
-  @spec create_session(User.t(), session_opts()) :: {:ok, UserSession.t()} | {:error, any()}
+  @type membership_error() :: :coach_membership_not_found | :client_membership_not_found
+  @type session_error() :: :session_expired | :session_revoked
+  @type write_error() :: membership_error() | Ecto.Changeset.t()
+  @type scope() :: UserSession.scope()
+
+  @spec create_session(User.t(), session_opts()) :: {:ok, UserSession.t()} | {:error, write_error()}
   def create_session(user, opts) do
-    with {:ok, attrs_with_role} <- validate_role(opts[:role] || :guest, user) do
-      UserSessions.create_session(
-        user,
-        attrs_with_role[:business_id],
-        attrs_with_role[:role],
-        attrs_with_role[:coach_id],
-        attrs_with_role[:is_owner] || false,
-        %{ip: opts[:ip] || "", user_agent: opts[:user_agent] || ""}
-      )
+    with {:ok, scope} <- validate_role(opts[:role] || :guest, user) do
+      UserSessions.create_session(user, scope, session_metadata(opts))
     end
   end
 
   @spec refresh_session(User.t(), UserSession.t(), session_opts()) ::
-          {:ok, UserSession.t()} | {:error, any()}
+          {:ok, UserSession.t()} | {:error, session_error() | write_error()}
   def refresh_session(user, session, opts) do
-    role = opts[:role] || session.role
-
-    with {:ok, attrs_with_role} <- validate_role(role || :guest, user) do
-      business_id = attrs_with_role[:business_id]
-
-      UserSessions.refresh_session(
-        session,
-        business_id,
-        attrs_with_role[:role],
-        attrs_with_role[:coach_id],
-        attrs_with_role[:is_owner] || false,
-        %{ip: opts[:ip] || "", user_agent: opts[:user_agent] || ""}
-      )
+    with :ok <- validate_session(session),
+         {:ok, scope} <- validate_role(opts[:role] || session.role || :guest, user) do
+      UserSessions.refresh_session(session, scope, session_metadata(opts))
     end
   end
 
-  @spec validate_session(UserSession.t()) :: {:ok, UserSession.t()} | {:error, any()}
-  def validate_session(session) do
+  defp validate_session(session) do
     cond do
-      UserSession.expired?(session) ->
+      UserSession.expired?(session, DateTime.utc_now()) ->
         {:error, :session_expired}
 
       UserSession.revoked?(session) ->
         {:error, :session_revoked}
 
       true ->
-        {:ok, session}
+        :ok
     end
   end
 
-  @spec validate_role(atom(), User.t()) :: {:ok, map()} | {:error, any()}
-  def validate_role(:coach, user) do
+  defp validate_role(:coach, user) do
     case Coaches.get_active_coach_by_user_id(user.id) do
-      %Coach{} = coach ->
-        is_owner =
-          Repo.exists?(from b in Orgs.Business, where: b.id == ^coach.business_id and b.owner_id == ^user.id)
+      {:ok, %Coach{} = coach} ->
+        is_owner = Repo.exists?(Business.owned_by(coach.business_id, user.id))
 
         {:ok, %{role: :coach, business_id: coach.business_id, coach_id: coach.id, is_owner: is_owner}}
 
-      nil ->
+      {:error, :not_found} ->
         {:error, :coach_membership_not_found}
     end
   end
 
-  def validate_role(:client, user) do
-    case Client |> Client.for_user(user.id) |> Client.accepted() |> Repo.one() do
+  defp validate_role(:client, user) do
+    memberships = Client.for_user(user.id)
+    active = memberships |> Client.active() |> Ecto.Query.limit(1) |> Repo.one()
+
+    case active || latest_client(memberships) do
       %Client{business_id: business_id} ->
         {:ok, %{role: :client, business_id: business_id}}
 
@@ -87,5 +74,14 @@ defmodule Easy.Identity.SessionFactory do
     end
   end
 
-  def validate_role(_role, _user), do: {:ok, %{role: :guest, business_id: nil}}
+  defp validate_role(_role, _user), do: {:ok, %{role: :guest, business_id: nil}}
+
+  defp latest_client(query) do
+    query
+    |> Ecto.Query.order_by([c], desc_nulls_last: c.joined_at, desc: c.inserted_at, desc: c.id)
+    |> Ecto.Query.limit(1)
+    |> Repo.one()
+  end
+
+  defp session_metadata(opts), do: %{ip: opts[:ip] || "", user_agent: opts[:user_agent] || ""}
 end

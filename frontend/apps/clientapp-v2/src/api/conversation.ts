@@ -3,15 +3,13 @@ import {type InfiniteData, useInfiniteQuery, useMutation, useQuery, useQueryClie
 import {call, client} from '@/api/client';
 import {conversationKeys} from '@/api/keys';
 import {patchQueryData, queryClient} from '@/api/query-client';
-import type {components, paths} from '@/api/schema';
+import type {ChatMessage, ChatMessageClientCreate, ChatMessagePage} from '@/api/schema';
 
-export type ChatMessage = components['schemas']['ChatMessage'];
 export {parseChatMessage} from '@/api/parse-chat-message';
-export type Conversation = components['schemas']['Conversation'];
-export type CreateMessageBody =
-  paths['/v1/client/conversation/messages']['post']['requestBody']['content']['application/json'];
+export type {ChatMessage, Conversation} from '@/api/schema';
+export type CreateMessageBody = ChatMessageClientCreate;
 
-export type ChatMessagesResponse = components['schemas']['ChatMessagesResponse'];
+export type ChatMessagesResponse = ChatMessagePage;
 
 const PAGE_SIZE = 20;
 

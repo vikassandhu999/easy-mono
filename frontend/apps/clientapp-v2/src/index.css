@@ -8,7 +8,7 @@
      `text-muted` / `bg-accent` resolve. It ships NONE for these three, so
      `text-success-secondary` and `border-success-border` were silently no-ops —
      twelve and three call sites rendering inherited near-black / default grey
-     instead of green (chat "Online", completed-set ✓, weight deltas, the
+     instead of green (chat "Online", completed-set ✓, the
      membership badge, the workout finish banner). Registering the alias here is
      what generates the utility. Verify with getComputedStyle, not by eye: a dead
      colour utility looks like "inherited", not like "broken". */
@@ -128,28 +128,6 @@
     border: 1px solid var(--border);
     border-radius: 1.25rem;
     box-shadow: none;
-  }
-
-  .input__wrapper:focus-within,
-  .input__wrapper[data-focused="true"] {
-    border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(4, 133, 247, 0.14);
-  }
-
-  .modal {
-    border-radius: 1.75rem 1.75rem 0 0;
-  }
-
-  .tabs__tab-list {
-    border: 1px solid var(--border);
-    border-radius: 0.75rem;
-    background: var(--surface-secondary);
-    padding: 3px;
-  }
-
-  .tabs__tab--selected {
-    border-radius: 0.625rem;
-    background: var(--surface);
   }
 }
 

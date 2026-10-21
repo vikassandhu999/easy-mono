@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import {spawnSync} from 'node:child_process';
-// Glob-run *.check.ts with node --experimental-strip-types.
-// Zero matches is a failed run (RM-202): a silent empty suite is not a suite.
+// Run behavior suites (*.test.ts) and legacy checks (*.check.ts) with node --experimental-strip-types.
+// Zero matches is a failed run: a silent empty suite is not a suite.
 import {readdirSync, statSync} from 'node:fs';
 import {join} from 'node:path';
 
@@ -22,9 +22,11 @@ function collect(dir, acc) {
   for (const ent of entries) {
     const path = join(dir, ent.name);
     if (ent.isDirectory()) {
-      if (ent.name === 'node_modules') continue;
+      if (ent.name === 'node_modules') {
+        continue;
+      }
       collect(path, acc);
-    } else if (ent.isFile() && ent.name.endsWith('.check.ts')) {
+    } else if (ent.isFile() && /\.(?:check|test)\.ts$/.test(ent.name)) {
       acc.push(path);
     }
   }
@@ -48,7 +50,7 @@ for (const root of roots) {
 files.sort();
 
 if (files.length === 0) {
-  console.error(`no *.check.ts files found under: ${roots.join(', ')}`);
+  console.error(`no test or check files found under: ${roots.join(', ')}`);
   process.exit(1);
 }
 

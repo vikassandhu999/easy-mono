@@ -1,214 +1,80 @@
 defmodule Easy.Nutrition.Food do
   use Ecto.Schema
-
-  alias Easy.Nutrition
-  alias Easy.Orgs
-
   import Ecto.Changeset
+  alias Easy.Utils
   import Ecto.Query
-
-  @type t() :: %__MODULE__{}
-
+  alias Easy.Nutrition.{FoodServing, Values}
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
-
-  @allergens ~w(dairy egg fish shellfish tree_nuts peanuts wheat soy sesame)
-  @dietary_tags ~w(vegan vegetarian halal kosher gluten_free dairy_free low_fodmap keto high_protein)
-
-  schema "nutrition_foods" do
+  @type t :: %__MODULE__{}
+  schema "foods" do
     field :name, :string
-    field :brand, :string
-    field :barcode, :string
-    field :source, Ecto.Enum, values: [:system, :imported, :custom]
-    field :category, :string
-
-    field :calories_per_100g, :float
-    field :protein_g_per_100g, :float
-    field :carbs_g_per_100g, :float
-    field :fat_g_per_100g, :float
-    field :fiber_g_per_100g, :float
-    field :sugar_g_per_100g, :float
-
-    field :allergens, {:array, :string}, default: []
-    field :dietary_tags, {:array, :string}, default: []
-
-    field :notes, :string
-    field :image_url, :string
-    field :import_id, :string
-    field :revision, :integer, default: 1
-
-    embeds_many :serving_sizes, Nutrition.ServingSize, on_replace: :delete
-
-    belongs_to :creator, Orgs.Coach, foreign_key: :creator_id
-    belongs_to :business, Orgs.Business
-    belongs_to :media, Easy.LibraryMedia.Media, foreign_key: :media_id
-
+    field :kind, Ecto.Enum, values: [:food, :supplement]
+    field :basis, Ecto.Enum, values: [:"100g", :"100ml", :"1unit"]
+    field :unit_label, :string
+    field :nutrients, :map, default: %{}
+    embeds_many :servings, FoodServing, on_replace: :delete
+    belongs_to :business, Easy.Orgs.Business
     timestamps(type: :utc_datetime)
   end
 
-  @cast_fields [
-    :name,
-    :brand,
-    :barcode,
-    :category,
-    :calories_per_100g,
-    :protein_g_per_100g,
-    :carbs_g_per_100g,
-    :fat_g_per_100g,
-    :fiber_g_per_100g,
-    :sugar_g_per_100g,
-    :allergens,
-    :dietary_tags,
-    :notes,
-    :image_url,
-    :media_id
-  ]
-
-  @spec insert_changeset(String.t(), String.t(), map()) :: Ecto.Changeset.t()
-  def insert_changeset(business_id, coach_id, attrs) do
-    %__MODULE__{}
-    |> cast(attrs, @cast_fields)
-    |> put_change(:business_id, business_id)
-    |> put_change(:creator_id, coach_id)
-    |> put_change(:source, :custom)
-    |> put_change(:revision, 1)
-    |> validate_required([:name, :creator_id, :business_id])
-    |> validate_macros()
-    |> validate_enums()
-    |> foreign_key_constraint(:media_id)
-    |> check_constraint(:media_id, name: :nutrition_foods_business_media_check)
-    |> check_constraint(:revision, name: :nutrition_foods_revision_positive)
-    |> cast_embed(:serving_sizes, with: &Nutrition.ServingSize.changeset/2)
-    |> validate_serving_sizes()
-  end
+  @fields [:name, :kind, :basis, :unit_label, :nutrients]
+  @spec insert_changeset(String.t(), map()) :: Ecto.Changeset.t()
+  def insert_changeset(business_id, attrs),
+    do: %__MODULE__{} |> change() |> put_change(:business_id, business_id) |> update_changeset(attrs)
 
   @spec update_changeset(t(), map()) :: Ecto.Changeset.t()
-  def update_changeset(food, attrs) do
-    food
-    |> cast(attrs, @cast_fields)
-    |> validate_required([:name])
-    |> validate_macros()
-    |> validate_enums()
-    |> foreign_key_constraint(:media_id)
-    |> check_constraint(:media_id, name: :nutrition_foods_business_media_check)
-    |> check_constraint(:revision, name: :nutrition_foods_revision_positive)
-    |> cast_embed(:serving_sizes, with: &Nutrition.ServingSize.changeset/2)
-    |> validate_serving_sizes()
+  def update_changeset(row, attrs) do
+    row
+    |> cast(Values.encode(attrs), @fields)
+    |> cast_embed(:servings)
+    |> update_change(:name, &Utils.trim/1)
+    |> validate_required([:business_id, :name, :kind, :basis])
+    |> validate_length(:name, max: 255)
+    |> validate_change(:nutrients, fn field, values ->
+      if Values.nutrients?(values), do: [], else: [{field, "use registered codes and non-negative values"}]
+    end)
+    |> validate_servings()
+    |> foreign_key_constraint(:business_id)
+    |> check_constraint(:nutrients, name: :foods_nutrients_valid)
+    |> check_constraint(:servings, name: :foods_servings_valid)
+    |> check_constraint(:kind, name: :foods_prescribed_shape)
   end
 
-  defp validate_macros(changeset) do
-    Enum.reduce(
-      [
-        :calories_per_100g,
-        :protein_g_per_100g,
-        :carbs_g_per_100g,
-        :fat_g_per_100g,
-        :fiber_g_per_100g,
-        :sugar_g_per_100g
-      ],
-      changeset,
-      fn field, acc -> validate_number(acc, field, greater_than_or_equal_to: 0) end
-    )
+  defp validate_servings(cs) do
+    labels = Enum.map(get_field(cs, :servings), & &1.label)
+    basis = get_field(cs, :basis)
+    base_unit = if basis, do: basis_unit(%{basis: basis})
+    reserved = ["base", base_unit, get_field(cs, :unit_label)]
+
+    if length(labels) == length(Enum.uniq(labels)) and not Enum.any?(labels, &(&1 in reserved)),
+      do: cs,
+      else: add_error(cs, :servings, "use unique serving labels distinct from the basis unit")
   end
 
-  defp validate_enums(changeset) do
-    changeset
-    |> validate_subset(:allergens, @allergens)
-    |> validate_subset(:dietary_tags, @dietary_tags)
-  end
-
-  defp validate_serving_sizes(changeset) do
-    sizes = get_field(changeset, :serving_sizes) || []
-    defaults = Enum.count(sizes, & &1.is_default)
-
+  @spec basis_unit(t()) :: String.t()
+  def basis_unit(%{basis: :"100g"}), do: "g"
+  def basis_unit(%{basis: :"100ml"}), do: "ml"
+  def basis_unit(%{basis: :"1unit"}), do: "unit"
+  @spec factor(t(), number(), String.t()) :: {:ok, number()} | {:error, :invalid_unit}
+  def factor(food, amount, unit) do
     cond do
-      sizes == [] -> changeset
-      defaults == 1 -> changeset
-      true -> add_error(changeset, :serving_sizes, "must have exactly one default")
+      unit in ["base", basis_unit(food), food.unit_label] -> {:ok, amount / divisor(food)}
+      serving = Enum.find(food.servings, &(&1.label == unit)) -> {:ok, amount * serving.amount / divisor(food)}
+      true -> {:error, :invalid_unit}
     end
   end
 
-  # Queries
-
+  defp divisor(%{basis: :"1unit"}), do: 1
+  defp divisor(_food), do: 100
   @spec for_business(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
-  def for_business(query \\ __MODULE__, business_id) do
-    from(f in query, where: f.business_id == ^business_id)
-  end
-
-  @spec for_business_or_system(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
-  def for_business_or_system(query \\ __MODULE__, business_id) do
-    from(f in query, where: f.business_id == ^business_id or is_nil(f.business_id))
-  end
-
-  @spec for_categories(Ecto.Queryable.t(), [String.t()] | nil) :: Ecto.Query.t()
-  def for_categories(query \\ __MODULE__, categories)
-  def for_categories(query, nil), do: query
-  def for_categories(query, []), do: query
-
-  def for_categories(query, categories) when is_list(categories) do
-    from(f in query, where: f.category in ^categories)
-  end
-
-  # The distinct categories present in what this coach can see. `category` is a
-  # free-form string on `foods` (dev data has both `packaged` and `Supplement`), so
-  # the filter's options come from the DATA rather than from an enum.
-  @spec distinct_categories(Ecto.Queryable.t()) :: Ecto.Query.t()
-  def distinct_categories(query \\ __MODULE__) do
-    from(f in query,
-      where: not is_nil(f.category) and f.category != "",
-      distinct: true,
-      order_by: [asc: f.category],
-      select: f.category
-    )
-  end
-
-  @spec search(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
+  def for_business(query \\ __MODULE__, id), do: from(f in query, where: f.business_id == ^id)
+  @spec for_kind(Ecto.Queryable.t(), atom() | String.t() | nil) :: Ecto.Queryable.t()
+  def for_kind(query \\ __MODULE__, kind)
+  def for_kind(query, kind) when kind in [nil, ""], do: query
+  def for_kind(query, kind), do: from(f in query, where: f.kind == ^kind)
+  @spec search(Ecto.Queryable.t(), String.t() | nil) :: Ecto.Queryable.t()
   def search(query \\ __MODULE__, term)
-  def search(query, nil), do: query
-  def search(query, ""), do: query
-
-  def search(query, term) do
-    case to_tsquery(term) do
-      "" ->
-        query
-
-      tsquery ->
-        from(f in query,
-          where: fragment("search_vector @@ to_tsquery('simple', ?)", ^tsquery),
-          order_by: [
-            desc:
-              fragment(
-                "ts_rank(search_vector, to_tsquery('simple', ?)) / greatest(length(?), 1)",
-                ^tsquery,
-                f.name
-              ),
-            asc: f.name,
-            asc: f.id
-          ]
-        )
-    end
-  end
-
-  @spec newest(Ecto.Queryable.t()) :: Ecto.Query.t()
-  def newest(query \\ __MODULE__) do
-    from(f in query, order_by: [desc: f.inserted_at, desc: f.id])
-  end
-
-  @spec include_media(Ecto.Queryable.t()) :: Ecto.Query.t()
-  def include_media(query \\ __MODULE__) do
-    from(f in query, preload: [:media])
-  end
-
-  defp to_tsquery(term) do
-    term
-    |> String.trim()
-    |> String.split(~r/\s+/, trim: true)
-    |> Enum.map(&sanitize_tsquery_token/1)
-    |> Enum.reject(&(&1 == ""))
-    |> Enum.map_join(" & ", &"#{&1}:*")
-  end
-
-  defp sanitize_tsquery_token(token) do
-    String.replace(token, ~r/[^\w]/u, "")
-  end
+  def search(query, term) when term in [nil, ""], do: query
+  def search(query, term), do: from(f in query, where: ilike(f.name, ^Easy.Search.like_pattern(String.trim(term))))
 end

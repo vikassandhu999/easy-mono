@@ -81,7 +81,7 @@ export default function RootLayout({
     applicationCategory: 'BusinessApplication',
     operatingSystem: 'Web',
     description:
-      'All-in-one fitness coaching platform for Indian personal trainers and fitness coaches to manage clients, create training and nutrition plans, track progress, and accept payments via UPI.',
+      'All-in-one fitness coaching platform for Indian personal trainers and fitness coaches to manage clients, create training and nutrition plans, review workouts and meals, and accept payments via UPI.',
     url: 'https://coacheasy.app',
     author: {
       '@type': 'Organization',
@@ -103,9 +103,8 @@ export default function RootLayout({
       'Client Management',
       'Training Plan Builder',
       'Nutrition Planning',
-      'Progress Tracking',
+      'Workout and Meal History',
       'UPI Payment Processing',
-      'AI Website Builder',
       '1-on-1 Messaging',
       'Group Chats',
       'Mobile App Access',

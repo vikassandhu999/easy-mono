@@ -2,7 +2,7 @@
 
 import {useEffect, useRef, useState} from 'react';
 
-const COACHAPP_URL = process.env.NEXT_PUBLIC_COACHAPP_URL || 'http://localhost:2021';
+const COACHAPP_URL = process.env.NEXT_PUBLIC_COACHAPP_URL || 'http://localhost:2022';
 const goToSignup = () => {
   window.location.href = `${COACHAPP_URL}/signup`;
 };
@@ -489,7 +489,6 @@ export default function CoachEasyLanding() {
   const triggers = [
     "Client can't find the PDF you sent Monday",
     'Spent Sunday copying the same workout into 12 sheets',
-    'Prospect asked for your website — you sent your Instagram',
     "Tracking payments in a spreadsheet because Razorpay doesn't know who's a client",
     'A client DMs at 10pm asking for their meal plan — again',
     "You don't know which subscription expires next week",
@@ -802,7 +801,7 @@ export default function CoachEasyLanding() {
               animation: 'fadeInUp 0.8s ease-out 0.5s both',
             }}
           >
-            {['UPI & Cards', 'Client App Included', 'Website Builder', '₹99/client/mo'].map((badge, i) => (
+            {['UPI & Cards', 'Client App Included', '₹99/client/mo'].map((badge, i) => (
               <div
                 key={i}
                 style={{
@@ -952,19 +951,9 @@ export default function CoachEasyLanding() {
               delay={0.15}
             />
             <BARow
-              after="Clients sign up on your site, pay, and land in your system"
-              before="Onboarding = Google Form → WhatsApp follow-up → hope"
-              delay={0.2}
-            />
-            <BARow
-              after="All progress in the client's profile with visual timelines"
-              before="Progress photos lost in WhatsApp media"
+              after="Workout and meal history in the client's profile"
+              before="Workout and meal records scattered across messages"
               delay={0.25}
-            />
-            <BARow
-              after="Your branded website with plans, pricing, and online signup"
-              before="No website. Or a Linktree with a Razorpay link."
-              delay={0.3}
             />
             <BARow
               after="Scaling = more clients in the same clean system"
@@ -996,7 +985,7 @@ export default function CoachEasyLanding() {
               }}
             >
               &quot;Imagine opening your phone in the morning and instead of 47 unread WhatsApp messages, you see a
-              clean dashboard. Every client&apos;s plan, progress, and payment status — right there. No digging. No
+              clean dashboard. Every client&apos;s plan, history, and payment status — right there. No digging. No
               scrolling. Just coaching.&quot;
             </p>
           </div>
@@ -1064,7 +1053,7 @@ export default function CoachEasyLanding() {
           >
             <FeatureCard
               delay={0.05}
-              does="Every client's profile, plan, progress, payment status, and chat — in one view."
+              does="Every client's profile, plan, history, payment status, and chat — in one view."
               icon="📋"
               means="Open CoachEasy and know where every client stands. No digging through 5 apps."
               title="Client Dashboard"
@@ -1091,18 +1080,11 @@ export default function CoachEasyLanding() {
               title="Built-in Payments"
             />
             <FeatureCard
-              delay={0.25}
-              does="Create a professional coaching website with plans listed, pricing visible, online signup."
-              icon="🌐"
-              means="Prospects land on a real website — not your Instagram bio link. They sign up without a DM."
-              title="AI Website Builder"
-            />
-            <FeatureCard
               delay={0.3}
-              does="1-to-1 and group chat inside the platform. Intake forms and questionnaires built in."
+              does="Message clients directly, share photos and files, and keep your conversation history together."
               icon="💬"
-              means="Client questions stay next to their plan and progress — not buried in WhatsApp."
-              title="Chat & Forms"
+              means="Client questions stay next to their plan and recorded workouts — not buried in WhatsApp."
+              title="Client Chat"
             />
           </div>
         </div>
@@ -1301,31 +1283,13 @@ export default function CoachEasyLanding() {
             }}
           >
             <MiniStory
-              changed="I went from spending 3 hours a day on admin to maybe 30 minutes. I'm coaching more clients and actually coaching them better."
-              clients="22"
-              delay={0.05}
-              location="Mumbai"
-              name="Rohan"
-              story="Got his INFS certification 2 years ago and built his client base through Instagram reels. Was running everything on WhatsApp and Google Sheets. At 20 clients, he started missing check-ins and forgetting payment follow-ups."
-              uses="Builds workout templates in the content library and personalises per client. Clients use the app to log workouts. Payments flow through the platform."
-            />
-            <MiniStory
-              changed="For the first time, I feel like I'm running a business, not just freelancing. Clients sign up on my website, get plans in the app, and I actually track their progress."
-              clients="35"
-              delay={0.15}
-              location="Bangalore"
-              name="Meera"
-              story="Left her clinic job to start independent nutrition coaching. Was using Kajabi for content, WhatsApp for chat, Razorpay for payments. None designed for assigning personalised meal plans and tracking compliance."
-              uses="Builds meal plans using the nutrition builder, creates recipe libraries. Her CoachEasy website converts Instagram followers into paying clients automatically."
-            />
-            <MiniStory
               changed="My online client retention went up because they actually feel coached, not just given a PDF. And I stopped mixing up who's doing what."
               clients="45"
               delay={0.25}
               location="Delhi"
               name="Vikram"
               story="Trained clients at a gym for 5 years, started taking online clients during COVID. His online clients got Google Sheets treatment without face-to-face accountability. Retention was dropping."
-              uses="Online clients use the client app as their 'virtual gym.' They check workouts daily, log progress, and chat inside the platform. In-gym clients also use it for meal plans."
+              uses="Online clients use the client app as their 'virtual gym.' They check workouts daily, record their sets, and chat inside the platform. In-gym clients also use it for meal plans."
             />
           </div>
         </div>
@@ -1395,7 +1359,7 @@ export default function CoachEasyLanding() {
                 'Client management',
                 'Workout builder',
                 'Nutrition plans',
-                'Progress tracking',
+                'Workout and meal history',
                 '1-1 Chat',
                 'Client app access',
               ]}
@@ -1411,8 +1375,6 @@ export default function CoachEasyLanding() {
                 'Custom exercise library',
                 'Group chat',
                 'Payment processing',
-                'AI Website builder',
-                'Forms & questionnaires',
                 'Advanced analytics',
                 'Priority support',
               ]}

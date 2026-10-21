@@ -5,23 +5,23 @@ defmodule Easy.Storage do
   @max_expiry 604_800
 
   @type signed_url :: %{url: String.t(), expires_at: DateTime.t()}
+  @type signing_option ::
+          {:expires_in, integer()} | {:now, DateTime.t()} | {:store, :private | :public}
 
-  @spec presign_put(String.t(), keyword()) ::
+  @spec presign_put(String.t(), [signing_option()]) ::
           {:ok, signed_url()} | {:error, :invalid_expiry | :storage_unavailable}
   def presign_put(storage_key, opts \\ []), do: presign("PUT", storage_key, opts)
 
-  @spec presign_get(String.t(), keyword()) ::
+  @spec presign_get(String.t(), [signing_option()]) ::
           {:ok, signed_url()} | {:error, :invalid_expiry | :storage_unavailable}
   def presign_get(storage_key, opts \\ []), do: presign("GET", storage_key, opts)
 
   @spec public_url(String.t()) :: {:ok, String.t()} | {:error, :storage_unavailable}
   def public_url(storage_key) do
-    case Keyword.get(config(), :public_url) do
-      origin when is_binary(origin) and origin != "" ->
-        {:ok, "#{String.trim_trailing(origin, "/")}/#{storage_key}"}
-
-      _ ->
-        {:error, :storage_unavailable}
+    with {:ok, origin} <- parse_origin(Keyword.get(config(), :public_url)) do
+      encoded_key = storage_key |> String.split("/") |> Enum.map_join("/", &encode/1)
+      path = String.trim_trailing(origin.path || "", "/") <> "/" <> encoded_key
+      {:ok, URI.to_string(%{origin | path: path})}
     end
   end
 
@@ -37,7 +37,7 @@ defmodule Easy.Storage do
   end
 
   defp build_signed_url(method, storage_key, now, expires_in, config, store) do
-    endpoint = URI.parse(config.endpoint)
+    endpoint = config.endpoint
     host = authority(endpoint)
     date_time = Calendar.strftime(now, "%Y%m%dT%H%M%SZ")
     date = Calendar.strftime(now, "%Y%m%d")
@@ -90,10 +90,26 @@ defmodule Easy.Storage do
       secret_access_key: Keyword.get(config, :secret_access_key)
     }
 
-    if Enum.all?(values, fn {_key, value} -> is_binary(value) and value != "" end),
-      do: {:ok, values},
-      else: {:error, :storage_unavailable}
+    with true <- Enum.all?(values, fn {_key, value} -> is_binary(value) and String.trim(value) != "" end),
+         {:ok, endpoint} <- parse_origin(values.endpoint) do
+      {:ok, %{values | endpoint: endpoint}}
+    else
+      _ -> {:error, :storage_unavailable}
+    end
   end
+
+  defp parse_origin(value) when is_binary(value) do
+    case URI.new(value) do
+      {:ok, %URI{scheme: scheme, host: host, port: port, userinfo: nil, query: nil, fragment: nil} = uri}
+      when scheme in ["http", "https"] and is_binary(host) and host != "" and port in 1..65_535 ->
+        {:ok, uri}
+
+      _ ->
+        {:error, :storage_unavailable}
+    end
+  end
+
+  defp parse_origin(_value), do: {:error, :storage_unavailable}
 
   defp config, do: Application.get_env(:easy, __MODULE__, [])
 
@@ -118,10 +134,9 @@ defmodule Easy.Storage do
     |> Enum.map_join("&", fn {key, value} -> "#{key}=#{value}" end)
   end
 
-  defp authority(%URI{host: host, port: nil}), do: host
-
   defp authority(%URI{scheme: scheme, host: host, port: port}) do
-    if URI.default_port(scheme) == port, do: host, else: "#{host}:#{port}"
+    host = if String.contains?(host, ":"), do: "[#{host}]", else: host
+    if is_nil(port) or URI.default_port(scheme) == port, do: host, else: "#{host}:#{port}"
   end
 
   defp signing_key(secret, date, region) do
@@ -135,11 +150,5 @@ defmodule Easy.Storage do
   defp hmac(key, data), do: :crypto.mac(:hmac, :sha256, key, data)
   defp sha256_hex(data), do: :crypto.hash(:sha256, data) |> hex()
   defp hex(binary), do: Base.encode16(binary, case: :lower)
-  defp encode(value), do: URI.encode(value, &unreserved?/1)
-
-  defp unreserved?(char) when char in ?A..?Z, do: true
-  defp unreserved?(char) when char in ?a..?z, do: true
-  defp unreserved?(char) when char in ?0..?9, do: true
-  defp unreserved?(char) when char in [?-, ?_, ?., ?~], do: true
-  defp unreserved?(_char), do: false
+  defp encode(value), do: URI.encode(value, &URI.char_unreserved?/1)
 end

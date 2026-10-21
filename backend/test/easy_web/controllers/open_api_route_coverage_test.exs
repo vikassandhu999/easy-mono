@@ -3,38 +3,66 @@ defmodule EasyWeb.OpenApiRouteCoverageTest do
 
   @http_methods [:delete, :get, :patch, :post, :put]
   @excluded_plugs [OpenApiSpex.Plug.RenderSpec, OpenApiSpex.Plug.SwaggerUI]
+  @allowed_legacy_operations MapSet.new([
+                               {EasyWeb.AuthController, :accept_invite},
+                               {EasyWeb.AuthController, :accept_invite_verify},
+                               {EasyWeb.AuthController, :otp},
+                               {EasyWeb.AuthController, :show_invitation},
+                               {EasyWeb.AuthController, :show_trainer_invitation},
+                               {EasyWeb.AuthController, :signup},
+                               {EasyWeb.AuthController, :token},
+                               {EasyWeb.AuthController, :trainer_accept_invite},
+                               {EasyWeb.AuthController, :trainer_accept_invite_verify},
+                               {EasyWeb.AuthController, :verify},
+                               {EasyWeb.WebhookController, :razorpay}
+                             ])
 
-  test "generated OpenAPI includes every application route" do
+  test "only auth and webhooks retain OpenApiSpex operations" do
+    legacy_operations =
+      EasyWeb.Router.__routes__()
+      |> Enum.filter(&controller_operation?/1)
+      |> MapSet.new(&{&1.plug, &1.plug_opts})
+
+    assert legacy_operations == @allowed_legacy_operations
+  end
+
+  test "generated OpenAPI includes every leftover application route" do
     paths = EasyWeb.ApiSpec.spec().paths
 
     missing_routes =
       EasyWeb.Router.__routes__()
-      |> Enum.reject(&(excluded_route?(&1) or documented_route?(&1, paths)))
+      |> Enum.reject(&(excluded_route?(&1) or typed_route?(&1) or documented_route?(&1, paths)))
       |> Enum.map(&route_name/1)
 
     assert missing_routes == []
   end
 
-  test "each application route has a controller-local OpenApiSpex operation" do
+  test "each application route has typed or a controller-local OpenApiSpex operation" do
     missing_operations =
       EasyWeb.Router.__routes__()
-      |> Enum.reject(&(excluded_route?(&1) or controller_operation?(&1)))
+      |> Enum.reject(&(excluded_route?(&1) or typed_route?(&1) or controller_operation?(&1)))
       |> Enum.map(&route_name/1)
 
     assert missing_operations == []
   end
 
-  test "each write route runs CastAndValidate" do
+  test "each write route runs a caster" do
     missing_validation =
       EasyWeb.Router.__routes__()
       |> Enum.filter(&(&1.verb in [:delete, :patch, :post, :put]))
-      |> Enum.reject(&cast_and_validate?/1)
+      |> Enum.reject(&caster?/1)
       |> Enum.map(&route_name/1)
 
     assert missing_validation == []
   end
 
   defp excluded_route?(%{plug: plug}), do: plug in @excluded_plugs
+
+  defp typed_route?(%{plug: plug, plug_opts: action}) do
+    Code.ensure_loaded?(plug) and
+      function_exported?(plug, :__typed_route__, 1) and
+      is_map(plug.__typed_route__(action))
+  end
 
   defp controller_operation?(%{plug: plug, plug_opts: action}) do
     Code.ensure_loaded?(plug) and
@@ -61,6 +89,8 @@ defmodule EasyWeb.OpenApiRouteCoverageTest do
 
     Enum.any?(scopes, &(&1 == :all or route.plug_opts in &1))
   end
+
+  defp caster?(route), do: typed_route?(route) or cast_and_validate?(route)
 
   defp cast_scope({:when, _, [_opts, {:in, _, [{:action, _, _}, actions]}]}) when is_list(actions),
     do: actions

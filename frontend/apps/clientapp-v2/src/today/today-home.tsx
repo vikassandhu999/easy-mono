@@ -1,8 +1,7 @@
 import {formatDateISO, getInitials} from '@easy/utils';
 import {Spinner} from '@heroui/react';
-import {ChevronRight, Dumbbell, MessageCircle, Play, TrendingUp, UtensilsCrossed} from 'lucide-react';
+import {ChevronRight, Dumbbell, MessageCircle, Play, UtensilsCrossed} from 'lucide-react';
 import {useNavigate} from 'react-router-dom';
-import {useListClientFormAssignmentsQuery} from '@/api/checkins';
 import {useListClientNutritionDaysQuery} from '@/api/nutrition';
 import {useGetClientProfileQuery} from '@/api/profile';
 import {
@@ -14,8 +13,6 @@ import {
 import {clientTrainingPlanFromCoverage} from '@/api/training-requests';
 import {kcalText, nutrientNumber} from '@/nutrition/nutrition-utils';
 import {ROUTES} from '@/routes';
-import CheckinNudgeCard from '@/today/checkin-nudge-card';
-import IntakeCard from '@/today/intake-card';
 import {estimatedMinutes, totalSets, workoutPreviewPath} from '@/training/training-utils';
 
 export default function TodayHome() {
@@ -27,7 +24,6 @@ export default function TodayHome() {
   const {data: nutritionDays, isLoading: nutritionLoading} = useListClientNutritionDaysQuery({
     date: formatDateISO(new Date()),
   });
-  const {data: assignments} = useListClientFormAssignmentsQuery();
   const createSession = useCreateClientTrainingSessionMutation();
   const starting = createSession.isPending;
   const profile = profileData?.data;
@@ -63,7 +59,6 @@ export default function TodayHome() {
   const completedThisWeek = (sessionsData?.data ?? []).filter(
     (session) => session.state === 'completed' && new Date(session.started_at) >= weekStart,
   ).length;
-  const completedCheckins = (assignments?.data ?? []).filter((assignment) => assignment.status === 'completed').length;
 
   return (
     <div className="px-5 pb-7 pt-[calc(env(safe-area-inset-top)+1rem)]">
@@ -85,9 +80,6 @@ export default function TodayHome() {
           {getInitials(profile?.first_name, profile?.last_name) || '?'}
         </button>
       </header>
-
-      <IntakeCard />
-      <CheckinNudgeCard />
 
       <p className="mb-3 mt-[22px] text-[11px] font-extrabold uppercase tracking-[0.12em] text-muted">
         Today&apos;s plan
@@ -225,11 +217,6 @@ export default function TodayHome() {
             </b>
             <span className="mt-1 block text-[10px] font-semibold text-muted">Nutrition today</span>
           </div>
-          <div className="h-8 w-px bg-separator" />
-          <div className="flex-1 pl-4">
-            <b className="text-[22px] font-extrabold">{completedCheckins}</b>
-            <span className="mt-1 block text-[10px] font-semibold text-muted">Check-ins</span>
-          </div>
         </div>
       </div>
       <div className="my-4 h-px bg-separator" />
@@ -245,22 +232,6 @@ export default function TodayHome() {
           <b className="block text-[13px]">Coach {coachName}</b>
           <span className="block truncate text-xs text-muted">Open your coaching conversation</span>
         </span>
-        <ChevronRight
-          className="text-muted"
-          size={17}
-        />
-      </button>
-      <div className="my-4 h-px bg-separator" />
-      <button
-        className="flex min-h-11 w-full items-center gap-3 text-left"
-        onClick={() => navigate(ROUTES.PROGRESS)}
-        type="button"
-      >
-        <TrendingUp
-          className="text-accent"
-          size={20}
-        />
-        <span className="flex-1 text-[13px] font-bold">Weight progress</span>
         <ChevronRight
           className="text-muted"
           size={17}

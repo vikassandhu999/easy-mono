@@ -1,0 +1,4 @@
+Script ran on page and returned:
+```json
+[{"path":"/api/v3/user/{user_id}/targets","status":200,"response_schema":{"type":"array","items":{"id":"number","min":"number","max":"null","vis":"boolean","custom":"boolean"}},"array_length":50},{"path":"/api/v3/user/{user_id}/food-search/string","status":200,"response_schema":{"type":"array","items":{"name":"string","id":"number","score":"number","source":"string","language":"string","globalPopularity":"number","userPopularity":"number","type":"string","category":"number","translationId":"number","stemName":"string","retired":"boolean","measureId":"number","measureDisplayName":"string","popularMeasureLoader":{},"openSearchTextScore":"number","displayString":"string","meal":"boolean","recipe":"boolean","recipeOrMeal":"boolean","replacementString":"string"}},"array_length":50}]
+```

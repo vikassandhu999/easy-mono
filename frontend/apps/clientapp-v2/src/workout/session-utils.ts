@@ -3,11 +3,11 @@
  * Used by the live logger (active-workout) and the read-only history detail so the
  * plan-vs-actual reconstruction stays identical on both sides.
  */
-import type {components} from '../api/schema.ts';
+import type {SessionPlannedSet, SessionSnapshotExercise} from '../api/schema.ts';
 import type {TrainingPerformedSet, TrainingSession} from '../api/training.ts';
 
-export type SnapshotSet = components['schemas']['TrainingPlanPlannedSet'];
-export type SnapshotExercise = components['schemas']['TrainingSessionSnapshotExercise'];
+export type SnapshotSet = SessionPlannedSet;
+export type SnapshotExercise = SessionSnapshotExercise;
 export type ExercisePick = {id: null | string; name: string; tracking_type: null | string};
 
 type ActiveExerciseCardBase = {

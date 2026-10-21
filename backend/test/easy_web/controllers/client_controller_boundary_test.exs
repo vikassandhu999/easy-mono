@@ -4,8 +4,6 @@ defmodule EasyWeb.ClientControllerBoundaryTest do
   @client_controllers [
     "lib/easy_web/controllers/coaches/client_controller.ex",
     "lib/easy_web/controllers/clients/profile_controller.ex",
-    "lib/easy_web/controllers/clients/weight_entry_controller.ex",
-    "lib/easy_web/controllers/coaches/client_weight_entry_controller.ex",
     "lib/easy_web/controllers/auth_controller.ex"
   ]
 
@@ -27,8 +25,6 @@ defmodule EasyWeb.ClientControllerBoundaryTest do
       refute source =~
                ~r/\bClient\.(accept_invite|create_inquiry|get_for_user|get_profile|invite|resend_invitation|resolve_invitation_token|revoke_invitation|self_update|update)\(/,
              path
-
-      refute source =~ ~r/\bWeightEntry\.(adherence|delete|upsert)\(/, path
     end
   end
 end

@@ -1,5 +1,5 @@
 import {Toast} from '@heroui/react';
-import {CalendarDays, ClipboardCheck, Dumbbell, MessageCircle, UtensilsCrossed} from 'lucide-react';
+import {CalendarDays, Dumbbell, MessageCircle, UtensilsCrossed} from 'lucide-react';
 import {type ReactNode} from 'react';
 import {NavLink, Outlet, ScrollRestoration, useLocation} from 'react-router-dom';
 import {useGetClientConversationQuery} from '@/api/conversation';
@@ -37,7 +37,6 @@ const BOTTOM_NAV: NavItem[] = [
   {icon: <CalendarDays size={ICON_SIZE} />, label: 'Today', path: ROUTES.TODAY},
   {icon: <Dumbbell size={ICON_SIZE} />, label: 'Train', path: ROUTES.TRAINING},
   {icon: <UtensilsCrossed size={ICON_SIZE} />, label: 'Eat', path: ROUTES.NUTRITION},
-  {icon: <ClipboardCheck size={ICON_SIZE} />, label: 'Check-ins', path: ROUTES.CHECKINS},
   {badge: <UnreadBadge />, icon: <MessageCircle size={ICON_SIZE} />, label: 'Coach', path: ROUTES.MESSAGES},
 ];
 

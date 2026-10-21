@@ -19,7 +19,7 @@
   },
   "tailwindCSS.experimental.configFile": {
     "apps/clientapp-v2/src/index.css": "apps/clientapp-v2/src/**/*.{js,jsx,ts,tsx,css}",
-    "apps/coachapp-v2/src/index.css": "apps/coachapp-v2/src/**/*.{js,jsx,ts,tsx,css}",
+    "apps/coachapp/src/index.css": "apps/coachapp/src/**/*.{js,jsx,ts,tsx,css}",
     "apps/website/app/globals.css": "apps/website/**/*.{js,jsx,ts,tsx,mdx,css}"
   },
   "editor.quickSuggestions": {

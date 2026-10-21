@@ -4,7 +4,7 @@ globs: backend/lib/**,backend/test/**,frontend/apps/**,frontend/packages/**
 alwaysApply: false
 ---
 
-For structural codebase work, prefer local `cbm` + skill `codebase-memory-axi`.
+For structural codebase work, prefer the local `cbm` CLI.
 
 - Known symbol → `cbm find|code|refs|trace`. Unknown → one short `cbm search` with **user nouns** (max 2–3). Do **not** invent PascalCase names.
 - Callers/callees → `trace --in|--out|--both`. Rename/remove → `refs --verify`. Impact → `cbm impact`. Architecture → `cbm architecture`. Dead-code/fan → `cbm query` + LIMIT.

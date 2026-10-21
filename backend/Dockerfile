@@ -1,5 +1,5 @@
 # Dockerfile for Fly.io deployment
-ARG BUILDER_IMAGE="hexpm/elixir:1.15.7-erlang-26.2.1-debian-bookworm-20231009-slim"
+ARG BUILDER_IMAGE="hexpm/elixir:1.19.1-erlang-28.1.1-debian-bookworm-20260610-slim"
 ARG RUNNER_IMAGE="debian:bookworm-slim"
 
 FROM ${BUILDER_IMAGE} AS builder
@@ -39,9 +39,9 @@ RUN apt-get update -y && \
 
 RUN sed -i '/en_US.UTF-8/s/^# //g' /etc/locale.gen && locale-gen
 
-ENV LANG en_US.UTF-8
-ENV LANGUAGE en_US:en
-ENV LC_ALL en_US.UTF-8
+ENV LANG=en_US.UTF-8
+ENV LANGUAGE=en_US:en
+ENV LC_ALL=en_US.UTF-8
 
 WORKDIR /app
 

@@ -3,16 +3,15 @@ defmodule EasyWeb.Auth.ShowInvitationTest do
 
   describe "GET /v1/auth/invitations/:token" do
     test "returns pending state with business and coach details for a valid token" do
-      coach = insert(:coach, first_name: "Rajat")
+      coach = insert(:coach, full_name: "Rajat Sharma")
       business = coach.business
 
       insert(:client,
         business: business,
-        creator: coach,
+        coach: coach,
         email: "vikas@email.com",
-        status: :pending,
-        invitation_token: "pending-token-xyz",
-        invitation_sent_at: DateTime.utc_now(:second),
+        invite_token: "pending-token-xyz",
+        invited_at: DateTime.utc_now(:second),
         user: nil,
         user_id: nil
       )
@@ -22,48 +21,25 @@ defmodule EasyWeb.Auth.ShowInvitationTest do
 
       assert data["state"] == "pending"
       assert data["business_name"] == business.name
-      assert data["coach_first_name"] == "Rajat"
+      assert data["coach_name"] == "Rajat Sharma"
       assert data["prefill_email"] == "vikas@email.com"
       assert data["expires_at"]
     end
 
-    test "prefill_email is null when the pending client has no email (phone-only invite)" do
-      coach = insert(:coach)
+    test "coach preview uses the preferred name when set" do
+      coach = insert(:coach, full_name: "Rajat Sharma", preferred_name: "Raj")
 
       insert(:client,
         business: coach.business,
-        creator: coach,
-        email: nil,
-        phone: "+91 99999 11111",
-        status: :pending,
-        invitation_token: "phone-only-token",
-        invitation_sent_at: DateTime.utc_now(:second),
-        user: nil,
-        user_id: nil
-      )
-
-      conn = build_conn() |> get("/v1/auth/invitations/phone-only-token")
-      assert %{"data" => data} = json_response(conn, 200)
-
-      assert data["state"] == "pending"
-      assert data["prefill_email"] == nil
-    end
-
-    test "coach_first_name falls back to 'Coach' when the coach has no first_name" do
-      coach = insert(:coach, first_name: nil)
-
-      insert(:client,
-        business: coach.business,
-        creator: coach,
-        status: :pending,
-        invitation_token: "nameless-coach-token",
-        invitation_sent_at: DateTime.utc_now(:second),
+        coach: coach,
+        invite_token: "nameless-coach-token",
+        invited_at: DateTime.utc_now(:second),
         user: nil,
         user_id: nil
       )
 
       conn = build_conn() |> get("/v1/auth/invitations/nameless-coach-token")
-      assert %{"data" => %{"coach_first_name" => "Coach"}} = json_response(conn, 200)
+      assert %{"data" => %{"coach_name" => "Raj"}} = json_response(conn, 200)
     end
 
     test "returns used state for an already-accepted invitation" do
@@ -71,9 +47,8 @@ defmodule EasyWeb.Auth.ShowInvitationTest do
 
       insert(:client,
         business: coach.business,
-        creator: coach,
-        status: :active,
-        invitation_token: "used-token"
+        coach: coach,
+        invite_token: "used-token"
       )
 
       conn = build_conn() |> get("/v1/auth/invitations/used-token")
@@ -81,7 +56,7 @@ defmodule EasyWeb.Auth.ShowInvitationTest do
 
       # Do not leak business/coach details for non-pending states.
       refute Map.has_key?(data, "business_name")
-      refute Map.has_key?(data, "coach_first_name")
+      refute Map.has_key?(data, "coach_name")
       refute Map.has_key?(data, "prefill_email")
     end
 
@@ -91,10 +66,9 @@ defmodule EasyWeb.Auth.ShowInvitationTest do
 
       insert(:client,
         business: coach.business,
-        creator: coach,
-        status: :pending,
-        invitation_token: "expired-token",
-        invitation_sent_at: sent_at,
+        coach: coach,
+        invite_token: "expired-token",
+        invited_at: sent_at,
         user: nil,
         user_id: nil
       )

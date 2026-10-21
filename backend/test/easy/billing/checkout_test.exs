@@ -6,7 +6,7 @@ defmodule Easy.Billing.CheckoutTest do
 
   import Easy.Factory
 
-  defp ctx_for(business), do: Ctx.new(business.id, business.owner_id)
+  defp ctx_for(business), do: Ctx.new(business.id, business.owner_user_id)
 
   defp billing_for(business_id),
     do: Repo.get_by(BusinessBilling, business_id: business_id) || %BusinessBilling{}
@@ -56,34 +56,64 @@ defmodule Easy.Billing.CheckoutTest do
   test "checkout with an existing active subscription updates quantity immediately" do
     stub_razorpay()
     business = insert(:business)
-    insert(:business_billing, business: business, paid_seats: 3, status: :active, razorpay_subscription_id: "sub_existing")
+    business.billing |> Ecto.Changeset.change(paid_seats: 3, status: :active, razorpay_subscription_id: "sub_existing") |> Easy.Repo.update!()
 
     assert {:ok, %{action: :updated, billing: billing}} = Billing.checkout(ctx_for(business), 1)
     assert billing.paid_seats == 4
     assert [%{kind: :seats_added, seat_delta: 1} | _] = summary(ctx_for(business)).recent_events
   end
 
-  test "buying seats activates the oldest awaiting_seat clients" do
+  test "checkout rejects past-due and scheduled-for-cancellation subscriptions" do
+    stub_razorpay()
+
+    for status <- [:past_due, :cancel_at_period_end] do
+      business = insert(:business)
+      business.billing |> Ecto.Changeset.change(status: status, razorpay_subscription_id: "sub_#{status}") |> Easy.Repo.update!()
+
+      assert {:error, changeset} = Billing.checkout(ctx_for(business), 1)
+      assert %{status: ["is unavailable for this action"]} = errors_on(changeset)
+    end
+  end
+
+  test "checkout rejects more than 100 seats before calling the provider" do
     stub_razorpay()
     business = insert(:business)
-    insert(:business_billing, business: business, paid_seats: 3, status: :active, razorpay_subscription_id: "sub_existing")
-    insert(:client, business: business, status: :active)
-    insert(:client, business: business, status: :active)
-    insert(:client, business: business, status: :active)
-    insert(:client, business: business, status: :active)
-    insert(:client, business: business, status: :active)
-    waiting = insert(:client, business: business, status: :inactive, inactive_reason: :awaiting_seat)
+
+    assert {:error, changeset} = Billing.checkout(ctx_for(business), 101)
+    assert %{seats_to_add: ["must be less than or equal to 100"]} = errors_on(changeset)
+  end
+
+  test "invalid seat increases return changeset errors without changing billing or contacting the provider" do
+    Req.Test.stub(Easy.Razorpay, fn _conn -> flunk("invalid checkout must not contact Razorpay") end)
+    business = insert(:business)
+
+    for value <- [nil, 0, -1, 1.5, "invalid", %{}] do
+      assert {:error, %Ecto.Changeset{valid?: false} = changeset} = Billing.checkout(ctx_for(business), value)
+      assert Map.has_key?(errors_on(changeset), :seats_to_add)
+      assert Repo.get_by(BusinessBilling, business_id: business.id).paid_seats == 0
+    end
+  end
+
+  test "buying seats leaves joined clients waiting for an explicit coaching start" do
+    stub_razorpay()
+    business = insert(:business)
+    business.billing |> Ecto.Changeset.change(paid_seats: 3, status: :active, razorpay_subscription_id: "sub_existing") |> Easy.Repo.update!()
+    insert(:client, business: business)
+    insert(:client, business: business)
+    insert(:client, business: business)
+    insert(:client, business: business)
+    insert(:client, business: business)
+    waiting = insert(:client, business: business, terms: [])
 
     {:ok, _} = Billing.checkout(ctx_for(business), 1)
 
-    assert Repo.get!(Easy.Clients.Client, waiting.id).status == :active
-    assert Repo.get!(Easy.Clients.Client, waiting.id).inactive_reason == nil
+    assert Repo.preload(Repo.get!(Easy.Clients.Client, waiting.id), :terms).terms == []
   end
 
   test "cancel schedules cancellation at period end and keeps paid seats" do
     stub_razorpay()
     business = insert(:business)
-    insert(:business_billing, business: business, paid_seats: 3, status: :active, razorpay_subscription_id: "sub_existing")
+    business.billing |> Ecto.Changeset.change(paid_seats: 3, status: :active, razorpay_subscription_id: "sub_existing") |> Easy.Repo.update!()
 
     assert {:ok, billing} = Billing.cancel(ctx_for(business))
     assert billing.status == :cancel_at_period_end
@@ -97,10 +127,22 @@ defmodule Easy.Billing.CheckoutTest do
     assert {:error, :no_subscription} = Billing.cancel(ctx_for(business))
   end
 
+  test "cancel rejects subscriptions that are already scheduled or cancelled" do
+    stub_razorpay()
+
+    for status <- [:free, :cancel_at_period_end, :cancelled] do
+      business = insert(:business)
+      business.billing |> Ecto.Changeset.change(status: status, razorpay_subscription_id: "sub_#{status}") |> Easy.Repo.update!()
+
+      assert {:error, changeset} = Billing.cancel(ctx_for(business))
+      assert %{status: ["is unavailable for this action"]} = errors_on(changeset)
+    end
+  end
+
   test "checkout with a stale subscription id on a free (never-paid) business starts a fresh checkout" do
     stub_razorpay()
     business = insert(:business)
-    insert(:business_billing, business: business, paid_seats: 0, status: :free, razorpay_subscription_id: "sub_stale")
+    business.billing |> Ecto.Changeset.change(paid_seats: 0, status: :free, razorpay_subscription_id: "sub_stale") |> Easy.Repo.update!()
 
     assert {:ok, %{action: :checkout, checkout: checkout, billing: billing}} =
              Billing.checkout(ctx_for(business), 3)
@@ -109,7 +151,6 @@ defmodule Easy.Billing.CheckoutTest do
     assert billing.paid_seats == 0
     assert billing_for(business.id).razorpay_subscription_id == "sub_new"
     refute Enum.any?(summary(ctx_for(business)).recent_events, &(&1.kind == :seats_added))
-    assert summary(ctx_for(business)).awaiting_seat_count == 0
   end
 
   test "razorpay failure surfaces as :razorpay_error and changes nothing" do

@@ -1,9 +1,10 @@
 defmodule Mix.Tasks.SeedFoods do
   use Mix.Task
 
-  @shortdoc "Seeds the foods database from priv/repo/foods_database.csv"
+  @shortdoc "Seeds the tenant food and nutrient catalogues"
 
   @impl Mix.Task
+  @spec run([String.t()]) :: {term(), keyword()}
   def run(_args) do
     Mix.Task.run("app.start")
 

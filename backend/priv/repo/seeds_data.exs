@@ -4,7 +4,6 @@
 #
 # Requires these files in priv/repo/:
 #   - exercises.json (~1.2 MB, ~800 exercises)
-#   - foods_database.csv (~249 MB, ~100k foods)
 #
 # These files are excluded from the Docker image to keep it small.
 # Seeds are idempotent — safe to run multiple times.

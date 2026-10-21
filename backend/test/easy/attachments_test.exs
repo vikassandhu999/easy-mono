@@ -5,6 +5,41 @@ defmodule Easy.AttachmentsTest do
   alias Easy.Attachments.Attachment
   alias Easy.Ctx
 
+  test "the schema derives storage keys from trusted tenant, client, and attachment identities" do
+    business_id = Ecto.UUID.generate()
+    client_id = Ecto.UUID.generate()
+    id = Ecto.UUID.generate()
+
+    changeset =
+      Attachment.insert_changeset(business_id, :client, client_id, client_id, id, %{
+        "storage_key" => "outside/tenant.jpg",
+        "business_id" => Ecto.UUID.generate(),
+        "client_id" => Ecto.UUID.generate(),
+        "id" => Ecto.UUID.generate(),
+        "content_type" => "image/jpeg",
+        "byte_size" => 1024
+      })
+
+    assert changeset.valid?
+
+    assert Ecto.Changeset.get_field(changeset, :storage_key) ==
+             "businesses/#{business_id}/clients/#{client_id}/attachments/#{id}.jpg"
+  end
+
+  test "download IDs are canonicalized before lookup and duplicate checks" do
+    client = insert_client()
+    attachment = insert(:attachment, id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", business: client.business, client: client)
+    upper_id = String.upcase(attachment.id)
+
+    assert {:ok, [%{id: id}]} = Attachments.get_client_downloads(client_ctx(client), [upper_id])
+    assert id == attachment.id
+
+    assert {:ok, [%{id: ^id}]} = Attachments.get_downloads(owner_ctx(client.business), [upper_id])
+
+    assert {:error, :invalid_attachments} =
+             Attachments.get_client_downloads(client_ctx(client), [attachment.id, upper_id])
+  end
+
   test "creates tenant-scoped client upload metadata and a signed URL" do
     client = insert_client()
 
@@ -26,7 +61,7 @@ defmodule Easy.AttachmentsTest do
 
   test "creates an upload for a client visible to the trainer" do
     trainer = insert(:coach)
-    client = insert(:client, business: trainer.business, creator: trainer, assigned_coach: trainer)
+    client = insert(:client, business: trainer.business, coach: trainer)
 
     assert {:ok, upload} =
              Attachments.create_upload_for_client(trainer_ctx(trainer), client.id, %{
@@ -53,6 +88,37 @@ defmodule Easy.AttachmentsTest do
 
     assert upload.attachment.duration_ms == 30_000
     refute Map.has_key?(Map.from_struct(upload.attachment), :purpose)
+  end
+
+  test "coach uploads reject hidden and cross-business clients without inserting metadata" do
+    trainer = insert(:coach)
+    assigned = insert(:coach, business: trainer.business)
+    hidden = insert(:client, business: trainer.business, coach: assigned)
+    foreign = insert_client()
+
+    for client <- [hidden, foreign] do
+      assert {:error, :not_found} =
+               Attachments.create_upload_for_client(trainer_ctx(trainer), client.id, %{
+                 content_type: "image/png",
+                 byte_size: 100
+               })
+    end
+
+    refute Repo.exists?(Attachment)
+  end
+
+  test "client download batches reject another client's attachment without a partial result" do
+    client = insert_client()
+    other_client = insert(:client, business: client.business, coach: client.coach)
+    owned = insert_attachment(client)
+    other = insert_attachment(other_client)
+
+    for ids <- [[owned.id, other.id], [other.id, owned.id]] do
+      assert {:error, :not_found} = Attachments.get_client_downloads(client_ctx(client), ids)
+    end
+
+    assert {:ok, [%{id: id}]} = Attachments.get_client_downloads(client_ctx(client), [owned.id])
+    assert id == owned.id
   end
 
   test "validates content type and byte size" do
@@ -141,7 +207,7 @@ defmodule Easy.AttachmentsTest do
   test "returns downloads to the business owner" do
     business = insert(:business)
     owner = insert(:coach, business: business, user: business.owner)
-    client = insert(:client, business: business, creator: owner)
+    client = insert(:client, business: business, coach: owner)
     attachment = insert_attachment(client)
 
     assert {:ok, [%{id: id}]} = Attachments.get_downloads(owner_ctx(business), [attachment.id])
@@ -150,7 +216,7 @@ defmodule Easy.AttachmentsTest do
 
   test "returns downloads to the assigned trainer" do
     trainer = insert(:coach)
-    client = insert(:client, business: trainer.business, creator: trainer, assigned_coach: trainer)
+    client = insert(:client, business: trainer.business, coach: trainer)
     attachment = insert_attachment(client)
 
     assert {:ok, [%{id: id}]} = Attachments.get_downloads(trainer_ctx(trainer), [attachment.id])
@@ -160,7 +226,7 @@ defmodule Easy.AttachmentsTest do
   test "hides downloads from an unassigned trainer" do
     trainer = insert(:coach)
     assigned = insert(:coach, business: trainer.business)
-    client = insert(:client, business: trainer.business, creator: assigned, assigned_coach: assigned)
+    client = insert(:client, business: trainer.business, coach: assigned)
     attachment = insert_attachment(client)
 
     assert {:error, :not_found} = Attachments.get_downloads(trainer_ctx(trainer), [attachment.id])
@@ -221,7 +287,7 @@ defmodule Easy.AttachmentsTest do
 
   defp insert_client do
     coach = insert(:coach)
-    insert(:client, creator: coach, business: coach.business, user: insert(:user))
+    insert(:client, coach: coach, business: coach.business, user: insert(:user))
   end
 
   defp client_ctx(client) do

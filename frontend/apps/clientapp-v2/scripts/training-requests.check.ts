@@ -1,4 +1,4 @@
-import type {components} from '../src/api/schema.ts';
+import type {ClientTrainingCoverageResponse} from '../src/api/training-requests.ts';
 import {
   clientTrainingCoverageRequest,
   clientTrainingPlanFromCoverage,
@@ -19,7 +19,7 @@ assert(datedRequest.params.query.date === '2026-08-15', 'the requested UTC date 
 const todayRequest = clientTrainingCoverageRequest();
 assert(!('date' in todayRequest.params.query), 'an omitted date lets the server resolve UTC today');
 
-const noCoverage = {data: null} satisfies components['schemas']['ClientTrainingCoverageResponse'];
+const noCoverage = {data: null} satisfies ClientTrainingCoverageResponse;
 assert(clientTrainingPlanFromCoverage(noCoverage) === undefined, 'nullable Coverage selects the no-plan UI state');
 
 const complete = clientTrainingSessionCompleteRequest({

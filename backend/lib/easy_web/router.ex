@@ -24,7 +24,8 @@ defmodule EasyWeb.Router do
     plug OpenApiSpex.Plug.PutApiSpec, module: EasyWeb.ApiSpec
     plug EasyWeb.Plugs.Authenticate
     plug EasyWeb.Plugs.EnsureRole, role: :client
-    plug EasyWeb.Plugs.EnsureActiveClient
+    plug EasyWeb.Plugs.LoadClient
+    plug EasyWeb.Plugs.RequireCoaching
   end
 
   scope "/api", EasyWeb do
@@ -39,6 +40,10 @@ defmodule EasyWeb.Router do
     get "/openapi", OpenApiSpex.Plug.RenderSpec, []
   end
 
+  scope "/", EasyWeb do
+    get "/ready", HealthController, :ready
+  end
+
   scope "/" do
     get "/swaggerui", OpenApiSpex.Plug.SwaggerUI, path: "/api/openapi"
   end
@@ -49,7 +54,7 @@ defmodule EasyWeb.Router do
     post "/signup", AuthController, :signup
     get "/invitations/:token", AuthController, :show_invitation
     post "/accept-invite", AuthController, :accept_invite
-    post "/accept-invite/verify", AuthController, :accept_invite_verify
+    post "/invites/:token/accept", AuthController, :accept_invite_verify
     post "/otp", AuthController, :otp
     post "/verify", AuthController, :verify
     post "/token", AuthController, :token
@@ -57,15 +62,6 @@ defmodule EasyWeb.Router do
     get "/trainer-invitations/:token", AuthController, :show_trainer_invitation
     post "/trainer-accept-invite", AuthController, :trainer_accept_invite
     post "/trainer-accept-invite/verify", AuthController, :trainer_accept_invite_verify
-  end
-
-  # Unauthenticated public landing funnel: anonymous prospects render a coach's published
-  # page and submit applications. No auth pipeline by design.
-  scope "/v1/public", EasyWeb.Public do
-    pipe_through :api
-
-    get "/landing-pages/:slug", LandingPageController, :show
-    post "/landing-pages/:slug/applications", LandingPageController, :apply
   end
 
   # Unauthenticated Razorpay webhook: verified by HMAC signature over the raw body, not auth.
@@ -78,15 +74,52 @@ defmodule EasyWeb.Router do
   scope "/v1/businesses", EasyWeb do
     pipe_through :require_user
     post "/", BusinessController, :create
+    get "/handle-availability", BusinessController, :handle_availability
 
     pipe_through :require_coach
     get "/me", BusinessController, :show
+    get "/timezones", BusinessController, :timezones
     patch "/me", BusinessController, :update
-    patch "/me/dashboard-setup", BusinessController, :update_dashboard_setup
   end
 
   scope "/v1/coach", EasyWeb.Coaches do
     pipe_through :require_coach
+
+    get "/trackers", TrackerController, :index
+    get "/trackers/:id", TrackerController, :show
+    post "/trackers", TrackerController, :create
+    patch "/trackers/:id", TrackerController, :update
+    delete "/trackers/:id", TrackerController, :delete
+    post "/trackers/:id/archive", TrackerController, :archive
+    post "/trackers/:id/restore", TrackerController, :restore
+    get "/tracker-templates", TrackerTemplateController, :index
+    post "/tracker-templates", TrackerTemplateController, :create
+    get "/tracker-templates/:id", TrackerTemplateController, :show
+    patch "/tracker-templates/:id", TrackerTemplateController, :update
+    get "/review-roster", ReviewController, :roster
+    get "/review-settings", ReviewController, :settings
+    patch "/review-settings", ReviewController, :update_settings
+    get "/clients/:client_id/review-screen", ReviewController, :screen
+    get "/clients/:client_id/reviews", ReviewController, :index
+    post "/clients/:client_id/reviews", ReviewController, :create
+    patch "/clients/:client_id/reviews/:id", ReviewController, :update
+    get "/tracker-settings", TrackerTemplateController, :settings
+    patch "/tracker-settings", TrackerTemplateController, :update_settings
+    get "/clients/:client_id/tracker-assignments", TrackerClientController, :assignments
+    get "/clients/:client_id/tracker-entries", TrackerClientController, :entries
+    post "/clients/:client_id/tracker-entries", TrackerClientController, :create_entry
+    patch "/clients/:client_id/tracker-entries/:id", TrackerClientController, :update_entry
+    delete "/clients/:client_id/tracker-entries/:id", TrackerClientController, :remove_entry
+    get "/clients/:client_id/tracker-today", TrackerClientController, :today
+    get "/clients/:client_id/tracker-prompts", TrackerClientController, :prompts
+    get "/clients/:client_id/tracker-requests", TrackerClientController, :requests
+    get "/clients/:client_id/trackers/:id/metrics", TrackerClientController, :metrics
+    post "/clients/:client_id/tracker-assignments", TrackerClientController, :add_assignment
+    patch "/clients/:client_id/tracker-assignments/:id", TrackerClientController, :change_assignment
+    delete "/clients/:client_id/tracker-assignments/:id", TrackerClientController, :end_assignment
+    post "/clients/:client_id/tracker-requests", TrackerClientController, :request
+    delete "/clients/:client_id/tracker-requests/:id", TrackerClientController, :cancel_request
+    post "/clients/:client_id/tracker-templates/:id/apply", TrackerTemplateController, :apply
 
     get "/me", ProfileController, :show
     patch "/me", ProfileController, :update
@@ -96,193 +129,162 @@ defmodule EasyWeb.Router do
     post "/billing/cancel", BillingController, :cancel
     post "/billing/sync", BillingController, :sync
 
-    # Landing funnel
-    get "/landing-page", LandingPageController, :show
-    put "/landing-page", LandingPageController, :update
-    get "/prospects", ProspectController, :index
-    get "/prospects/:id", ProspectController, :show
-    patch "/prospects/:id", ProspectController, :update
-    post "/prospects/:id/enroll", ProspectController, :enroll
-
-    get "/workbench", WorkbenchController, :index
-    get "/workbench/queues/onboarding", WorkbenchController, :onboarding
-    get "/workbench/queues/programming", WorkbenchController, :programming
-    get "/workbench/queues/expiring", WorkbenchController, :expiring
-    get "/workbench/queues/quiet", WorkbenchController, :quiet
-    get "/workbench/queues/check-ins", WorkbenchController, :check_ins
-    get "/workbench/queues/replies", WorkbenchController, :replies
-    put "/clients/:id/queue-snooze", WorkbenchController, :snooze
-
-    post "/clients/invite", ClientController, :invite
-    post "/clients/:id/resend-invite", ClientController, :resend_invite
+    post "/clients", ClientController, :invite
+    post "/clients/:id/invite", ClientController, :resend_invite
     get "/clients/:id", ClientController, :show
     patch "/clients/:id", ClientController, :update
     delete "/clients/:id", ClientController, :delete
     get "/clients", ClientController, :index
-    post "/clients/:id/reassign", ClientController, :reassign
+    post "/clients/:id/terms", CoachingTermController, :create
+    patch "/terms/:id", CoachingTermController, :update
     post "/clients/:client_id/uploads", UploadController, :create
     post "/attachments/download-urls", UploadController, :download_urls
     post "/library-media/uploads", LibraryMediaController, :create
 
-    get "/team", TeamController, :index
-    post "/team/invite", TeamController, :invite
-    post "/team/:id/resend-invite", TeamController, :resend_invite
-    delete "/team/:id", TeamController, :revoke_invite
-    post "/team/:id/deactivate", TeamController, :deactivate
-    post "/team/:id/reactivate", TeamController, :reactivate
+    get "/coaches", TeamController, :index
+    get "/coaches/:id", TeamController, :show
+    post "/coaches", TeamController, :invite
+    post "/coaches/:id/invite", TeamController, :resend_invite
+    delete "/coaches/:id", TeamController, :revoke_invite
+    post "/coaches/:id/remove", TeamController, :remove
 
-    get "/form-templates", FormTemplateController, :index
-    post "/form-templates", FormTemplateController, :create
-    get "/form-templates/:id", FormTemplateController, :show
-    patch "/form-templates/:id", FormTemplateController, :update
-    delete "/form-templates/:id", FormTemplateController, :delete
-    put "/form-templates/:id/default-intake", FormTemplateController, :set_default_intake
-    delete "/form-templates/:id/default-intake", FormTemplateController, :clear_default_intake
-    get "/clients/:client_id/check-in-schedules", CheckInScheduleController, :index
-    post "/clients/:client_id/check-in-schedules", CheckInScheduleController, :create
-    patch "/check-in-schedules/:id", CheckInScheduleController, :update
-    delete "/check-in-schedules/:id", CheckInScheduleController, :delete
-    get "/check-ins/review-queue", CheckInReviewController, :index
-    post "/form-submissions/:id/review", CheckInReviewController, :review
-    get "/clients/:client_id/form-assignments", FormAssignmentController, :index
-    post "/clients/:client_id/form-assignments", FormAssignmentController, :create
-    get "/form-assignments/:id/submissions", FormAssignmentController, :submissions
-    patch "/form-assignments/:id", FormAssignmentController, :update
-    post "/form-assignments/:id/remind", FormAssignmentController, :remind
+    get "/exercises", ExerciseController, :index
+    post "/exercises", ExerciseController, :create
+    get "/exercises/:id", ExerciseController, :show
+    patch "/exercises/:id", ExerciseController, :update
+    delete "/exercises/:id", ExerciseController, :delete
+    post "/exercises/:id/copy", ExerciseController, :copy
+    post "/exercises/:id/archive", ExerciseController, :archive
+    post "/exercises/:id/restore", ExerciseController, :restore
+    get "/workouts", WorkoutController, :index
+    post "/workouts", WorkoutController, :create
+    get "/workouts/:id", WorkoutController, :show
+    patch "/workouts/:id", WorkoutController, :update
+    delete "/workouts/:id", WorkoutController, :delete
+    post "/workouts/:id/copy", WorkoutController, :copy
+    get "/clients/:client_id/workouts", ClientWorkoutController, :index
+    post "/clients/:client_id/workouts", ClientWorkoutController, :create
+    get "/clients/:client_id/workouts/:id", ClientWorkoutController, :show
+    patch "/clients/:client_id/workouts/:id", ClientWorkoutController, :update
+    delete "/clients/:client_id/workouts/:id", ClientWorkoutController, :delete
+    post "/clients/:client_id/workouts/:id/copy", ClientWorkoutController, :copy
+    post "/clients/:client_id/workouts/:id/assign", ClientWorkoutController, :assign
+    get "/clients/:client_id/workout-week", WorkoutWeekController, :show
+    post "/clients/:client_id/workout-schedules", WorkoutWeekController, :create_schedule
+    patch "/clients/:client_id/workout-schedules/:id", WorkoutWeekController, :update_schedule
+    delete "/clients/:client_id/workout-schedules/:id", WorkoutWeekController, :remove_schedule
+    post "/clients/:client_id/workout-undo", WorkoutWeekController, :undo
+
+    get "/clients/:client_id/workout-logs", ClientWorkoutLogController, :index
+    post "/clients/:client_id/workout-logs", ClientWorkoutLogController, :start
+    get "/clients/:client_id/workout-logs/:id", ClientWorkoutLogController, :show
+    patch "/clients/:client_id/workout-logs/:id", ClientWorkoutLogController, :update
+    post "/clients/:client_id/workout-logs/:id/finish", ClientWorkoutLogController, :finish
+    post "/clients/:client_id/workout-logs/:id/discard", ClientWorkoutLogController, :discard
+    post "/clients/:client_id/workout-logs/:id/reopen", ClientWorkoutLogController, :reopen
+    post "/clients/:client_id/workout-logs/:id/exercise-logs", ClientWorkoutLogController, :start_activity
+    patch "/clients/:client_id/workout-logs/:id/exercise-logs/:activity_id", ClientWorkoutLogController, :update_activity
+    post "/clients/:client_id/workout-logs/:id/exercise-logs/:activity_id/complete", ClientWorkoutLogController, :complete_activity
+    post "/clients/:client_id/workout-logs/:id/exercise-logs/:activity_id/skip", ClientWorkoutLogController, :skip_activity
+    post "/clients/:client_id/workout-logs/:id/exercise-logs/:activity_id/reopen", ClientWorkoutLogController, :reopen_activity
+    post "/clients/:client_id/workout-logs/:id/exercise-logs/:activity_id/replace", ClientWorkoutLogController, :replace_activity
+    post "/clients/:client_id/workout-logs/:id/exercise-logs/:activity_id/sets", ClientWorkoutLogController, :record_set
+    patch "/clients/:client_id/workout-logs/:id/exercise-logs/:activity_id/sets/:set_id", ClientWorkoutLogController, :correct_set
+    delete "/clients/:client_id/workout-logs/:id/exercise-logs/:activity_id/sets/:set_id", ClientWorkoutLogController, :remove_set
 
     # Client-scoped plan lists
-    get "/clients/:client_id/training-plans", ClientPlanController, :training_plans
-    get "/clients/:client_id/nutrition-plans", ClientPlanController, :nutrition_plans
-    get "/clients/:client_id/weight_entries", ClientWeightEntryController, :index
-
-    get "/nutrition-foods", FoodController, :index
-    get "/nutrition-foods/categories", FoodController, :categories
-    post "/nutrition-foods", FoodController, :create
-    get "/nutrition-foods/:id", FoodController, :show
-    patch "/nutrition-foods/:id", FoodController, :update
-    delete "/nutrition-foods/:id", FoodController, :delete
-    get "/nutrition-foods/:id/impact", FoodController, :impact
-    post "/nutrition-foods/:id/copy", FoodController, :copy
-
-    get "/nutrition-recipes", RecipeController, :index
-    post "/nutrition-recipes", RecipeController, :create
-    get "/nutrition-recipes/:id", RecipeController, :show
-    patch "/nutrition-recipes/:id", RecipeController, :update
-    delete "/nutrition-recipes/:id", RecipeController, :delete
-    get "/nutrition-recipes/:id/impact", RecipeController, :impact
-    post "/nutrition-recipes/:id/copy", RecipeController, :copy
-
-    get "/nutrition-plans", NutritionPlanController, :index
-    post "/nutrition-plans", NutritionPlanController, :create
-    get "/nutrition-plans/:id", NutritionPlanController, :show
-    patch "/nutrition-plans/:id", NutritionPlanController, :update
-    delete "/nutrition-plans/:id", NutritionPlanController, :delete
-    post "/nutrition-plans/:id/archive", NutritionPlanController, :archive
-    post "/nutrition-plans/:id/restore", NutritionPlanController, :restore
-    post "/nutrition-plans/:id/duplicate", NutritionPlanController, :duplicate
-    post "/clients/:client_id/nutrition-plans/:id/assign", NutritionPlanController, :assign
-    put "/nutrition-plans/:id/menu", NutritionPlanController, :replace_menu
-
-    get "/training-exercises", ExerciseController, :index
-    post "/training-exercises", ExerciseController, :create
-    get "/training-exercises/:id", ExerciseController, :show
-    patch "/training-exercises/:id", ExerciseController, :update
-    delete "/training-exercises/:id", ExerciseController, :delete
-    post "/training-exercises/:id/copy", ExerciseController, :copy
-
-    get "/training-muscles", MuscleController, :index
-    get "/training-equipment", EquipmentController, :index
-
-    get "/training-plans", TrainingPlanController, :index
-    post "/training-plans", TrainingPlanController, :create
-    get "/training-plans/:id", TrainingPlanController, :show
-    patch "/training-plans/:id", TrainingPlanController, :update
-    put "/training-plans/:id/prescription", TrainingPlanController, :replace_prescription
-    delete "/training-plans/:id", TrainingPlanController, :delete
-    post "/training-plans/:id/archive", TrainingPlanController, :archive
-    post "/training-plans/:id/restore", TrainingPlanController, :restore
-    post "/training-plans/:id/duplicate", TrainingPlanController, :duplicate
-    post "/clients/:client_id/training-plans/:id/assign", TrainingPlanController, :assign
 
     # Client-scoped training sessions (read-only)
-    get "/clients/:client_id/training-sessions", WorkoutSessionController, :index
-    get "/clients/:client_id/training-sessions/:id", WorkoutSessionController, :show
-
-    get "/clients/:client_id/nutrition-days", NutritionDayController, :index
 
     # Chat
     get "/conversations", ConversationController, :index
+    get "/conversation-inbox", ConversationController, :inbox
+    get "/conversations/:id/history", ConversationController, :history
     get "/conversations/:id", ConversationController, :show
     get "/conversations/:id/messages", ConversationController, :messages
     post "/conversations/:id/messages", ConversationController, :create_message
     post "/conversations/:id/read", ConversationController, :mark_read
-    post "/conversations/:id/mark-handled", ConversationController, :mark_handled
     get "/clients/:client_id/conversation", ConversationController, :show_for_client
+
+    get "/foods", FoodController, :index
+    get "/foods/:id", FoodController, :show
+    post "/foods", FoodController, :create
+    patch "/foods/:id", FoodController, :update
+    get "/nutrients", FoodController, :nutrients
+    get "/clients/:client_id/nutrition-week", NutritionWeekController, :show
+    get "/clients/:client_id/nutrition-presets", NutritionWeekController, :presets
+    post "/clients/:client_id/nutrition-presets", NutritionWeekController, :create_preset
+    patch "/clients/:client_id/nutrition-presets/:id", NutritionWeekController, :update_preset
+    delete "/clients/:client_id/nutrition-presets/:id", NutritionWeekController, :archive_preset
+    post "/clients/:client_id/nutrition-schedules", NutritionWeekController, :create_schedule
+    patch "/clients/:client_id/nutrition-schedules/:id", NutritionWeekController, :update_schedule
+    delete "/clients/:client_id/nutrition-schedules/:id", NutritionWeekController, :remove_schedule
+    post "/clients/:client_id/nutrition-targets", NutritionWeekController, :create_targets
+    patch "/clients/:client_id/nutrition-targets/:id", NutritionWeekController, :update_targets
+    put "/clients/:client_id/nutrition-target-days/:weekday", NutritionWeekController, :assign_targets
+    post "/clients/:client_id/nutrition-undo", NutritionWeekController, :undo
   end
 
   scope "/v1/client", EasyWeb.Clients do
     pipe_through :require_client
 
+    get "/days/:date", DayController, :show
+    get "/week-markers", DayController, :markers
+    get "/foods", NutritionLogController, :foods
+    get "/exercises", DayController, :exercises
+    post "/nutrition-logs/restore", NutritionLogController, :restore
+    post "/nutrition-logs", NutritionLogController, :create
+    get "/nutrition-logs/:id", NutritionLogController, :show
+    patch "/nutrition-logs/:id", NutritionLogController, :update
+    delete "/nutrition-logs/:id", NutritionLogController, :delete
+
+    get "/workout-logs", WorkoutLogController, :index
+    post "/workout-logs", WorkoutLogController, :start
+    get "/workout-logs/:id", WorkoutLogController, :show
+    patch "/workout-logs/:id", WorkoutLogController, :update
+    post "/workout-logs/:id/finish", WorkoutLogController, :finish
+    post "/workout-logs/:id/discard", WorkoutLogController, :discard
+    post "/workout-logs/:id/reopen", WorkoutLogController, :reopen
+    post "/workout-logs/:id/exercise-logs", WorkoutLogController, :start_activity
+    patch "/workout-logs/:id/exercise-logs/:activity_id", WorkoutLogController, :update_activity
+    post "/workout-logs/:id/exercise-logs/:activity_id/complete", WorkoutLogController, :complete_activity
+    post "/workout-logs/:id/exercise-logs/:activity_id/skip", WorkoutLogController, :skip_activity
+    post "/workout-logs/:id/exercise-logs/:activity_id/reopen", WorkoutLogController, :reopen_activity
+    post "/workout-logs/:id/exercise-logs/:activity_id/replace", WorkoutLogController, :replace_activity
+    post "/workout-logs/:id/exercise-logs/:activity_id/sets", WorkoutLogController, :record_set
+    patch "/workout-logs/:id/exercise-logs/:activity_id/sets/:set_id", WorkoutLogController, :correct_set
+    delete "/workout-logs/:id/exercise-logs/:activity_id/sets/:set_id", WorkoutLogController, :remove_set
+
+    get "/review-replies", ReviewReplyController, :index
+    get "/trackers", TrackerController, :index
+    get "/trackers/:id", TrackerController, :show
+    get "/tracker-assignments", TrackerClientController, :assignments
+    get "/tracker-entries", TrackerClientController, :entries
+    post "/tracker-entries", TrackerClientController, :create_entry
+    patch "/tracker-entries/:id", TrackerClientController, :update_entry
+    delete "/tracker-entries/:id", TrackerClientController, :remove_entry
+    get "/tracker-today", TrackerClientController, :today
+    get "/tracker-prompts", TrackerClientController, :prompts
+    get "/tracker-requests", TrackerClientController, :requests
+    get "/trackers/:id/metrics", TrackerClientController, :metrics
+
     get "/me", ProfileController, :show
     patch "/me", ProfileController, :update
 
     post "/uploads", UploadController, :create
-    post "/attachments/download-urls", UploadController, :download_urls
-
-    get "/form-assignments", FormAssignmentController, :index
-    get "/form-assignments/:id", FormAssignmentController, :show
-    post "/form-assignments/:id/submit", FormAssignmentController, :submit
+    get "/attachments/download-urls", UploadController, :download_urls
 
     # Training plans (read-only)
-    get "/training-plans", TrainingPlanController, :index
-    get "/training-plans/coverage", TrainingPlanController, :coverage
-    get "/training-plans/:id", TrainingPlanController, :show
 
     # Exercises (read-only)
-    get "/training-exercises", ExerciseController, :index
-    get "/training-exercises/:id", ExerciseController, :show
 
     # Training sessions
-    get "/training-sessions", WorkoutSessionController, :index
-    post "/training-sessions", WorkoutSessionController, :create
-    get "/training-sessions/active", WorkoutSessionController, :active
-    post "/training-sessions/:id/complete", WorkoutSessionController, :complete
-    post "/training-sessions/:id/discard", WorkoutSessionController, :discard
-    get "/training-sessions/:id", WorkoutSessionController, :show
-    patch "/training-sessions/:id", WorkoutSessionController, :update
-    post "/training-sessions/:session_id/performed-sets", PerformedSetController, :create
-    patch "/training-performed-sets/:id", PerformedSetController, :update
-    delete "/training-performed-sets/:id", PerformedSetController, :delete
-
-    # Nutrition plans (read-only)
-    get "/nutrition-plans", NutritionPlanController, :index
-    get "/nutrition-plans/:id", NutritionPlanController, :show
 
     # Foods (read-only)
-    get "/nutrition-foods", FoodController, :index
-    get "/nutrition-foods/:id", FoodController, :show
-
-    # Recipes (read-only)
-    get "/nutrition-recipes", RecipeController, :index
-    get "/nutrition-recipes/:id", RecipeController, :show
-
-    get "/nutrition-days", NutritionDayController, :index
-    post "/nutrition-days/:date/extras", NutritionDayController, :add_extra
-    post "/nutrition-days/:date/planned-items", NutritionDayController, :log_planned_item
-    post "/nutrition-days/:date/planned-options", NutritionDayController, :log_planned_option
-    post "/nutrition-days/:date/planned-day", NutritionDayController, :log_planned_day
-    post "/nutrition-days/:date/active-option", NutritionDayController, :switch_option
-    post "/nutrition-days/:date/replacements", NutritionDayController, :replace_planned_item
-    patch "/nutrition-days/:date/entries/:id", NutritionDayController, :update_entry
-    delete "/nutrition-days/:date/entries/:id", NutritionDayController, :delete_entry
-
-    # Weight entries
-    get "/weight_entries", WeightEntryController, :index
-    post "/weight_entries", WeightEntryController, :create
-    delete "/weight_entries/:id", WeightEntryController, :delete
 
     # Chat
     get "/conversation", ConversationController, :show
+    get "/conversation/history", ConversationController, :history
     get "/conversation/messages", ConversationController, :messages
     post "/conversation/messages", ConversationController, :create_message
     post "/conversation/read", ConversationController, :mark_read

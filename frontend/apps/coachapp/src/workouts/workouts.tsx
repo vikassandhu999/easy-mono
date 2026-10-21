@@ -1,8 +1,8 @@
-import {useState} from 'react';
-import {Link, useLocation, useNavigate, useSearchParams} from 'react-router-dom';
+import {useEffect, useRef, useState} from 'react';
+import {Link, NavLink, useLocation, useNavigate, useSearchParams} from 'react-router-dom';
 import {errorMessage} from '../api/client';
 import {useCopyWorkout, useDeleteWorkout, useSaveWorkout, useWorkouts, type Workout} from '../api/workouts';
-import {Button, buttonVariants} from '../ui/button';
+import {Button} from '../ui/button';
 import {Dialog, DialogHeader, DialogTitle} from '../ui/dialog';
 import {FormError} from '../ui/form-error';
 import {InfiniteList} from '../ui/infinite-list';
@@ -20,7 +20,22 @@ export function WorkoutLibrary() {
   const [dialog, setDialog] = useState<'new' | Workout | null>(null);
   const [name, setName] = useState('');
   const [error, setError] = useState<string>();
-  const [notice, setNotice] = useState('');
+  const [nameInvalid, setNameInvalid] = useState(false);
+  const nameInput = useRef<HTMLInputElement>(null);
+  const [copyError, setCopyError] = useState<{id: string; message: string} | null>(null);
+  const [notice, setNotice] = useState<{message: string} | null>(null);
+  useEffect(() => {
+    if (!notice) {
+      return;
+    }
+    const timer = window.setTimeout(() => setNotice(null), 5000);
+    return () => window.clearTimeout(timer);
+  }, [notice]);
+  function closeDialog() {
+    setDialog(null);
+    setError(undefined);
+    setNameInvalid(false);
+  }
   return (
     <Page>
       <PageHeader
@@ -31,6 +46,7 @@ export function WorkoutLibrary() {
             onPress={() => {
               setName('');
               setError(undefined);
+              setNameInvalid(false);
               setDialog('new');
             }}
           >
@@ -38,8 +54,25 @@ export function WorkoutLibrary() {
           </Button>
         }
       />
+      <nav
+        aria-label="Workout library"
+        className="flex gap-5"
+      >
+        <NavLink
+          className="app-navigation-link"
+          to="/workouts"
+          end
+        >
+          Workouts
+        </NavLink>
+        <NavLink
+          className="app-navigation-link"
+          to="/exercises"
+        >
+          Exercises
+        </NavLink>
+      </nav>
       <ListSearch label="Search workouts" />
-      <p role="status">{notice}</p>
       <InfiniteList
         query={query}
         label="workouts"
@@ -63,38 +96,53 @@ export function WorkoutLibrary() {
                 {workout.type === 'prescribed' ? 'Exercises' : workout.type === 'video' ? 'Video' : 'Open session'}
               </p>
             </Link>
-            <Button
-              variant="ghost"
-              onPress={async () => {
-                try {
-                  const result = await copy.mutateAsync({id: workout.id, name: `${workout.name} copy`});
-                  navigate(`/workouts/${result.data.id}`);
-                } catch (cause) {
-                  setError(errorMessage(cause, 'Could not copy this workout.'));
-                }
-              }}
-            >
-              Copy
-            </Button>
-            <Button
-              variant="ghost"
-              onPress={() => {
-                setError(undefined);
-                setDialog(workout);
-              }}
-            >
-              Delete
-            </Button>
+            <div className="flex w-full justify-end gap-3 sm:w-auto">
+              <Button
+                variant="outline"
+                size="sm"
+                className="min-w-24"
+                isPending={copy.isPending && copy.variables?.id === workout.id}
+                isDisabled={copy.isPending}
+                onPress={async () => {
+                  if (copy.isPending) {
+                    return;
+                  }
+                  setCopyError(null);
+                  try {
+                    const result = await copy.mutateAsync({id: workout.id, name: `${workout.name} copy`});
+                    navigate(`/workouts/${result.data.id}`);
+                  } catch (cause) {
+                    setCopyError({id: workout.id, message: errorMessage(cause, 'Could not copy this workout.')});
+                  }
+                }}
+              >
+                {copy.isPending && copy.variables?.id === workout.id ? 'Copying…' : 'Copy'}
+              </Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                onPress={() => {
+                  setError(undefined);
+                  setDialog(workout);
+                }}
+              >
+                Delete
+              </Button>
+            </div>
+            {copyError?.id === workout.id && (
+              <div className="w-full">
+                <FormError message={copyError.message} />
+              </div>
+            )}
           </div>
         )}
       </InfiniteList>
-      <FormError message={error} />
       {dialog && (
         <Dialog
           isOpen
           onOpenChange={(open) => {
             if (!open) {
-              setDialog(null);
+              closeDialog();
             }
           }}
         >
@@ -103,16 +151,20 @@ export function WorkoutLibrary() {
           </DialogHeader>
           {dialog === 'new' ? (
             <form
-              className="space-y-4"
+              className="dialog-body space-y-4"
+              noValidate
               onSubmit={async (event) => {
                 event.preventDefault();
                 if (create.isPending) {
                   return;
                 }
+                setError(undefined);
                 if (!name.trim()) {
-                  setError('Enter a workout name.');
+                  setNameInvalid(true);
+                  nameInput.current?.focus();
                   return;
                 }
+                setNameInvalid(false);
                 try {
                   const result = await create.mutateAsync({
                     body: {name: name.trim(), type: 'prescribed', description: null, video_url: null, groups: []},
@@ -130,28 +182,55 @@ export function WorkoutLibrary() {
                 <span className="text-sm font-medium">Workout name</span>
                 <Input
                   id="create-workout-name"
+                  ref={nameInput}
                   autoFocus
+                  required
+                  aria-invalid={nameInvalid}
+                  aria-describedby={nameInvalid ? 'create-workout-name-error' : undefined}
                   value={name}
                   maxLength={255}
-                  onChange={(event) => setName(event.target.value)}
+                  onChange={(event) => {
+                    setName(event.target.value);
+                    if (event.target.value.trim()) {
+                      setNameInvalid(false);
+                    }
+                    setError(undefined);
+                  }}
                 />
               </label>
+              {nameInvalid && (
+                <p
+                  id="create-workout-name-error"
+                  role="alert"
+                  className="text-sm text-destructive"
+                >
+                  Enter a workout name.
+                </p>
+              )}
               <FormError message={error} />
-              <Button
-                type="submit"
-                isPending={create.isPending}
-              >
-                Create workout
-              </Button>
+              <div className="flex justify-end gap-3">
+                <Button
+                  variant="outline"
+                  onPress={closeDialog}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  isPending={create.isPending}
+                >
+                  Create workout
+                </Button>
+              </div>
             </form>
           ) : (
-            <div className="space-y-4">
+            <div className="dialog-body space-y-4">
               <p>This removes the library workout. Copies assigned to clients stay available.</p>
               <FormError message={error} />
               <div className="flex gap-2">
                 <Button
                   variant="outline"
-                  onPress={() => setDialog(null)}
+                  onPress={closeDialog}
                 >
                   Cancel
                 </Button>
@@ -161,7 +240,7 @@ export function WorkoutLibrary() {
                   onPress={async () => {
                     try {
                       await remove.mutateAsync(dialog.id);
-                      setNotice(`${dialog.name} deleted.`);
+                      setNotice({message: `${dialog.name} deleted.`});
                       setDialog(null);
                     } catch (cause) {
                       setError(errorMessage(cause, 'Could not delete this workout.'));
@@ -175,12 +254,16 @@ export function WorkoutLibrary() {
           )}
         </Dialog>
       )}
-      <Link
-        to="/exercises"
-        className={buttonVariants({variant: 'outline'})}
+      <div
+        role="status"
+        className="fixed inset-x-0 bottom-6 z-40 flex justify-center px-4"
       >
-        Exercise library
-      </Link>
+        {notice && (
+          <p className="max-w-md min-w-0 break-words rounded-xl bg-foreground px-4 py-3 text-sm font-medium text-background shadow-lg">
+            {notice.message}
+          </p>
+        )}
+      </div>
     </Page>
   );
 }

@@ -1,6 +1,6 @@
 import {type MetricKey, metricLabel} from '@easy/workouts/metrics';
 import {targetModes} from '@easy/workouts/targets';
-import {useEffect, useState} from 'react';
+import {useEffect, useRef, useState} from 'react';
 import type {Exercise} from '../api/exercises';
 import {useExercises} from '../api/exercises';
 import {kindLabels} from '../exercises/exercise';
@@ -17,6 +17,7 @@ import {
   type Mode,
   modeLabels,
   type Target,
+  targetProblem,
   type Where,
   type Workout,
 } from './model';
@@ -50,7 +51,7 @@ export function Segmented<T extends string>({
           key={option.value}
           variant={option.value === value ? 'outline' : 'ghost'}
           aria-pressed={option.value === value}
-          className="min-h-11 h-auto whitespace-normal px-2 py-2 sm:px-5"
+          className="min-h-11 h-auto min-w-0 break-words whitespace-normal px-2 py-2 sm:px-5"
           onPress={() => onChange(option.value)}
         >
           {option.label}
@@ -67,20 +68,35 @@ export function TargetEditor({
   onPerRound,
   id,
   className,
+  validationVisible = false,
 }: BuilderProps & {
   where: Where;
   onClose: () => void;
   onPerRound: (perRound: boolean) => void;
   id: string;
   className?: string;
+  validationVisible?: boolean;
 }) {
+  const root = useRef<HTMLDivElement>(null);
+  const [checked, setChecked] = useState(false);
   const group = workout.groups[where.group];
   const exercise = group?.exercises[where.exercise];
+  const target = exercise
+    ? (getTarget(exercise, where.key, where.round) ?? {mode: 'client_chooses'})
+    : {mode: 'client_chooses' as const};
+  // biome-ignore lint/correctness/useExhaustiveDependencies: Focus the selected target when its identity or input type changes.
+  useEffect(() => {
+    root.current
+      ?.querySelector<HTMLElement>('input, select, [aria-label="Target type"] button[aria-pressed="true"]')
+      ?.focus();
+  }, [where.group, where.exercise, where.key, where.round, target.mode]);
   if (!group || !exercise) {
     return null;
   }
   const info = infoFor(where.key);
-  const target = getTarget(exercise, where.key, where.round) ?? {mode: 'client_chooses'};
+  const problem = targetProblem(where.key, target, exercise.source);
+  const visibleProblem = checked || validationVisible ? problem : null;
+  const errorId = `${id}-error`;
   const put = (next: Target) => setWorkout(actions.putTarget(workout, where, next));
   const modes: readonly Mode[] =
     where.key === 'rest' ? ['client_chooses', 'none', 'exact', 'range'] : targetModes(where.key as MetricKey | 'grade');
@@ -103,6 +119,7 @@ export function TargetEditor({
   return (
     <div
       id={id}
+      ref={root}
       role="group"
       aria-labelledby={`${id}-title`}
       className={cn('space-y-3 rounded-xl bg-muted p-4', className)}
@@ -113,11 +130,24 @@ export function TargetEditor({
           className="font-semibold"
         >
           {labelFor(where.key, exercise.source)} — {exercise.source.name}
-          {where.round !== null ? ` · round ${where.round + 1}` : ` · all ${group.rounds} rounds`}
+          {where.round !== null
+            ? ` · round ${where.round + 1}`
+            : group.rounds === 1
+              ? ' · 1 round'
+              : ` · all ${group.rounds} rounds`}
         </h3>
         <Button
           variant="ghost"
-          onPress={onClose}
+          onPress={() => {
+            if (problem) {
+              setChecked(true);
+              root.current
+                ?.querySelector<HTMLElement>(`#${id}-${problem.field === 'v' ? 'value' : problem.field}`)
+                ?.focus();
+              return;
+            }
+            onClose();
+          }}
         >
           Done
         </Button>
@@ -149,6 +179,8 @@ export function TargetEditor({
             <select
               id={`${id}-value`}
               className={fieldClass}
+              aria-invalid={Boolean(visibleProblem?.field === 'v')}
+              aria-describedby={visibleProblem?.field === 'v' ? errorId : undefined}
               value={target.v ?? ''}
               onChange={(event) => put({...target, v: event.target.value})}
             >
@@ -158,13 +190,16 @@ export function TargetEditor({
                   key={value}
                   value={value}
                 >
-                  {value}
+                  {value[0]?.toUpperCase()}
+                  {value.slice(1)}
                 </option>
               ))}
             </select>
           ) : (
             <Input
               id={`${id}-value`}
+              aria-invalid={Boolean(visibleProblem?.field === 'v')}
+              aria-describedby={visibleProblem?.field === 'v' ? errorId : undefined}
               inputMode={info?.text ? 'text' : 'decimal'}
               value={target.v ?? ''}
               onChange={(event) => put({...target, v: event.target.value})}
@@ -185,6 +220,8 @@ export function TargetEditor({
               </span>
               <Input
                 id={`${id}-${field}`}
+                aria-invalid={Boolean(visibleProblem?.field === field)}
+                aria-describedby={visibleProblem?.field === field ? errorId : undefined}
                 inputMode="decimal"
                 value={target[field] ?? ''}
                 onChange={(event) => put({...target, [field]: event.target.value})}
@@ -192,6 +229,15 @@ export function TargetEditor({
             </label>
           ))}
         </div>
+      )}
+      {visibleProblem && (
+        <p
+          id={errorId}
+          role="alert"
+          className="text-sm text-destructive"
+        >
+          {visibleProblem.message}
+        </p>
       )}
       <p className="text-sm font-medium text-muted-foreground">
         {where.key === 'rest' && where.exercise === group.exercises.length - 1
@@ -232,10 +278,10 @@ export function ExercisePicker({
       <DialogHeader>
         <DialogTitle>{title}</DialogTitle>
       </DialogHeader>
-      <div className="dialog-body space-y-4">
+      <div className="dialog-body flex min-h-0 flex-col gap-4 overflow-hidden">
         <label
           htmlFor="workout-exercise-search"
-          className="grid gap-1"
+          className="grid shrink-0 gap-1"
         >
           <span className="text-sm font-medium">Search exercises</span>
           <Input
@@ -246,29 +292,35 @@ export function ExercisePicker({
             onChange={(event) => setSearch(event.target.value)}
           />
         </label>
-        <InfiniteList
-          query={query}
-          label="exercises"
-          singular="exercise"
-          empty={<p className="py-4 text-muted-foreground">No matching exercises. Try another name.</p>}
+        <div
+          role="region"
+          aria-label="Exercise results"
+          className="min-h-0 flex-1 overflow-y-auto"
         >
-          {(exercise) => (
-            <Button
-              variant="ghost"
-              className="h-auto min-h-14 w-full justify-start rounded-none px-4 py-3 text-left"
-              onPress={() => onPick(exercise)}
-            >
-              <span className="min-w-0 whitespace-normal">
-                <span className="block font-semibold">{exercise.name}</span>
-                <span className="block text-sm font-medium text-muted-foreground">
-                  {kindLabels[exercise.kind]}
-                  {' · '}
-                  {exercise.metrics.map((metric) => metricLabel(metric.key, metric)).join(' · ')}
+          <InfiniteList
+            query={query}
+            label="exercises"
+            singular="exercise"
+            empty={<p className="py-4 text-muted-foreground">No matching exercises. Try another name.</p>}
+          >
+            {(exercise) => (
+              <Button
+                variant="ghost"
+                className="h-auto min-h-14 w-full justify-start rounded-none px-4 py-3 text-left"
+                onPress={() => onPick(exercise)}
+              >
+                <span className="min-w-0 break-words whitespace-normal">
+                  <span className="block font-semibold">{exercise.name}</span>
+                  <span className="block text-sm font-medium text-muted-foreground">
+                    {kindLabels[exercise.kind]}
+                    {' · '}
+                    {exercise.metrics.map((metric) => metricLabel(metric.key, metric)).join(' · ')}
+                  </span>
                 </span>
-              </span>
-            </Button>
-          )}
-        </InfiniteList>
+              </Button>
+            )}
+          </InfiniteList>
+        </div>
       </div>
     </Dialog>
   );

@@ -195,25 +195,46 @@ export function problemsOf(workout: Workout) {
     for (const exercise of group.exercises) {
       for (const row of exercise.perRound ? exercise.roundTargets : [exercise.targets]) {
         for (const [key, target] of Object.entries(row)) {
-          if (
-            target.mode === 'exact' &&
-            (infoFor(key)?.text ? !target.v?.trim() : !Number.isFinite(parseNumber(target.v ?? '')))
-          ) {
-            return `Enter a valid ${labelFor(key, exercise.source)} value for ${exercise.source.name}.`;
-          }
-          if (
-            target.mode === 'range' &&
-            (!Number.isFinite(parseNumber(target.min ?? '')) ||
-              !Number.isFinite(parseNumber(target.max ?? '')) ||
-              parseNumber(target.min ?? '') > parseNumber(target.max ?? ''))
-          ) {
-            return `Enter a valid ${labelFor(key, exercise.source)} range for ${exercise.source.name}.`;
+          const problem = targetProblem(key, target, exercise.source);
+          if (problem) {
+            return problem.message;
           }
         }
       }
     }
   }
   return null;
+}
+export function targetProblem(
+  key: string,
+  target: Target,
+  exercise?: CatalogueExercise,
+): {field: 'v' | 'min' | 'max'; message: string} | null {
+  const label = labelFor(key, exercise);
+  const owner = exercise ? ` for ${exercise.name}` : '';
+  if (
+    target.mode === 'exact' &&
+    (infoFor(key)?.text ? !target.v?.trim() : !Number.isFinite(parseNumber(target.v ?? '')))
+  ) {
+    return {field: 'v', message: `Enter a valid ${label} value${owner}.`};
+  }
+  if (target.mode === 'range') {
+    const lower = parseNumber(target.min ?? '');
+    const upper = parseNumber(target.max ?? '');
+    if (!Number.isFinite(lower)) {
+      return {field: 'min', message: `Enter a valid ${label} range${owner}.`};
+    }
+    if (!Number.isFinite(upper) || lower > upper) {
+      return {field: 'max', message: `Enter a valid ${label} range${owner}.`};
+    }
+  }
+  return null;
+}
+export function hasDifferentRounds(exercise: Exercise) {
+  return (
+    exercise.perRound &&
+    exercise.roundTargets.some((row) => JSON.stringify(row) !== JSON.stringify(exercise.roundTargets[0]))
+  );
 }
 export function validUrl(value: string) {
   try {
@@ -329,8 +350,25 @@ export const actions = {
   }),
   moveExercise: (workout: Workout, group: number, index: number, by: -1 | 1) =>
     mapGroup(workout, group, (current) => ({...current, exercises: move(current.exercises, index, index + by)})),
-  moveExerciseToGroup: (workout: Workout, group: number, index: number, target: number) => {
+  moveExerciseToGroup: (workout: Workout, group: number, index: number, target: number | 'new'): Workout => {
     const exercise = workout.groups[group]?.exercises[index];
+    if (exercise && target === 'new') {
+      const source = workout.groups[group];
+      if (!source || source.exercises.length < 2) {
+        return workout;
+      }
+      const next = actions.removeExercise(workout, group, index);
+      return {
+        ...next,
+        groups: [
+          ...next.groups,
+          {id: crypto.randomUUID(), uiId: crypto.randomUUID(), name: '', rounds: source.rounds, exercises: [exercise]},
+        ],
+      };
+    }
+    if (target === 'new') {
+      return workout;
+    }
     const destination = workout.groups[target];
     if (!exercise || !destination || group === target) {
       return workout;
@@ -352,6 +390,49 @@ export const actions = {
     };
   },
 };
+
+export function restoreRounds(current: Workout, before: Group, reducedTo: number): Workout {
+  return {
+    ...current,
+    groups: current.groups.map((group) =>
+      group.uiId !== before.uiId
+        ? group
+        : {
+            ...group,
+            rounds: before.rounds,
+            exercises: group.exercises.map((exercise) => {
+              if (!exercise.perRound) {
+                return exercise;
+              }
+              const old = before.exercises.find((row) => row.uiId === exercise.uiId);
+              const rows = old
+                ? [...exercise.roundTargets.slice(0, reducedTo), ...old.roundTargets.slice(reducedTo)]
+                : exercise.roundTargets;
+              return {...exercise, roundTargets: fitted(rows, before.rounds, exercise.targets)};
+            }),
+          },
+    ),
+  };
+}
+export function restoreTargetMode(current: Workout, before: Exercise): Workout {
+  return {
+    ...current,
+    groups: current.groups.map((group) => ({
+      ...group,
+      exercises: group.exercises.map((exercise) => {
+        if (exercise.uiId !== before.uiId) {
+          return exercise;
+        }
+        return {
+          ...exercise,
+          perRound: before.perRound,
+          targets: before.targets,
+          roundTargets: before.perRound ? fitted(before.roundTargets, group.rounds, before.targets) : [],
+        };
+      }),
+    })),
+  };
+}
 
 export function restoreRemoval(current: Workout, before: Workout): Workout {
   const groups = [...current.groups];

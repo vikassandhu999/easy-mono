@@ -2,7 +2,7 @@ import {metricKeys} from '@easy/workouts/metrics';
 import type {Workout as SavedWorkout, WorkoutBody} from '../api/workouts';
 import {bodyOf, problemsOf, type Workout} from './model.ts';
 
-export type SaveState = 'saved' | 'saving' | 'failed';
+export type SaveState = 'saved' | 'saving' | 'invalid' | 'failed';
 export class WorkoutSaveQueue {
   draft: Workout;
   state: SaveState;
@@ -40,17 +40,19 @@ export class WorkoutSaveQueue {
     this.publish();
     clearTimeout(this.timer);
     this.timer = setTimeout(() => {
+      this.timer = undefined;
       this.flush();
     }, 450);
   }
   async flush() {
     clearTimeout(this.timer);
+    this.timer = undefined;
     if (this.running || this.saved === this.revision) {
       return;
     }
     const problem = problemsOf(this.draft);
     if (problem) {
-      this.state = 'failed';
+      this.state = 'invalid';
       this.error = problem;
       this.publish();
       return;
@@ -76,7 +78,7 @@ export class WorkoutSaveQueue {
       }
       this.state = 'saved';
     } catch (cause) {
-      this.state = 'failed';
+      this.state = problemsOf(this.draft) ? 'invalid' : 'failed';
       this.error = cause instanceof Error ? cause.message : 'Could not save this workout.';
       this.persist(this.draft);
     } finally {
@@ -85,7 +87,12 @@ export class WorkoutSaveQueue {
     }
   }
   dispose() {
+    const pending = this.timer !== undefined;
     clearTimeout(this.timer);
+    this.timer = undefined;
+    if (pending && this.state === 'saving') {
+      this.flush();
+    }
   }
 }
 const object = (value: unknown): value is Record<string, unknown> =>

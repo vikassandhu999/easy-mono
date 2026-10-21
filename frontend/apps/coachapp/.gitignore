@@ -20,3 +20,4 @@ tests/acquisition/artifacts/*fixtures.json
 tests/exercises/artifacts/
 tests/workout-session/artifacts/
 tests/workout-ux/artifacts/
+tests/workout-builder/artifacts/

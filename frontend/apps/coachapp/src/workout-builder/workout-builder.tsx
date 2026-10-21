@@ -1,20 +1,22 @@
-import {ArrowLeft, Check, CloudOff, LoaderCircle} from 'lucide-react';
-import {useEffect, useRef, useState} from 'react';
+import {AlertCircle, ArrowLeft, Check, CloudOff, LoaderCircle} from 'lucide-react';
+import {useCallback, useEffect, useRef, useState} from 'react';
 import {Link, useLocation, useNavigate, useParams} from 'react-router-dom';
 import {errorMessage} from '../api/client';
-import {useUploadLibraryMedia} from '../api/library-media';
 import {getSession} from '../api/session';
 import {useUndoWorkoutWeek} from '../api/workout-week';
 import {type Workout as SavedWorkout, useSaveWorkout, useWorkout} from '../api/workouts';
 import {Button} from '../ui/button';
+import {Dialog, DialogHeader, DialogTitle} from '../ui/dialog';
 import {FormError} from '../ui/form-error';
 import {Input} from '../ui/input';
 import {Page} from '../ui/page';
 import {Textarea} from '../ui/textarea';
+import {type Undo, UndoToast} from '../ui/week-editor';
 import {CardsBuilder} from './cards-builder';
-import {draftOf, typeLabels, validUrl} from './model';
+import {draftOf, restoreRemoval, typeLabels, type Workout, type WorkoutType} from './model';
 import {Segmented} from './parts';
 import {readDraft, readDraftKeys, WorkoutSaveQueue} from './save-queue';
+import {VideoPanel} from './video-panel';
 import './workout-builder.css';
 
 export function WorkoutBuilder() {
@@ -24,20 +26,14 @@ export function WorkoutBuilder() {
   const currentId = location.pathname.endsWith('/new') ? 'new' : (workoutId ?? id ?? '');
   const query = useWorkout(currentId === 'new' ? '' : currentId, clientId);
   const [undoError, setUndoError] = useState<string>();
-  const [undo, setUndo] = useState<{token: string; previousId: string; expires: number} | null>(null);
+  const [undo, setUndo] = useState<Undo<{token: string; previousId: string}> | null>(null);
+  const expireUndo = useCallback(() => setUndo(null), []);
   const editorAliases = useRef(new Map<string, string>());
   const [restoreVersion, setRestoreVersion] = useState(0);
   const [localUndoActive, setLocalUndoActive] = useState(false);
   const [saving, setSaving] = useState(false);
   const restore = useUndoWorkoutWeek(clientId ?? '');
   const navigate = useNavigate();
-  useEffect(() => {
-    if (!undo) {
-      return;
-    }
-    const timer = window.setTimeout(() => setUndo(null), Math.max(0, undo.expires - Date.now()));
-    return () => window.clearTimeout(timer);
-  }, [undo]);
   if (currentId === 'new') {
     return <CreateWorkout {...(clientId ? {clientId} : {})} />;
   }
@@ -69,42 +65,30 @@ export function WorkoutBuilder() {
         initial={query.data.data}
         onSaved={(token, previousId, nextId) => {
           editorAliases.current.set(nextId, editorAliases.current.get(previousId) ?? previousId);
-          setUndo(token ? {token, previousId, expires: Date.now() + 8000} : null);
+          setUndo(token ? {message: 'Workout updated.', before: {token, previousId}} : null);
         }}
         onUndoActive={setLocalUndoActive}
         onSaving={setSaving}
         {...(clientId ? {clientId} : {})}
       />
-      {undoError && <FormError message={undoError} />}
-      {undo && clientId && !localUndoActive && (
-        <div
-          role="status"
-          className="fixed inset-x-0 bottom-6 z-40 flex justify-center px-4"
-        >
-          <div className="flex items-center gap-3 rounded-xl bg-foreground py-2 pr-2 pl-4 text-background shadow-lg">
-            <span>Workout updated.</span>
-            <Button
-              variant="outline"
-              isPending={restore.isPending}
-              isDisabled={saving}
-              onPress={async () => {
-                try {
-                  await restore.mutateAsync(undo.token);
-                  setUndo(null);
-                  setUndoError(undefined);
-                  editorAliases.current.clear();
-                  setRestoreVersion((version) => version + 1);
-                  navigate(`/clients/${clientId}/training/workouts/${undo.previousId}`, {replace: true});
-                } catch (cause) {
-                  setUndoError(errorMessage(cause, 'Could not undo this workout change.'));
-                }
-              }}
-            >
-              Undo
-            </Button>
-          </div>
-        </div>
-      )}
+      <UndoToast
+        undo={clientId && !localUndoActive ? undo : null}
+        onExpire={expireUndo}
+        pending={restore.isPending || saving}
+        {...(undoError ? {error: undoError} : {})}
+        onUndo={async (before) => {
+          try {
+            await restore.mutateAsync(before.token);
+            setUndo(null);
+            setUndoError(undefined);
+            editorAliases.current.clear();
+            setRestoreVersion((version) => version + 1);
+            navigate(`/clients/${clientId}/training/workouts/${before.previousId}`, {replace: true});
+          } catch (cause) {
+            setUndoError(errorMessage(cause, 'Could not undo this workout change.'));
+          }
+        }}
+      />
     </>
   );
 }
@@ -129,6 +113,18 @@ function Editor({
   const mounted = useRef(true);
   const [, render] = useState(0);
   const [storageError, setStorageError] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [cardsUndoActive, setCardsUndoActive] = useState(false);
+  const [typeUndo, setTypeUndo] = useState<Undo<Workout> | null>(null);
+  const [pendingType, setPendingType] = useState<WorkoutType | null>(null);
+  const [pendingRestore, setPendingRestore] = useState<Workout | null>(null);
+  const expireTypeUndo = useCallback(() => setTypeUndo(null), []);
+  const cardsUndoChanged = useCallback((active: boolean) => {
+    setCardsUndoActive(active);
+    if (active) {
+      setTypeUndo(null);
+    }
+  }, []);
   const onSavedRef = useRef(onSaved);
   onSavedRef.current = onSaved;
   const saveRef = useRef(save.mutateAsync);
@@ -164,7 +160,6 @@ function Editor({
       () => {
         if (mounted.current) {
           render((revision) => revision + 1);
-          onSavingRef.current(queue.state !== 'saved');
         }
       },
       (draft) => {
@@ -190,12 +185,18 @@ function Editor({
   });
   useEffect(() => {
     mounted.current = true;
-    onSavingRef.current(queue.state !== 'saved');
     return () => {
       mounted.current = false;
       queue.dispose();
     };
   }, [queue]);
+  useEffect(() => {
+    onSavingRef.current(queue.state !== 'saved' || uploading);
+  }, [queue, queue.state, uploading]);
+  useEffect(() => {
+    onUndoActive(Boolean(typeUndo) || cardsUndoActive);
+    return () => onUndoActive(false);
+  }, [typeUndo, cardsUndoActive, onUndoActive]);
   useEffect(() => {
     if (queue.state === 'saved' && queue.draft.id !== initial.id) {
       navigate(clientId ? `/clients/${clientId}/training/workouts/${queue.draft.id}` : `/workouts/${queue.draft.id}`, {
@@ -214,9 +215,45 @@ function Editor({
     return () => window.removeEventListener('beforeunload', leave);
   }, [queue]);
   const workout = queue.draft;
+  useEffect(() => {
+    const previous = document.title;
+    document.title = `${workout.name.trim() || 'Workout'} · Workout editor · CoachEasy`;
+    return () => {
+      document.title = previous;
+    };
+  }, [workout.name]);
+  const changeType = (type: WorkoutType) => {
+    if (type === workout.type) {
+      return;
+    }
+    if (workout.groups.length || workout.video) {
+      setTypeUndo({message: `Changed to ${typeLabels[type].toLowerCase()}.`, before: workout});
+    }
+    queue.change({
+      ...workout,
+      type,
+      groups: type === 'prescribed' ? workout.groups : [],
+      video: type === 'video' ? workout.video : '',
+    });
+    setPendingType(null);
+  };
+  const nameInvalid = queue.state === 'invalid' && !workout.name.trim();
+  const restoreType = (before: Workout) => {
+    const restored = {
+      ...queue.draft,
+      type: before.type,
+      video: before.type === 'video' ? before.video : '',
+      groups: before.type === 'prescribed' ? queue.draft.groups : [],
+    };
+    queue.change(before.type === 'prescribed' ? restoreRemoval(restored, before) : restored);
+    setTypeUndo(null);
+    setPendingRestore(null);
+  };
+  const nextType = pendingType ?? pendingRestore?.type;
   const back = clientId ? `/clients/${clientId}/training` : '/workouts';
   return (
-    <Page className="editor-page min-w-0 grid-cols-1 max-w-5xl pb-24">
+    <Page className="editor-page workout-editor min-w-0 grid-cols-1 max-w-5xl gap-5 pb-24 sm:gap-6">
+      <h1 className="sr-only">Edit workout</h1>
       <div className="sticky top-[var(--app-header-height)] z-30 -mx-4 flex flex-wrap items-center justify-between gap-2 border-b border-border bg-background px-4 py-2 sm:mx-0 sm:px-0">
         <Link
           to={back}
@@ -230,9 +267,18 @@ function Editor({
         </Link>
         <div
           role="status"
-          className="flex flex-wrap items-center gap-2 text-sm font-medium"
+          className="flex min-w-0 flex-wrap items-center gap-2 text-sm font-medium"
         >
-          {queue.state === 'saved' ? (
+          {uploading ? (
+            <>
+              <LoaderCircle
+                size={16}
+                className="animate-spin"
+                aria-hidden="true"
+              />
+              Uploading video…
+            </>
+          ) : queue.state === 'saved' ? (
             <>
               <Check
                 size={16}
@@ -247,7 +293,15 @@ function Editor({
                 className="animate-spin"
                 aria-hidden="true"
               />
-              Saving…
+              {save.isPaused ? 'Waiting for a connection… Your changes stay on this device.' : 'Saving…'}
+            </>
+          ) : queue.state === 'invalid' ? (
+            <>
+              <AlertCircle
+                size={16}
+                aria-hidden="true"
+              />
+              <span>Check the highlighted fields.</span>
             </>
           ) : (
             <>
@@ -282,11 +336,22 @@ function Editor({
             id="workout-name"
             className="editor-name"
             value={workout.name}
-            aria-invalid={!workout.name.trim()}
+            required
+            aria-invalid={nameInvalid}
+            aria-describedby={nameInvalid ? 'workout-name-error' : undefined}
             maxLength={255}
             onChange={(event) => queue.change({...workout, name: event.target.value})}
           />
         </label>
+        {nameInvalid && (
+          <p
+            id="workout-name-error"
+            role="alert"
+            className="text-sm text-destructive"
+          >
+            Enter a workout name.
+          </p>
+        )}
         <label
           htmlFor="workout-description"
           className="grid gap-1"
@@ -294,7 +359,8 @@ function Editor({
           <span className="text-sm font-medium">Instructions for the client (optional)</span>
           <Textarea
             id="workout-description"
-            rows={2}
+            rows={1}
+            className="min-h-12"
             value={workout.description}
             onChange={(event) => queue.change({...workout, description: event.target.value})}
           />
@@ -304,7 +370,16 @@ function Editor({
           <Segmented
             label="Workout type"
             value={workout.type}
-            onChange={(type) => queue.change({...workout, type})}
+            onChange={(type) => {
+              if (type === workout.type) {
+                return;
+              }
+              if (workout.groups.length || workout.video) {
+                setPendingType(type);
+              } else {
+                changeType(type);
+              }
+            }}
             options={(['prescribed', 'video', 'open'] as const).map((value) => ({value, label: typeLabels[value]}))}
           />
         </div>
@@ -317,12 +392,19 @@ function Editor({
         <CardsBuilder
           workout={workout}
           setWorkout={(draft) => queue.change(draft)}
-          onUndoActive={onUndoActive}
+          onUndoActive={cardsUndoChanged}
+          validationVisible={queue.state === 'invalid'}
         />
       ) : workout.type === 'video' ? (
         <VideoPanel
           value={workout.video}
-          onChange={(video) => queue.change({...workout, video})}
+          onChange={(video) => {
+            if (queue.draft.type === 'video') {
+              queue.change({...queue.draft, video});
+            }
+          }}
+          validationVisible={queue.state === 'invalid'}
+          onPendingChange={setUploading}
         />
       ) : (
         <section className="surface space-y-2">
@@ -332,95 +414,71 @@ function Editor({
           </p>
         </section>
       )}
-    </Page>
-  );
-}
-function VideoPanel({value, onChange}: {value: string; onChange: (value: string) => void}) {
-  const upload = useUploadLibraryMedia();
-  const fileInput = useRef<HTMLInputElement>(null);
-  const active = useRef<AbortController | null>(null);
-  const [error, setError] = useState<string>();
-  useEffect(() => () => active.current?.abort(), []);
-  return (
-    <section className="surface space-y-3">
-      <h2 className="editor-section-title">Video</h2>
-      <p className="text-muted-foreground">The client follows this video on the scheduled day.</p>
-      <label
-        htmlFor="workout-video"
-        className="grid gap-1"
-      >
-        <span className="text-sm font-medium">Video URL</span>
-        <Input
-          id="workout-video"
-          type="url"
-          value={value}
-          onChange={(event) => onChange(event.target.value)}
-          placeholder="https://…"
-        />
-      </label>
-      <input
-        ref={fileInput}
-        type="file"
-        className="sr-only"
-        aria-label="Choose workout video"
-        tabIndex={-1}
-        accept="video/mp4,video/webm"
-        onChange={async (event) => {
-          const file = event.target.files?.[0];
-          event.target.value = '';
-          if (!file) {
-            return;
-          }
-          active.current = new AbortController();
-          setError(undefined);
-          try {
-            const media = await upload.mutateAsync({file, signal: active.current.signal});
-            if (!media.url) {
-              throw new Error('The uploaded video has no public URL.');
-            }
-            onChange(media.url);
-          } catch (cause) {
-            setError(errorMessage(cause, 'Could not upload the video. Choose it again to retry.'));
+      <UndoToast
+        undo={cardsUndoActive ? null : typeUndo}
+        onExpire={expireTypeUndo}
+        onUndo={(before) => {
+          if (before.type !== workout.type && (workout.groups.length || workout.video)) {
+            setPendingRestore(before);
+          } else {
+            restoreType(before);
           }
         }}
       />
-      <Button
-        variant="outline"
-        isPending={upload.isPending}
-        onPress={() => fileInput.current?.click()}
-      >
-        Upload a video
-      </Button>
-      <FormError message={error} />
-      {validUrl(value) && (
-        <a
-          href={value}
-          target="_blank"
-          rel="noreferrer"
-          className="inline-flex min-h-11 items-center font-medium underline"
+      {nextType && (
+        <Dialog
+          className="workout-editor"
+          isOpen
+          onOpenChange={(open) => {
+            if (!open) {
+              setPendingType(null);
+              setPendingRestore(null);
+            }
+          }}
         >
-          Open video (new tab)
-        </a>
+          <DialogHeader>
+            <DialogTitle>Switch to {typeLabels[nextType].toLowerCase()}?</DialogTitle>
+          </DialogHeader>
+          <div className="dialog-body space-y-4">
+            <p>
+              This removes{' '}
+              {workout.type === 'prescribed' ? 'the current exercises and their targets' : 'the current video'} from
+              this workout.{' '}
+              {pendingRestore ? 'The previous workout content will be restored.' : 'You can Undo this change.'}
+            </p>
+            <div className="flex flex-wrap justify-end gap-3">
+              <Button
+                variant="outline"
+                onPress={() => {
+                  setPendingType(null);
+                  setPendingRestore(null);
+                }}
+              >
+                Keep current type
+              </Button>
+              <Button
+                onPress={() => {
+                  if (pendingRestore) {
+                    restoreType(pendingRestore);
+                  } else {
+                    changeType(nextType);
+                  }
+                }}
+              >
+                Switch workout type
+              </Button>
+            </div>
+          </div>
+        </Dialog>
       )}
-      {validUrl(value) && /\.(mp4|webm)(\?|$)/i.test(value) && (
-        <video
-          controls
-          playsInline
-          preload="metadata"
-          src={value}
-          aria-label="Workout video"
-          className="max-h-80 w-full rounded-xl"
-        >
-          <track kind="captions" />
-        </video>
-      )}
-    </section>
+    </Page>
   );
 }
-
 function CreateWorkout({clientId}: {clientId?: string}) {
   const [name, setName] = useState('');
   const [error, setError] = useState<string>();
+  const [nameInvalid, setNameInvalid] = useState(false);
+  const input = useRef<HTMLInputElement>(null);
   const save = useSaveWorkout(clientId);
   const navigate = useNavigate();
   return (
@@ -428,15 +486,19 @@ function CreateWorkout({clientId}: {clientId?: string}) {
       <h1 className="page-title">Create workout</h1>
       <form
         className="space-y-4"
+        noValidate
         onSubmit={async (event) => {
           event.preventDefault();
           if (save.isPending) {
             return;
           }
           if (!name.trim()) {
-            setError('Enter a workout name.');
+            setNameInvalid(true);
+            input.current?.focus();
             return;
           }
+          setError(undefined);
+          setNameInvalid(false);
           try {
             const result = await save.mutateAsync({
               body: {name: name.trim(), description: null, type: 'prescribed', video_url: null, groups: []},
@@ -457,11 +519,30 @@ function CreateWorkout({clientId}: {clientId?: string}) {
           <span className="text-sm font-medium">Workout name</span>
           <Input
             id="new-workout-name"
+            ref={input}
             autoFocus
+            required
+            aria-invalid={nameInvalid}
+            aria-describedby={nameInvalid ? 'new-workout-name-error' : undefined}
             value={name}
-            onChange={(event) => setName(event.target.value)}
+            onChange={(event) => {
+              setName(event.target.value);
+              if (event.target.value.trim()) {
+                setNameInvalid(false);
+              }
+              setError(undefined);
+            }}
           />
         </label>
+        {nameInvalid && (
+          <p
+            id="new-workout-name-error"
+            role="alert"
+            className="text-sm text-destructive"
+          >
+            Enter a workout name.
+          </p>
+        )}
         <FormError message={error} />
         <Button
           type="submit"

@@ -1,47 +1,48 @@
-import {ArrowDown, ArrowUp, ArrowUpDown, Minus, Plus, Trash2, X} from 'lucide-react';
-import {useEffect, useState} from 'react';
+import {AlertCircle, ArrowDown, ArrowUp, ArrowUpDown, Minus, Plus, Trash2, X} from 'lucide-react';
+import {useCallback, useEffect, useRef, useState} from 'react';
 import {Button} from '../ui/button';
 import {Checkbox} from '../ui/checkbox';
 import {cn} from '../ui/cn';
+import {Dialog, DialogHeader, DialogTitle} from '../ui/dialog';
+import {type Undo, UndoToast} from '../ui/week-editor';
 import {
   actions,
   groupLabel,
   groupSummary,
   groupTitle,
+  hasDifferentRounds,
   keysOf,
   labelFor,
   letterOf,
   restoreRemoval,
+  restoreRounds,
+  restoreTargetMode,
   targetLabel,
+  targetProblem,
   type Where,
   type Workout,
 } from './model';
 import {type BuilderProps, ExercisePicker, fieldClass, TargetEditor} from './parts';
 
-type Undo = {message: string; before: Workout};
-
 export function CardsBuilder({
   workout,
   setWorkout,
   onUndoActive,
-}: BuilderProps & {onUndoActive: (active: boolean) => void}) {
+  validationVisible = false,
+}: BuilderProps & {onUndoActive: (active: boolean) => void; validationVisible?: boolean}) {
   const [editing, setEditing] = useState<Where | null>(null);
   // A group index adds to that group; 'new' adds a new single-exercise group.
   const [picker, setPicker] = useState<number | 'new' | null>(null);
-  const [undo, setUndo] = useState<Undo | null>(null);
+  const [undo, setUndo] = useState<Undo<(current: Workout) => Workout> | null>(null);
+  const [confirmTargets, setConfirmTargets] = useState<Where | null>(null);
+  const trigger = useRef<HTMLElement | null>(null);
+  const root = useRef<HTMLDivElement>(null);
+  const expireUndo = useCallback(() => setUndo(null), []);
   useEffect(() => {
     onUndoActive(Boolean(undo));
     return () => onUndoActive(false);
   }, [undo, onUndoActive]);
   const [reordering, setReordering] = useState(false);
-
-  useEffect(() => {
-    if (!undo) {
-      return;
-    }
-    const timer = window.setTimeout(() => setUndo(null), 8000);
-    return () => window.clearTimeout(timer);
-  }, [undo]);
 
   const same = (where: Where) =>
     editing?.group === where.group &&
@@ -49,10 +50,22 @@ export function CardsBuilder({
     editing.key === where.key &&
     editing.round === where.round;
   const toggle = (where: Where) => setEditing(same(where) ? null : where);
-  const remove = (message: string, next: Workout) => {
+  const changeWithUndo = (message: string, next: Workout, restore: (current: Workout) => Workout) => {
     setEditing(null);
-    setUndo({message, before: workout});
+    setUndo({message, before: restore});
     setWorkout(next);
+  };
+  const remove = (message: string, next: Workout) => {
+    changeWithUndo(message, next, (current) => restoreRemoval(current, workout));
+  };
+  const changeTargetMode = (where: Where, perRound: boolean) => {
+    const exercise = workout.groups[where.group]?.exercises[where.exercise];
+    if (!exercise || exercise.perRound === perRound) {
+      return;
+    }
+    const next = actions.togglePerRound(workout, where.group, where.exercise);
+    changeWithUndo(`${exercise.source.name} targets changed.`, next, (current) => restoreTargetMode(current, exercise));
+    setEditing({...where, round: perRound ? 0 : null});
   };
   const editorId = (gi: number, ei: number) => `target-editor-${gi}-${ei}`;
   const pickerGroup = typeof picker === 'number' ? workout.groups[picker] : undefined;
@@ -63,12 +76,16 @@ export function CardsBuilder({
       : 'Add an exercise';
 
   return (
-    <div className="min-w-0 space-y-4">
+    <div
+      ref={root}
+      className="min-w-0 space-y-4"
+    >
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-xl font-semibold">{reordering ? 'Reorder the workout' : 'Exercises'}</h2>
         <Button
           variant={reordering ? 'default' : 'outline'}
           aria-pressed={reordering}
+          isDisabled={workout.groups.length === 0}
           onPress={() => {
             setEditing(null);
             setReordering(!reordering);
@@ -135,13 +152,20 @@ export function CardsBuilder({
                     variant="ghost"
                     aria-label="Fewer rounds"
                     isDisabled={group.rounds <= 1}
-                    onPress={() => setWorkout(actions.setRounds(workout, gi, group.rounds - 1))}
+                    onPress={() => {
+                      const rounds = group.rounds - 1;
+                      changeWithUndo(
+                        `${groupTitle(group, gi)} reduced to ${rounds} ${rounds === 1 ? 'round' : 'rounds'}.`,
+                        actions.setRounds(workout, gi, rounds),
+                        (current) => restoreRounds(current, group, rounds),
+                      );
+                    }}
                   >
                     <Minus />
                   </Button>
                   <output
                     aria-live="polite"
-                    className="min-w-24 text-center font-semibold"
+                    className="min-w-0 flex-1 break-words px-1 text-center font-semibold sm:min-w-24"
                   >
                     {group.rounds} {group.rounds === 1 ? 'round' : 'rounds'}
                   </output>
@@ -149,6 +173,7 @@ export function CardsBuilder({
                     size="icon-sm"
                     variant="ghost"
                     aria-label="More rounds"
+                    isDisabled={group.rounds >= 100}
                     onPress={() => setWorkout(actions.setRounds(workout, gi, Math.min(100, group.rounds + 1)))}
                   >
                     <Plus />
@@ -170,7 +195,7 @@ export function CardsBuilder({
                           {letterOf(gi)}
                           {ei + 1}
                         </span>
-                        <p className="min-w-0 flex-1 pt-2 font-semibold md:w-52 md:flex-none">
+                        <p className="min-w-0 flex-1 break-words pt-2 font-semibold md:w-52 md:flex-none">
                           {exercise.source.name}
                           {exercise.sideMode === 'per_side' && (
                             <span className="ml-2 inline-flex whitespace-nowrap rounded-md bg-muted px-1.5 py-0.5 text-xs font-medium text-muted-foreground">
@@ -233,6 +258,15 @@ export function CardsBuilder({
                                       </th>
                                       {keys.map((key) => {
                                         const where = {group: gi, exercise: ei, key, round: ri};
+                                        const invalid =
+                                          validationVisible &&
+                                          Boolean(
+                                            targetProblem(
+                                              key,
+                                              targets[key] ?? {mode: 'client_chooses'},
+                                              exercise.source,
+                                            ),
+                                          );
                                         return (
                                           <td key={key}>
                                             <Button
@@ -240,6 +274,7 @@ export function CardsBuilder({
                                               variant="outline"
                                               aria-label={`${exercise.source.name} round ${ri + 1} ${labelFor(key, exercise.source)}: ${targetLabel(key, targets[key])}`}
                                               aria-expanded={same(where)}
+                                              aria-invalid={invalid}
                                               {...(same(where) && {'aria-controls': editorId(gi, ei)})}
                                               className={cn(
                                                 'min-w-16 justify-start tabular-nums sm:min-w-20',
@@ -247,10 +282,16 @@ export function CardsBuilder({
                                                   targets[key]?.mode ?? 'client_chooses',
                                                 ) && 'font-sans font-medium text-muted-foreground',
                                                 same(where) && 'border-primary bg-primary/5',
+                                                invalid && 'border-destructive',
                                               )}
-                                              onPress={() => toggle(where)}
+                                              onPress={(event) => {
+                                                trigger.current =
+                                                  event.target instanceof HTMLElement ? event.target : null;
+                                                toggle(where);
+                                              }}
                                             >
                                               {targetLabel(key, targets[key])}
+                                              {invalid && <AlertCircle aria-label="Invalid target" />}
                                             </Button>
                                           </td>
                                         );
@@ -266,19 +307,31 @@ export function CardsBuilder({
                                 const where = {group: gi, exercise: ei, key, round: null};
                                 const target = exercise.targets[key];
                                 const soft = !target || target.mode === 'client_chooses' || target.mode === 'none';
+                                const invalid =
+                                  validationVisible &&
+                                  Boolean(targetProblem(key, target ?? {mode: 'client_chooses'}, exercise.source));
                                 return (
                                   <Button
                                     key={key}
                                     size="sm"
                                     variant="outline"
                                     aria-expanded={same(where)}
+                                    aria-invalid={invalid}
                                     {...(same(where) && {'aria-controls': editorId(gi, ei)})}
-                                    className={cn('gap-1.5 px-3', same(where) && 'border-primary bg-primary/5')}
-                                    onPress={() => toggle(where)}
+                                    className={cn(
+                                      'h-auto min-h-11 max-w-full min-w-0 gap-1.5 whitespace-normal px-3',
+                                      same(where) && 'border-primary bg-primary/5',
+                                      invalid && 'border-destructive',
+                                    )}
+                                    onPress={(event) => {
+                                      trigger.current = event.target instanceof HTMLElement ? event.target : null;
+                                      toggle(where);
+                                    }}
                                   >
-                                    <span className="font-medium text-muted-foreground">
+                                    <span className="min-w-0 break-words font-medium text-muted-foreground">
                                       {labelFor(key, exercise.source)}
                                     </span>
+                                    {invalid && <AlertCircle aria-label="Invalid target" />}
                                     <span className={cn(soft ? 'font-medium text-muted-foreground' : 'tabular-nums')}>
                                       {targetLabel(key, target)}
                                     </span>
@@ -297,12 +350,22 @@ export function CardsBuilder({
                           workout={workout}
                           setWorkout={setWorkout}
                           where={open}
-                          onClose={() => setEditing(null)}
+                          validationVisible={validationVisible}
+                          onClose={() => {
+                            const origin = trigger.current?.isConnected
+                              ? trigger.current
+                              : document.querySelector<HTMLElement>(
+                                  `button[aria-controls="${editorId(gi, ei)}"][aria-expanded="true"]`,
+                                );
+                            setEditing(null);
+                            origin?.focus();
+                          }}
                           onPerRound={(perRound) => {
-                            if (perRound !== exercise.perRound) {
-                              setWorkout(actions.togglePerRound(workout, gi, ei));
+                            if (!perRound && hasDifferentRounds(exercise)) {
+                              setConfirmTargets(open);
+                              return;
                             }
-                            setEditing({...open, round: perRound ? 0 : null});
+                            changeTargetMode(open, perRound);
                           }}
                         />
                       )}
@@ -350,27 +413,57 @@ export function CardsBuilder({
         />
       )}
 
-      <div
-        role="status"
-        className="fixed inset-x-0 bottom-6 z-40 flex justify-center px-4"
-      >
-        {undo && (
-          <div className="flex items-center gap-3 rounded-xl bg-foreground py-2 pr-2 pl-4 text-background shadow-lg">
-            <span>{undo.message}</span>
-            <Button
-              size="sm"
-              variant="ghost"
-              className="bg-background text-foreground hover:bg-background/90"
-              onPress={() => {
-                setWorkout(restoreRemoval(workout, undo.before));
-                setUndo(null);
-              }}
-            >
-              Undo
-            </Button>
+      <UndoToast
+        undo={undo}
+        onExpire={expireUndo}
+        onUndo={(restore) => {
+          setEditing(null);
+          setWorkout(restore(workout));
+          setUndo(null);
+          requestAnimationFrame(() => {
+            root.current
+              ?.querySelector<HTMLButtonElement>('button:not([disabled]):not([aria-disabled="true"])')
+              ?.focus();
+          });
+        }}
+      />
+      {confirmTargets && (
+        <Dialog
+          className="workout-editor"
+          isOpen
+          onOpenChange={(open) => {
+            if (!open) {
+              setConfirmTargets(null);
+            }
+          }}
+        >
+          <DialogHeader>
+            <DialogTitle>Use the first round for every round?</DialogTitle>
+          </DialogHeader>
+          <div className="dialog-body space-y-4">
+            <p>
+              The rounds have different targets. This replaces all of this exercise’s targets with the first round’s
+              values. You can Undo this change.
+            </p>
+            <div className="flex flex-wrap justify-end gap-3">
+              <Button
+                variant="outline"
+                onPress={() => setConfirmTargets(null)}
+              >
+                Keep per-round targets
+              </Button>
+              <Button
+                onPress={() => {
+                  changeTargetMode(confirmTargets, false);
+                  setConfirmTargets(null);
+                }}
+              >
+                Use first round
+              </Button>
+            </div>
           </div>
-        )}
-      </div>
+        </Dialog>
+      )}
     </div>
   );
 }
@@ -427,7 +520,14 @@ function ReorderList({workout, setWorkout}: BuilderProps) {
                     <select
                       value={gi}
                       onChange={(event) =>
-                        setWorkout(actions.moveExerciseToGroup(workout, gi, ei, Number(event.target.value)))
+                        setWorkout(
+                          actions.moveExerciseToGroup(
+                            workout,
+                            gi,
+                            ei,
+                            event.target.value === 'new' ? 'new' : Number(event.target.value),
+                          ),
+                        )
                       }
                       className={cn(fieldClass, 'h-11 bg-surface pr-8')}
                     >
@@ -440,6 +540,7 @@ function ReorderList({workout, setWorkout}: BuilderProps) {
                           {option.name ? ` · ${option.name}` : ''}
                         </option>
                       ))}
+                      {group.exercises.length > 1 && <option value="new">New straight-sets card</option>}
                     </select>
                   </label>
                   <Button

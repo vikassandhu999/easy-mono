@@ -10,6 +10,9 @@ import {
   labelFor,
   problemsOf,
   restoreRemoval,
+  restoreRounds,
+  restoreTargetMode,
+  targetProblem,
   type Workout,
 } from '../../src/workout-builder/model.ts';
 import {readDraft, readDraftKeys, remapAfterSave, WorkoutSaveQueue} from '../../src/workout-builder/save-queue.ts';
@@ -316,6 +319,109 @@ test('rest none round-trips', () => {
   const draft = draftOf(savedTargets([{rest: {mode: 'none'}}]));
   assert.deepEqual(draft.groups[0]?.exercises[0]?.targets.rest, {mode: 'none'});
   assert.deepEqual(bodyOf(draft).groups?.[0]?.exercises[0]?.targets, [{rest: {mode: 'none'}}]);
+});
+
+test('moving an exercise to a new card preserves its targets and side mode', () => {
+  const paired = actions.addExercise(
+    actions.addExercise(
+      draftOf(savedTargets([{reps: {mode: 'exact', value: 8}, rest: {mode: 'none'}}], 'per_side')),
+      0,
+      pull,
+    ),
+    'new',
+    bench,
+  );
+  const result = actions.moveExerciseToGroup(paired, 0, 0, 'new');
+  assert.equal(result.groups.length, 3);
+  assert.deepEqual(bodyOf(result).groups?.[2]?.exercises[0]?.targets, [
+    {reps: {mode: 'exact', value: 8}, rest: {mode: 'none'}},
+  ]);
+  assert.equal(result.groups[2]?.exercises[0]?.sideMode, 'per_side');
+  assert.equal(result.groups[2]?.exercises[0]?.uiId, paired.groups[0]?.exercises[0]?.uiId);
+});
+
+test('disposing a queue sends its pending valid edit without waiting for the debounce', async () => {
+  let written = '';
+  const queue = new WorkoutSaveQueue(
+    draftOf(saved),
+    async (_id, body) => {
+      written = body.name;
+      return {...saved, name: body.name};
+    },
+    () => undefined,
+    () => undefined,
+  );
+  queue.change({...queue.draft, name: 'Saved on leaving'});
+  queue.dispose();
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(written, 'Saved on leaving');
+  assert.equal(queue.state, 'saved');
+});
+
+test('invalid input remains distinct from a failed save and is never sent on leaving', async () => {
+  let writes = 0;
+  const queue = new WorkoutSaveQueue(
+    draftOf(saved),
+    async () => {
+      writes++;
+      return saved;
+    },
+    () => undefined,
+    () => undefined,
+  );
+  queue.change({...queue.draft, name: ''});
+  queue.dispose();
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(queue.state, 'invalid');
+  assert.equal(queue.error, 'Enter a workout name.');
+  assert.equal(writes, 0);
+});
+
+test('round Undo restores removed targets while preserving later edits to remaining rounds', () => {
+  let before = actions.togglePerRound(
+    draftOf(savedTargets([{reps: {mode: 'exact', value: 6}, rest: {mode: 'none'}}])),
+    0,
+    0,
+  );
+  before = actions.putTarget(before, {group: 0, exercise: 0, key: 'reps', round: 1}, {mode: 'exact', v: '7'});
+  before = actions.putTarget(before, {group: 0, exercise: 0, key: 'reps', round: 2}, {mode: 'exact', v: '9'});
+  let current = actions.setRounds(before, 0, 2);
+  current = actions.putTarget(
+    {...current, description: 'Later instructions'},
+    {group: 0, exercise: 0, key: 'reps', round: 0},
+    {mode: 'exact', v: '10'},
+  );
+  const restored = restoreRounds(current, before.groups[0], 2);
+  assert.equal(restored.description, 'Later instructions');
+  assert.deepEqual(
+    bodyOf(restored).groups?.[0]?.exercises[0]?.targets?.map((row) => row.reps?.value),
+    [10, 7, 9],
+  );
+});
+
+test('target-mode Undo follows an exercise moved to another card and retains its later side choice', () => {
+  const before = actions.togglePerRound(
+    draftOf(savedTargets([{reps: {mode: 'exact', value: 8}, rest: {mode: 'none'}}])),
+    0,
+    0,
+  );
+  let current = actions.togglePerRound(before, 0, 0);
+  current = actions.addExercise(current, 0, pull);
+  current = actions.moveExerciseToGroup(current, 0, 0, 'new');
+  current = actions.setSideMode(current, 1, 0, 'per_side');
+  const restored = restoreTargetMode(current, before.groups[0].exercises[0]);
+  assert.equal(restored.groups[1]?.exercises[0]?.sideMode, 'per_side');
+  assert.equal(restored.groups[1]?.exercises[0]?.perRound, true);
+  assert.equal(bodyOf(restored).groups?.[1]?.exercises[0]?.targets?.length, 3);
+});
+
+test('target problems identify the input that needs correction', () => {
+  assert.deepEqual(targetProblem('reps', {mode: 'range', min: '10', max: '5'}, bench), {
+    field: 'max',
+    message: 'Enter a valid Reps range for Bench press.',
+  });
+  assert.deepEqual(targetProblem('rest', {mode: 'exact', v: ''}), {field: 'v', message: 'Enter a valid Rest value.'});
+  assert.equal(targetProblem('weight', {mode: 'exact', v: '-5'}), null);
 });
 
 test('client chooses rest round-trips', () => {

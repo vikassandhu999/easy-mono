@@ -1,5 +1,5 @@
 import {metricLabel} from '@easy/workouts/metrics';
-import {Link, useLocation, useSearchParams} from 'react-router-dom';
+import {Link, NavLink, useLocation, useSearchParams} from 'react-router-dom';
 import {useExercises} from '../api/exercises';
 import {buttonVariants} from '../ui/button';
 import {InfiniteList} from '../ui/infinite-list';
@@ -37,7 +37,6 @@ export function Exercises() {
       <PageHeader
         title="Exercise library"
         description="Shared exercises and your own exercises. Choose what the client records."
-        back={{to: '/workouts', label: 'Workout library'}}
         actions={
           <Link
             to="/exercises/new"
@@ -48,6 +47,24 @@ export function Exercises() {
           </Link>
         }
       />
+      <nav
+        aria-label="Workout library"
+        className="flex gap-5"
+      >
+        <NavLink
+          className="app-navigation-link"
+          to="/workouts"
+          end
+        >
+          Workouts
+        </NavLink>
+        <NavLink
+          className="app-navigation-link"
+          to="/exercises"
+        >
+          Exercises
+        </NavLink>
+      </nav>
       <ListSearch label="Search exercises" />
       <div className="grid gap-3 sm:grid-cols-3">
         {(

@@ -116,6 +116,38 @@ defmodule EasyWeb.WorkoutsTest do
     assert hd(undone["data"]["schedules"])["id"] == schedule["data"]["id"]
   end
 
+  test "exact result targets survive create, update, detail and list responses", f do
+    exercise = insert(:exercise, business: f.coach.business, kind: :sport, metrics: [%{key: :result}])
+
+    created =
+      post(f.conn, "/v1/coach/workouts", %{
+        name: "Match practice",
+        groups: [
+          %{rounds: 1, exercises: [%{exercise_id: exercise.id, targets: [%{result: %{mode: "exact", value: "win"}}]}]}
+        ]
+      })
+      |> json_response(201)
+
+    id = created["data"]["id"]
+
+    for outcome <- ["win", "draw", "loss"] do
+      body = %{
+        groups: [
+          %{rounds: 1, exercises: [%{exercise_id: exercise.id, targets: [%{result: %{mode: "exact", value: outcome}}]}]}
+        ]
+      }
+
+      updated = patch(f.conn, "/v1/coach/workouts/#{id}", body) |> json_response(200)
+      detail = get(f.conn, "/v1/coach/workouts/#{id}") |> json_response(200)
+      page = get(f.conn, "/v1/coach/workouts") |> json_response(200)
+
+      for workout <- [updated["data"], detail["data"], hd(page["data"])] do
+        assert get_in(workout, ["groups", Access.at(0), "exercises", Access.at(0), "targets", Access.at(0), "result"]) ==
+                 %{"mode" => "exact", "value" => outcome}
+      end
+    end
+  end
+
   test "workout JSON nests round targets with rest and side_mode", f do
     exercise = insert(:exercise, business: f.coach.business)
 

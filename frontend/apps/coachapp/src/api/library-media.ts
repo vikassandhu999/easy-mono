@@ -30,13 +30,63 @@ export function mediaFileError(file: File) {
   return null;
 }
 
+function uploadFile(
+  url: string,
+  headers: Record<string, string>,
+  file: File,
+  signal: AbortSignal,
+  onProgress?: (percent: number) => void,
+) {
+  signal.throwIfAborted();
+  return new Promise<void>((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    const abort = () => xhr.abort();
+    const finish = (error?: Error) => {
+      signal.removeEventListener('abort', abort);
+      if (error) {
+        reject(error);
+      } else {
+        resolve();
+      }
+    };
+    xhr.open('PUT', url);
+    for (const [key, value] of Object.entries(headers)) {
+      xhr.setRequestHeader(key, value);
+    }
+    xhr.upload.onprogress = (event) => {
+      if (event.lengthComputable) {
+        onProgress?.(Math.round((event.loaded / event.total) * 100));
+      }
+    };
+    xhr.onload = () =>
+      finish(xhr.status >= 200 && xhr.status < 300 ? undefined : new Error('Could not upload the file.'));
+    xhr.onerror = () => finish(new Error('Could not upload the file. Check your connection and try again.'));
+    xhr.onabort = () => finish(new DOMException('Upload cancelled.', 'AbortError'));
+    signal.addEventListener('abort', abort, {once: true});
+    xhr.send(file);
+  });
+}
+
 export function useUploadLibraryMedia() {
   return useMutation({
-    mutationFn: async ({file, signal}: {file: File; signal: AbortSignal}) => {
+    networkMode: 'always',
+    mutationFn: async ({
+      file,
+      signal,
+      onProgress,
+    }: {
+      file: File;
+      signal: AbortSignal;
+      onProgress?: (percent: number) => void;
+    }) => {
       const sessionId = getSession()?.id;
       const type = contentType(file.type);
-      if (!sessionId || !type || mediaFileError(file)) {
-        throw new Error('Choose a supported photo or video.');
+      const problem = mediaFileError(file);
+      if (problem) {
+        throw new Error(problem);
+      }
+      if (!sessionId || !type) {
+        throw new Error('Your session changed.');
       }
       const {data} = await call(
         client.POST('/v1/coach/library-media/uploads', {
@@ -48,15 +98,7 @@ export function useUploadLibraryMedia() {
       if (getSession()?.id !== sessionId) {
         throw new Error('Your session changed.');
       }
-      const response = await fetch(data.upload_url, {
-        method: 'PUT',
-        headers: data.upload_headers,
-        body: file,
-        signal,
-      });
-      if (!response.ok) {
-        throw new Error('Could not upload the file.');
-      }
+      await uploadFile(data.upload_url, data.upload_headers, file, signal, onProgress);
       signal.throwIfAborted();
       if (getSession()?.id !== sessionId) {
         throw new Error('Your session changed.');

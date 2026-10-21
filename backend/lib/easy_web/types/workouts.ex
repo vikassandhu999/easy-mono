@@ -190,7 +190,7 @@ defmodule EasyWeb.Types.WorkoutRoundTargets do
              target
              |> Map.take(target.__struct__.__schema__(:fields))
              |> Enum.reject(fn {_key, value} -> is_nil(value) end)
-             |> Map.new(fn {key, value} -> {key, numeric_value(value)} end)}
+             |> Map.new(fn {key, value} -> {key, target_value(field, key, value)} end)}
           ]
       end
     end)
@@ -199,8 +199,11 @@ defmodule EasyWeb.Types.WorkoutRoundTargets do
 
   def format(%{rest: _} = round), do: round
 
-  defp numeric_value(%Decimal{} = value), do: Decimal.to_float(value)
-  defp numeric_value(value), do: value
+  defp target_value(:result, :value, value) when value in [:win, :draw, :loss],
+    do: Atom.to_string(value)
+
+  defp target_value(_field, _key, %Decimal{} = value), do: Decimal.to_float(value)
+  defp target_value(_field, _key, value), do: value
 end
 
 defmodule EasyWeb.Types.WorkoutExercise do

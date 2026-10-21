@@ -107,6 +107,113 @@ async function journey(width) {
   const base = `/v1/coach/clients/${fixture.clientId}`;
   const week = async (on) => (await send('get', `${base}/workout-week${on ? `?on=${on}` : ''}`, undefined, token)).data;
   const workout = async (id) => (await send('get', `/v1/coach/workouts/${id}`, undefined, token)).data;
+  await page.goto('/workouts');
+  const libraryNav = page.getByRole('navigation', {name: 'Workout library', exact: true});
+  await expect(libraryNav.getByRole('link', {name: 'Workouts', exact: true})).toHaveAttribute('aria-current', 'page');
+  for (const link of await libraryNav.getByRole('link').all()) {
+    expect((await link.boundingBox()).height).toBeGreaterThanOrEqual(44);
+  }
+  expect(
+    await libraryNav
+      .getByRole('link', {name: 'Workouts', exact: true})
+      .evaluate((node) => getComputedStyle(node).borderBottomColor),
+  ).not.toBe(
+    await libraryNav
+      .getByRole('link', {name: 'Exercises', exact: true})
+      .evaluate((node) => getComputedStyle(node).borderBottomColor),
+  );
+  const searchBox = await page.getByLabel('Search workouts', {exact: true}).boundingBox();
+  const countBox = await page
+    .getByRole('status')
+    .filter({hasText: /^\d+ workouts?$/})
+    .boundingBox();
+  expect(countBox.y - searchBox.y - searchBox.height).toBeLessThanOrEqual(32);
+  await expect(page.getByRole('button', {name: 'All workouts loaded', exact: true})).toHaveCount(0);
+  await libraryNav.getByRole('link', {name: 'Exercises', exact: true}).click();
+  await expect(page.getByRole('heading', {name: 'Exercise library', exact: true})).toBeVisible();
+  await expect(libraryNav.getByRole('link', {name: 'Exercises', exact: true})).toHaveAttribute('aria-current', 'page');
+  await libraryNav.getByRole('link', {name: 'Workouts', exact: true}).click();
+  await expect(page.getByRole('heading', {name: 'Workout library', exact: true})).toBeVisible();
+  await page.getByRole('button', {name: 'Create workout', exact: true}).click();
+  const createDialog = page.getByRole('dialog', {name: 'Create workout', exact: true});
+  const input = createDialog.getByLabel('Workout name', {exact: true});
+  await expect(input).toBeFocused();
+  await createDialog.getByRole('button', {name: 'Create workout', exact: true}).click();
+  await expect(createDialog.getByRole('alert')).toHaveText('Enter a workout name.');
+  await expect(input).toHaveAttribute('aria-invalid', 'true');
+  const errorId = await input.getAttribute('aria-describedby');
+  await expect(page.locator(`[id="${errorId}"]`)).toHaveText('Enter a workout name.');
+  await input.fill('Valid name');
+  await expect(input).toHaveAttribute('aria-invalid', 'false');
+  await expect(createDialog.getByRole('alert')).toHaveCount(0);
+  await input.fill('');
+  await createDialog.getByRole('button', {name: 'Create workout', exact: true}).click();
+  await expect(createDialog.getByRole('alert')).toHaveText('Enter a workout name.');
+  const titleBox = await createDialog.getByRole('heading', {name: 'Create workout', exact: true}).boundingBox();
+  const inputBox = await input.boundingBox();
+  const dialogBox = await createDialog.boundingBox();
+  expect(Math.abs(titleBox.x - inputBox.x)).toBeLessThanOrEqual(1);
+  expect(inputBox.x - dialogBox.x).toBeGreaterThanOrEqual(20);
+  expect(dialogBox.x + dialogBox.width - inputBox.x - inputBox.width).toBeGreaterThanOrEqual(20);
+  await shot(page, `create-workout-${width}`);
+  await createDialog.getByRole('button', {name: 'Cancel', exact: true}).click();
+  await expect(createDialog).toHaveCount(0);
+  await expect(page.getByRole('alert')).toHaveCount(0);
+  await page.getByRole('button', {name: 'Create workout', exact: true}).click();
+  const libraryName = `Library flow ${width}`;
+  await input.fill(libraryName);
+  await createDialog.getByRole('button', {name: 'Create workout', exact: true}).click();
+  await expect(page).toHaveURL(/\/workouts\/[0-9a-f-]{36}$/);
+  await expect(page.getByLabel('Workout name', {exact: true})).toHaveValue(libraryName);
+  await page.goto('/workouts');
+  const originalRow = page
+    .getByRole('listitem')
+    .filter({has: page.getByRole('link', {name: `${libraryName} Exercises`, exact: true})});
+  await expect(originalRow).toBeVisible();
+  const copyBox = await originalRow.getByRole('button', {name: 'Copy', exact: true}).boundingBox();
+  const deleteBox = await originalRow.getByRole('button', {name: 'Delete', exact: true}).boundingBox();
+  expect(deleteBox.x - copyBox.x - copyBox.width).toBeGreaterThanOrEqual(12);
+  expect(copyBox.height).toBeGreaterThanOrEqual(44);
+  expect(deleteBox.height).toBeGreaterThanOrEqual(44);
+  await shot(page, `workout-library-${width}`);
+  const copyPath = /\/v1\/coach\/workouts\/[^/?]+$/;
+  let releaseCopy;
+  const copyHeld = new Promise((resolve) => {
+    releaseCopy = resolve;
+  });
+  await page.route(copyPath, async (route) => {
+    await copyHeld;
+    await route.abort();
+  });
+  await originalRow.getByRole('button', {name: 'Copy', exact: true}).click();
+  await expect(originalRow.getByRole('button', {name: 'Copying…', exact: true})).toBeDisabled();
+  await expect(
+    page.getByRole('list', {name: 'workouts', exact: true}).getByRole('button', {name: 'Copy', exact: true}).first(),
+  ).toBeDisabled();
+  await shot(page, `copying-workout-${width}`);
+  releaseCopy();
+  await expect(originalRow.getByRole('alert')).toHaveText('Could not copy this workout.');
+  await expect(originalRow.getByRole('button', {name: 'Copy', exact: true})).toBeEnabled();
+  await page.unroute(copyPath);
+  await originalRow.getByRole('button', {name: 'Copy', exact: true}).click();
+  await expect(page.getByLabel('Workout name', {exact: true})).toHaveValue(`${libraryName} (copy)`);
+  await page.goto('/workouts');
+  const copiedRow = page
+    .getByRole('listitem')
+    .filter({has: page.getByRole('link', {name: `${libraryName} (copy) Exercises`, exact: true})});
+  await copiedRow.getByRole('button', {name: 'Delete', exact: true}).click();
+  await page.getByRole('dialog').getByRole('button', {name: 'Delete workout', exact: true}).click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect(copiedRow).toHaveCount(0);
+  await expect(originalRow).toBeVisible();
+  const deletionMessage = page.getByText(`${libraryName} (copy) deleted.`, {exact: true});
+  await expect(deletionMessage).toHaveCount(1);
+  await expect(deletionMessage).toBeVisible();
+  expect(await deletionMessage.evaluate((node) => getComputedStyle(node.closest('[role="status"]')).position)).toBe(
+    'fixed',
+  );
+  await shot(page, `workout-deleted-banner-${width}`);
+  await expect(deletionMessage).toHaveCount(0, {timeout: 7000});
   let pendingWrites = 0;
   const isWrite = (request) => request.method() !== 'GET' && request.url().includes('/v1/coach/');
   page.on('request', (request) => {

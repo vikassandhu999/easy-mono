@@ -87,25 +87,13 @@ export function InfiniteList<Item extends {id: string}>({
   const items = [...new Map(query.data.pages.flatMap((page) => page.data).map((item) => [item.id, item])).values()];
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between gap-4">
-        <p
-          role="status"
-          className="text-sm text-muted-foreground"
-        >
-          {count === null ? 'Count unavailable' : `${count} ${count === 1 ? singular : label}`}
-          {isFetching && !query.isFetchingNextPage ? ' · Updating…' : ''}
-        </p>
-        <Button
-          variant="ghost"
-          aria-label={`Refresh ${label}`}
-          isPending={isFetching}
-          onPress={() => {
-            query.refetch();
-          }}
-        >
-          Refresh
-        </Button>
-      </div>
+      <p
+        role="status"
+        className="text-sm text-muted-foreground"
+      >
+        {count === null ? 'Count unavailable' : `${count} ${count === 1 ? singular : label}`}
+        {isFetching && !query.isFetchingNextPage ? ' · Updating…' : ''}
+      </p>
       {query.isPaused && (
         <p
           role="status"
@@ -136,19 +124,19 @@ export function InfiniteList<Item extends {id: string}>({
         <FormError
           message={
             restartPage
-              ? 'This list has changed. Refresh to continue from the beginning.'
+              ? 'This list has changed. Try again to load the latest results.'
               : errorMessage(
                   query.error,
                   query.isFetchNextPageError
                     ? `Couldn't load more ${label}. Your loaded results are still here.`
-                    : `Couldn't refresh ${label}. Showing the previous results.`,
+                    : `Couldn't update ${label}. Showing the previous results.`,
                 )
           }
         />
       )}
       <div
         ref={sentinel}
-        className="flex justify-center py-2"
+        className={hasNextPage || query.isError ? 'flex justify-center py-2' : 'sr-only'}
       >
         {query.isError && (!query.isFetchNextPageError || restartPage) ? (
           <Button
@@ -158,14 +146,13 @@ export function InfiniteList<Item extends {id: string}>({
               query.refetch();
             }}
           >
-            Retry refresh
+            Try again
           </Button>
         ) : (
-          (hasNextPage || items.length > 0) && (
+          hasNextPage && (
             <Button
               variant="outline"
               isPending={isFetching}
-              isDisabled={!hasNextPage}
               onPress={() => {
                 fetchNextPage({cancelRefetch: false});
               }}
@@ -174,9 +161,7 @@ export function InfiniteList<Item extends {id: string}>({
                 ? 'Loading more…'
                 : query.isFetchNextPageError
                   ? 'Retry loading more'
-                  : hasNextPage
-                    ? 'Load more'
-                    : `All ${label} loaded`}
+                  : 'Load more'}
             </Button>
           )
         )}

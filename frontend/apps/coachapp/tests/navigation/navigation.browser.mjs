@@ -160,15 +160,19 @@ try {
         }
 
         for (const [parent, parentPath, label, path, back] of [
-          ['Workouts', '/workouts', 'Exercise library', '/exercises', 'Workout library'],
+          ['Workouts', '/workouts', 'Exercises', '/exercises', 'Workouts'],
         ]) {
           await primary(page, parent, parentPath);
           await openLink(page, label, path);
-          await expect(page.getByRole('heading', {level: 1, name: label, exact: true})).toBeVisible();
+          await expect(page.getByRole('heading', {level: 1, name: 'Exercise library', exact: true})).toBeVisible();
           await expect(
             page.getByRole('navigation', {name: 'Coaching'}).getByRole('link', {name: parent, exact: true}),
           ).toHaveClass(/\bactive\b/);
-          await openLink(page, back, parentPath);
+          await page
+            .getByRole('navigation', {name: 'Workout library', exact: true})
+            .getByRole('link', {name: back, exact: true})
+            .click();
+          await expect(page).toHaveURL(new RegExp(`${parentPath}$`));
         }
 
         await primary(page, 'Clients', '/clients');

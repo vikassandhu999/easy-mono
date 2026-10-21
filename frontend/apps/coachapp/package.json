@@ -34,6 +34,7 @@
     "test:billing": "node tests/billing/billing.browser.mjs",
     "test:coaching-terms": "node tests/clients/coaching-terms.browser.mjs",
     "test:workout": "node tests/workout-week/workout-week.browser.mjs",
+    "test:workout-editor": "node tests/workout-builder/editor.browser.mjs",
     "test:exercises": "node tests/exercises/exercises.browser.mjs",
     "test:workout-session": "node tests/workout-session/workout-session.browser.mjs"
   },

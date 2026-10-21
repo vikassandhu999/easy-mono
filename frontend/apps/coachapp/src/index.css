@@ -83,6 +83,44 @@
   text-underline-offset: 4px;
 }
 
+@utility workout-editor {
+  container-type: inline-size;
+  overflow-wrap: anywhere;
+
+  & button {
+    max-width: 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  & [role="group"] {
+    min-width: 0;
+  }
+}
+
+@container (max-width: 18rem) {
+  .workout-editor [aria-label="Workout type"],
+  .workout-editor [aria-label="Target type"] {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .workout-editor [aria-label^="Rounds for "] {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .workout-editor [aria-label^="Rounds for "] output {
+    grid-column: 1 / -1;
+    grid-row: 1;
+  }
+
+  .workout-editor [aria-label^="Rounds for "] button {
+    justify-self: center;
+  }
+}
+
 @layer components {
   .skip-link {
     position: fixed;

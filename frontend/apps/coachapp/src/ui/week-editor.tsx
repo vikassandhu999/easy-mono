@@ -71,29 +71,44 @@ export function UndoToast<T>({
   pending?: boolean;
   error?: string;
 }) {
-  const [paused, setPaused] = useState(false);
+  const [hovered, setHovered] = useState(false);
+  const [focused, setFocused] = useState(false);
   useEffect(() => {
-    if (!undo || paused || pending || error) {
+    if (!undo) {
+      setHovered(false);
+      setFocused(false);
+    }
+  }, [undo]);
+  useEffect(() => {
+    if (!undo || hovered || focused || pending || error) {
       return;
     }
     const timer = window.setTimeout(onExpire, 8000);
     return () => window.clearTimeout(timer);
-  }, [undo, paused, pending, error, onExpire]);
+  }, [undo, hovered, focused, pending, error, onExpire]);
   return (
     <div
       role="status"
       className="fixed inset-x-0 bottom-6 z-40 flex justify-center px-4"
     >
       {undo && (
-        <div className="flex max-w-md flex-wrap items-center gap-3 rounded-xl bg-foreground py-2 pr-2 pl-4 text-background shadow-lg">
-          <span>{undo.message}</span>
+        <div
+          className="flex max-w-md min-w-0 flex-wrap items-center gap-3 rounded-xl bg-foreground py-2 pr-2 pl-4 text-background shadow-lg"
+          onPointerEnter={() => setHovered(true)}
+          onPointerLeave={() => setHovered(false)}
+          onFocusCapture={() => setFocused(true)}
+          onBlurCapture={(event) => {
+            if (!event.currentTarget.contains(event.relatedTarget)) {
+              setFocused(false);
+            }
+          }}
+        >
+          <span className="min-w-0 flex-1 break-words">{undo.message}</span>
           <Button
             size="sm"
             variant="ghost"
             className="text-background hover:bg-background/15 data-pressed:bg-background/25"
             isPending={pending}
-            onHoverChange={setPaused}
-            onFocusChange={setPaused}
             onPress={() => onUndo(undo.before)}
           >
             Undo
